@@ -4,7 +4,9 @@ Status: **Proposed**. **No API exists yet.** The endpoints below are a logical, 
 
 - **Source of truth:** `docs/security/authorization-matrix.json`. This table must match it exactly.
 - **Test:** `node --test tests/security/*.test.mjs` runs `tests/security/authorization-matrix.test.mjs`. It fails the build when a cell is missing or unknown, when a cell breaks a security invariant (below), when this table drifts from the JSON, or when the app has a real endpoint with no row here.
-- **Coverage gate:** activates automatically once application code exists (`src/`, `app/`, `server/`, `api/`, ...). It then needs `tests/security/adapters/discover-endpoints.mjs` for the chosen stack, and **fails closed** without it.
+- **Coverage gate:** activates automatically once application code exists (`src/`, `app/`, `server/`, `api/`, ...). The stack is decided (`docs/adr/0001-stack.md`: Fastify API in `server/`), and `tests/security/adapters/discover-endpoints.mjs` scans its routes statically. It **fails closed** on any route it cannot read.
+- **Auth paths:** `AUTH-01` to `AUTH-05` are logical paths. When Better Auth is wired up, rename them to its real routes here and in the JSON; the coverage gate fails until they match.
+- **Live tests:** `tests/security/*.test.mjs` iterate this matrix by its flags (contract: `docs/security/test-harness-contract.md`).
 
 ## Roles
 

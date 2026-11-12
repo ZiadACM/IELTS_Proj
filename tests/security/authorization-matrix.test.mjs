@@ -139,8 +139,16 @@ const ADAPTER = path.join(repoRoot, 'tests', 'security', 'adapters', 'discover-e
 
 test('every real endpoint in the application appears in the matrix', async (t) => {
   const appDirs = APP_DIRS.filter((d) => fs.existsSync(path.join(repoRoot, d)));
-  if (appDirs.length === 0 && !fs.existsSync(ADAPTER)) {
-    t.skip('NOT VERIFIED: no application code yet (none of ' + APP_DIRS.join(', ') + '). Activates automatically when one appears.');
+  if (appDirs.length === 0) {
+    // No application code. If the adapter exists it still runs, and anything it finds is checked (never weaker
+    // than before); only an empty result is reported as NOT VERIFIED. (Fix 2026-11-12: the adapter's mere
+    // presence used to be treated as application code, failing the gate before any app existed.)
+    const found = fs.existsSync(ADAPTER) ? await (await import(pathToFileURL(ADAPTER).href)).discoverEndpoints({ root: repoRoot }) : [];
+    if (found.length === 0) {
+      t.skip('NOT VERIFIED: no application code yet (none of ' + APP_DIRS.join(', ') + '). Activates automatically when one appears.');
+      return;
+    }
+    assert.deepEqual(findUnlisted(found, matrix), [], 'endpoints missing from docs/security/authorization-matrix.json');
     return;
   }
   assert.ok(fs.existsSync(ADAPTER),

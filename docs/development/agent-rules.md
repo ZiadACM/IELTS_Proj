@@ -57,4 +57,6 @@ Known issues / risks: ...           Next action: ...
 
 Install only through `scripts/install-skills.mjs`, following `docs/development/INSTALL-FOR-AGENTS.md`.
 
+**Check the phase before every task.** Run `node scripts/install-skills.mjs plan`. If the task belongs to a phase whose core skills are not installed (phase table in `INSTALL-FOR-AGENTS.md` section 3: B when content items are authored, C when the stack exists and the first slice starts, D once that slice runs locally, pre-launch before public release), stop and tell the owner which phase is due. Install it through the runbook only after the owner says yes. Never install a later phase early, and never work around a missing skill silently.
+
 To adopt any NEW skill, plugin, hook or MCP server: do not install it. Open a proposal listing: the approved need, source and pinned commit, what its `SKILL.md`, scripts, hooks and network calls do (you must have read them), what permission it asks for, and whether it duplicates something here. The owner approves. Vendored skills are checksummed (`scripts/verify-vendored.sh`); a mismatch is a stop-and-ask.

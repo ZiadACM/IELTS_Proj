@@ -1,0 +1,53 @@
+{
+  "_comment": "SYNTHETIC SECURITY TEST FIXTURE. Not a real exercise: do not ship, do not use as a content template. Shape follows tools/fixtures/map-001.valid.json. {{RUN}} is replaced by a random run id, so every protected text field carries a CANARY-*-<run> string that the leak tests search for. Answers are C, E, B; labels A and D are never correct (tests save them as deliberately wrong answers).",
+  "id": "security-map-{{RUN}}",
+  "type": "listening.map-labelling",
+  "version": 1,
+  "skills": ["directions.basic", "landmarks.tracking"],
+  "difficulty": { "landmarks": 5, "routeSteps": 4, "distractors": 1, "selfCorrections": 0, "audioPace": "slow" },
+  "supportPolicy": { "learning": { "replay": true, "hints": true }, "exam": { "replay": false, "hints": false } },
+  "audio": { "file": "audio/security-map.mp3", "durationSec": 60 },
+  "map": {
+    "width": 1000, "height": 700,
+    "landmarks": [
+      { "id": "entrance", "label": "Main entrance", "x": 100, "y": 600 },
+      { "id": "library", "label": "Library", "x": 300, "y": 450 },
+      { "id": "cafe", "label": "Cafe", "x": 500, "y": 450 },
+      { "id": "old-library", "label": "Old library", "x": 700, "y": 250 },
+      { "id": "fountain", "label": "Fountain", "x": 500, "y": 250 }
+    ],
+    "targets": [
+      { "label": "A", "x": 300, "y": 300 },
+      { "label": "B", "x": 520, "y": 150 },
+      { "label": "C", "x": 800, "y": 250 },
+      { "label": "D", "x": 650, "y": 450 },
+      { "label": "E", "x": 850, "y": 550 }
+    ]
+  },
+  "transcript": {
+    "cues": [
+      { "id": "c1", "start": 0, "end": 8, "text": "You are at the main entrance. CANARY-TRANSCRIPT-{{RUN}}-c1" },
+      { "id": "c2", "start": 8, "end": 16, "text": "Walk straight ahead to the library. CANARY-TRANSCRIPT-{{RUN}}-c2" },
+      { "id": "c3", "start": 16, "end": 24, "text": "Carry on past the cafe. CANARY-TRANSCRIPT-{{RUN}}-c3" },
+      { "id": "c4", "start": 24, "end": 34, "text": "You will see the old library ahead, but keep going. CANARY-TRANSCRIPT-{{RUN}}-c4" },
+      { "id": "c5", "start": 34, "end": 42, "text": "The reading room is at the far end, opposite the old library. CANARY-TRANSCRIPT-{{RUN}}-c5" },
+      { "id": "c6", "start": 42, "end": 50, "text": "The sports hall is back past the cafe, on the right. CANARY-TRANSCRIPT-{{RUN}}-c6" },
+      { "id": "c7", "start": 50, "end": 58, "text": "The gift shop is north of the fountain. CANARY-TRANSCRIPT-{{RUN}}-c7" }
+    ]
+  },
+  "events": [
+    { "id": "e1", "cueId": "c1", "kind": "move", "at": { "x": 100, "y": 600 } },
+    { "id": "e2", "cueId": "c2", "kind": "landmark", "landmarkId": "library", "at": { "x": 300, "y": 450 } },
+    { "id": "e3", "cueId": "c3", "kind": "landmark", "landmarkId": "cafe", "at": { "x": 500, "y": 450 } },
+    { "id": "e4", "cueId": "c4", "kind": "distractor", "landmarkId": "old-library", "at": { "x": 700, "y": 250 }, "note": "The route continues past it. CANARY-NOTE-{{RUN}}-e4" },
+    { "id": "e5", "cueId": "c5", "kind": "destination", "at": { "x": 800, "y": 250 } },
+    { "id": "e6", "cueId": "c6", "kind": "destination", "at": { "x": 850, "y": 550 } },
+    { "id": "e7", "cueId": "c7", "kind": "destination", "at": { "x": 520, "y": 150 } }
+  ],
+  "questions": [
+    { "id": "q1", "prompt": "Reading room", "answerLabel": "C", "eventId": "e5", "explanation": "Opposite the old library. CANARY-EXPLANATION-{{RUN}}-q1", "hint": "Listen for opposite. CANARY-HINT-{{RUN}}-q1" },
+    { "id": "q2", "prompt": "Sports hall", "answerLabel": "E", "eventId": "e6", "explanation": "Back past the cafe. CANARY-EXPLANATION-{{RUN}}-q2", "hint": "Listen for back past. CANARY-HINT-{{RUN}}-q2" },
+    { "id": "q3", "prompt": "Gift shop", "answerLabel": "B", "eventId": "e7", "explanation": "North of the fountain. CANARY-EXPLANATION-{{RUN}}-q3", "hint": "Listen for north. CANARY-HINT-{{RUN}}-q3" }
+  ],
+  "validation": { "status": "published", "reviewer": "synthetic-reviewer", "reviewedOn": "2026-11-12" }
+}

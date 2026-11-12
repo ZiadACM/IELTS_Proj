@@ -1,0 +1,37 @@
+# Local SAST rules (test-plan XSS-04, INPUT-02; CODING_STANDARDS 2.5). Run in CI with a pinned semgrep image:
+#   semgrep scan --metrics off --error --config .semgrep/security.yml
+#   semgrep --test .semgrep            (rule self-test against .semgrep/*.js / *.ts fixtures)
+# Local rules only: no registry download, no login, no metrics. A reviewed exception is a `nosemgrep: <rule-id>`
+# comment on the line plus a reason; reviewers reject one without a reason.
+rules:
+  - id: ielts-raw-html-sink
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      Raw HTML sink. Render user text, content text and AI output as text (CODING_STANDARDS 2.5).
+      Use textContent / JSX text, not innerHTML, outerHTML, insertAdjacentHTML, document.write or dangerouslySetInnerHTML.
+    pattern-either:
+      - pattern: $EL.innerHTML = $X
+      - pattern: $EL.outerHTML = $X
+      - pattern: $EL.innerHTML += $X
+      - pattern: $EL.insertAdjacentHTML(...)
+      - pattern: document.write(...)
+      - pattern: document.writeln(...)
+      - pattern: <$TAG dangerouslySetInnerHTML={...} />
+      - pattern: <$TAG dangerouslySetInnerHTML={...}>...</$TAG>
+      - pattern: "{dangerouslySetInnerHTML: ...}"
+      - pattern: $R.createContextualFragment(...)
+  - id: ielts-string-built-query
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      SQL built from a string. Use parameterised queries ($1 placeholders or the query builder) only (test-plan INPUT-02).
+    pattern-either:
+      - pattern: $DB.query(`...${$X}...`, ...)
+      - pattern: $DB.query("..." + $X, ...)
+      - pattern: $DB.query($X + "...", ...)
+      - pattern: $DB.unsafe(...)
+      - pattern: $DB.raw(`...${$X}...`, ...)
+      - pattern: $DB.raw("..." + $X, ...)
+      - pattern: sql.raw(...)
+      - pattern: $DB.execute(`...${$X}...`, ...)

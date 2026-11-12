@@ -1,0 +1,24 @@
+# Protected files: CODING_STANDARDS.md section 7 (owner decision D3), plus the files that ARE the gate.
+# Owner taken from `git remote get-url origin` (https://github.com/ZiadACM/IELTS_Proj.git).
+# Enforcement needs branch protection or a ruleset with "Require review from Code Owners", which GitHub offers for
+# private repositories only on paid plans (see docs/security/reviews/2026-11-12-security-test-baseline.md).
+
+# CODING_STANDARDS.md section 7
+/tools/validate-content.mjs        @ZiadACM
+/tools/validate-content.test.mjs   @ZiadACM
+/tools/fixtures/                   @ZiadACM
+/tests/golden/                     @ZiadACM
+/tests/security/                   @ZiadACM
+/CODING_STANDARDS.md               @ZiadACM
+/.claude/settings.json             @ZiadACM
+/.claude/hooks/                    @ZiadACM
+/skills-manifest.src.json          @ZiadACM
+/skills-manifest.lock.json         @ZiadACM
+/scripts/                          @ZiadACM
+/third-party/                      @ZiadACM
+
+# The gate itself (proposed for section 7)
+/.github/                          @ZiadACM
+/.semgrep/                         @ZiadACM
+/tools/check-protected-files.mjs   @ZiadACM
+/tools/check-protected-files.test.mjs @ZiadACM

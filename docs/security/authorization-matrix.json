@@ -1,5 +1,5 @@
 {
-  "_comment": "Machine-readable authorization matrix. Source of truth; docs/security/authorization-matrix.md must match it (checked by tests/security/authorization-matrix.test.mjs). Status Proposed: NO API EXISTS YET. Owner decisions applied 2026-11-12 (docs/product/owner-decisions.md). Endpoints are a logical, stack-neutral inventory derived from the product blueprint; the owner and the first feature spec must confirm or change them. Paths use {param} placeholders.",
+  "_comment": "Machine-readable authorization matrix. Source of truth; docs/security/authorization-matrix.md must match it (checked by tests/security/authorization-matrix.test.mjs). Status Proposed: NO API EXISTS YET. Stack decided in docs/adr/0001-stack.md (Fastify API); AUTH-* paths are logical and must be renamed to the Better Auth routes when auth is wired up (the coverage gate fails until they match). Owner decisions applied 2026-11-12 (docs/product/owner-decisions.md). Endpoints are a logical, stack-neutral inventory derived from the product blueprint; the owner and the first feature spec must confirm or change them. Paths use {param} placeholders.",
   "version": 1,
   "status": "proposed",
   "roles": {

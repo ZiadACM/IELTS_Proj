@@ -1,6 +1,6 @@
 # Security test plan
 
-Status: **Proposed** (2026-11-12). Stack: **not decided** (no ADR in `docs/adr/`, nothing in `docs/architecture/`). This plan is stack-neutral: it says what each test sends and what must come back. It does not say which framework runs it. Owner decisions D1 to D16 (`docs/product/owner-decisions.md`) are applied; CI is GitHub Actions (D16).
+Status: **Proposed** (2026-11-12). Stack: **decided** in `docs/adr/0001-stack.md` (React + Vite SPA, Fastify API, PostgreSQL, Better Auth; GitHub Actions). The live suites speak HTTP to a running test instance (contract: `docs/security/test-harness-contract.md`), so they stay framework-neutral. Owner decisions D1 to D16 (`docs/product/owner-decisions.md`) are applied; CI is GitHub Actions (D16).
 
 Inputs: `CODING_STANDARDS.md` section 2, `docs/security/threat-model.md`, `skills/ielts-security-review/SKILL.md` (used as reference only, not installed), `docs/security/pre-launch-review.md`, the product blueprint and the agentic playbook (sections 9 and 10). Terms follow `GLOSSARY.md`.
 
@@ -15,7 +15,9 @@ Goal: every rule in `CODING_STANDARDS.md` section 2 and every row of the threat 
 | Status | Meaning |
 |---|---|
 | **NOW** | Runnable today and wired into `node --test tests/security/*.test.mjs`. |
-| **STACK** | Automatable. Blocked only on the stack decision (no API, no app, no CI provider yet). |
+| **BUILT** | Test written and proven against the SYNTHETIC safe and vulnerable fixtures (`tests/security/fixture-proof.test.mjs`). **NOT VERIFIED against the real app**, which does not exist yet: the case is skipped as NOT VERIFIED until `SECURITY_BASE_URL` points at a test instance. |
+| **CI** | Runs in `.github/workflows/security.yml`. |
+| **STACK** | Automatable. Not written yet; waits for the app code it tests. |
 | **DESIGN** | Automatable once a product or design decision exists (named in the case). |
 | **PARTIAL** | A test covers part of it; the rest needs a human. |
 | **MANUAL** | Cannot be automated meaningfully. A human checks it. |
@@ -38,26 +40,26 @@ Goal: every rule in `CODING_STANDARDS.md` section 2 and every row of the threat 
 | Case | Abuse case (who sends what) | Expected safe result | Test | Status |
 |---|---|---|---|---|
 | AUTHZ-01 | Matrix lists an owner-scoped endpoint as `allow`, or anonymous gets learner data | Build fails | `tests/security/authorization-matrix.test.mjs` | **NOW** |
-| AUTHZ-02 | A real endpoint exists that is not in the matrix | Build fails | same file, coverage gate (fails closed once app code exists without a discovery adapter) | **NOW** (skips with NOT VERIFIED until app code exists) |
-| AUTHZ-03 | `learner-b` sends GET/PUT/POST to every `ownerScoped` endpoint with `learner-a`'s `attemptId`; repeat as `guest-b` against `guest-a`, and guest against learner and back | 404 (or 403), no data from the other user in the body; the other user's attempt unchanged | `tests/security/cross-user-access.test.*` | STACK |
-| AUTHZ-04 | `learner-b` calls `/me/*` with `?userId=`, `X-User-Id` header or `userId` in the body set to `learner-a` | Response is `learner-b`'s own data; the override is ignored or rejected | `cross-user-access` | STACK |
-| AUTHZ-05 | No session; every endpoint whose anonymous cell is `deny` | 401, no data | `cross-user-access` | STACK |
-| AUTHZ-06 | Every role calls every endpoint; compare the status with the matrix cell | Matches the matrix (allowed is 2xx; denied is 401, 403 or 404) | `authorization-enforcement.test.*` (matrix-driven) | STACK |
-| AUTHZ-07 | `learner-a` sends extra fields (`userId`, `score`, `isCorrect`, `mode`, `role`, `validation.status`) to `massAssignmentRisk` endpoints | Fields ignored or 400; stored score, mode and role unchanged | `cross-user-access` (mass assignment) | STACK |
-| AUTHZ-08 | `learner-a` tampers with progress or recommendations directly (PUT/PATCH to progress, or a client-computed score in submit) | No such write endpoint exists (405 or 404); the server computes the score from stored answers | `cross-user-access` | STACK |
+| AUTHZ-02 | A real endpoint exists that is not in the matrix | Build fails | same file, coverage gate (fails closed once app code exists without a discovery adapter) | **NOW** (skips with NOT VERIFIED until app code exists; adapter `tests/security/adapters/discover-endpoints.mjs` for Fastify) |
+| AUTHZ-03 | `learner-b` sends GET/PUT/POST to every `ownerScoped` endpoint with `learner-a`'s `attemptId`; repeat as `guest-b` against `guest-a`, and guest against learner and back | 404 (or 403), no data from the other user in the body; the other user's attempt unchanged | `tests/security/cross-user-access.test.mjs` | **BUILT** |
+| AUTHZ-04 | `learner-b` calls `/me/*` with `?userId=`, `X-User-Id` header or `userId` in the body set to `learner-a` | Response is `learner-b`'s own data; the override is ignored or rejected | `cross-user-access` | **BUILT** |
+| AUTHZ-05 | No session; every endpoint whose anonymous cell is `deny` | 401, no data | `cross-user-access` | **BUILT** |
+| AUTHZ-06 | Every role calls every endpoint; compare the status with the matrix cell | Matches the matrix (allowed is 2xx; denied is 401, 403 or 404) | `authorization-enforcement.test.mjs` (matrix-driven) | **BUILT** |
+| AUTHZ-07 | `learner-a` sends extra fields (`userId`, `score`, `isCorrect`, `mode`, `role`, `validation.status`) to `massAssignmentRisk` endpoints | Fields ignored or 400; stored score, mode and role unchanged | `cross-user-access` (mass assignment) | **BUILT** |
+| AUTHZ-08 | `learner-a` tampers with progress or recommendations directly (PUT/PATCH to progress, or a client-computed score in submit) | No such write endpoint exists (405 or 404); the server computes the score from stored answers | `cross-user-access` | **BUILT** |
 
 ### 2.2 Answers, authored routes, transcripts and explanations are not sent before submission, and never in exam mode
 
 | Case | Abuse case | Expected safe result | Test | Status |
 |---|---|---|---|---|
 | LEAK-01 | Matrix lets a learner-facing endpoint return answer data before submit | Build fails | `authorization-matrix.test.mjs` | **NOW** |
-| LEAK-02 | `learner-a` starts a **guided** attempt and fetches every `deliveryPayload` endpoint plus `ATT-03` before submitting | No canary, no forbidden key, no question-to-target mapping | `tests/security/answer-key-leakage.test.*` | STACK |
-| LEAK-03 | Same as LEAK-02 in an **exam** attempt, including after answers are saved and after the timer expires but before submit | Same; also no transcript at any point while the exam is in progress | `answer-key-leakage` | STACK |
-| LEAK-04 | `learner-a` calls `ATT-09` (review) before submitting, in both modes | 403 or 409, no canary | `answer-key-leakage` | STACK |
-| LEAK-05 | Built client bundle and static assets (JS, JSON, source maps) scanned for canaries and forbidden keys from published items | None found; source maps not deployed | `answer-key-leakage` (bundle scan step after the build) | STACK |
-| LEAK-06 | `learner-a` guesses review URLs or ids (sequential ids, the item id instead of the attempt id) | 404; attempt ids are not sequential (at least 122 random bits, e.g. UUIDv4) | `answer-key-leakage` | STACK |
-| LEAK-07 | Error responses (bad answer format, wrong mode) quote the correct answer | Errors contain no canary or forbidden key | `answer-key-leakage` (error-path fuzz) | STACK |
-| LEAK-08 | After submit, `learner-a` requests review: does it carry the authored route and transcript? | Yes; a positive control, so the leak test is not passing because nothing is ever returned | `answer-key-leakage` | STACK |
+| LEAK-02 | `learner-a` starts a **guided** attempt and fetches every `deliveryPayload` endpoint plus `ATT-03` before submitting | No canary, no forbidden key, no question-to-target mapping | `tests/security/answer-key-leakage.test.mjs` | **BUILT** |
+| LEAK-03 | Same as LEAK-02 in an **exam** attempt, including after answers are saved and after the timer expires but before submit | Same; also no transcript at any point while the exam is in progress | `answer-key-leakage` | **BUILT** |
+| LEAK-04 | `learner-a` calls `ATT-09` (review) before submitting, in both modes | 403 or 409, no canary | `answer-key-leakage` | **BUILT** |
+| LEAK-05 | Built client bundle and static assets (JS, JSON, source maps) scanned for canaries and forbidden keys from published items | None found; source maps not deployed | `answer-key-leakage` (bundle scan step after the build) | **BUILT** (served assets; canary part needs a build that includes content) |
+| LEAK-06 | `learner-a` guesses review URLs or ids (sequential ids, the item id instead of the attempt id) | 404; attempt ids are not sequential (at least 122 random bits, e.g. UUIDv4) | `answer-key-leakage` | **BUILT** |
+| LEAK-07 | Error responses (bad answer format, wrong mode) quote the correct answer | Errors contain no canary or forbidden key | `answer-key-leakage` (error-path fuzz) | **BUILT** |
+| LEAK-08 | After submit, `learner-a` requests review: does it carry the authored route and transcript? | Yes; a positive control, so the leak test is not passing because nothing is ever returned | `answer-key-leakage` | **BUILT** |
 | LEAK-09 | Timing or ordering side channels (target order matches question order; response size differs by answer) | Not reliably automatable | Human review of the delivery payload design | **MANUAL** |
 
 ### 2.3 Exam-mode rules (one listen, no hint, no replay, timer) enforced server-side
@@ -65,18 +67,18 @@ Goal: every rule in `CODING_STANDARDS.md` section 2 and every row of the threat 
 | Case | Abuse case | Expected safe result | Test | Status |
 |---|---|---|---|---|
 | EXAM-01 | Matrix lets replay or hint run in exam mode, or lets an attempt be written after submit | Build fails | `authorization-matrix.test.mjs` | **NOW** |
-| EXAM-02 | `learner-a` in an exam attempt sends `POST ATT-07` (replay) directly, bypassing the UI | 403 or 409; support usage unchanged; no audio served | `tests/security/exam-mode.test.*` | STACK |
-| EXAM-03 | Same with `POST ATT-08` (hint) | 403 or 409; no hint content in the body | `exam-mode` | STACK |
-| EXAM-04 | `learner-a` fetches `ATT-06` (audio) again in exam mode: a second full request, a Range request that rewinds, a request from a new session, a request after the grant ended | Only one forward-only stream per exam attempt; resuming forward from the furthest delivered byte is allowed; everything else refused (D9). Local recording on the device cannot be prevented (accepted risk). | `exam-mode` | STACK |
-| EXAM-05 | `learner-a` saves answers or submits after the server-side deadline, or sends a client timestamp, `timeRemaining` or `deadline` field | Late write refused (or marked late per spec); client time fields ignored | `exam-mode` | STACK (test controls the server clock) |
-| EXAM-06 | `learner-a` switches an exam attempt to guided (PATCH mode), or starts a guided attempt on the same item while the exam is open, to read a review | Mode is immutable; a second open attempt on the same item is refused (D10) | `exam-mode` | STACK |
-| EXAM-07 | `learner-a` opens two exam attempts on one item in parallel; or submits a guided attempt, reads the review, then starts an exam on the same item | Parallel attempt refused; the later exam is allowed but flagged `seenBefore` and excluded from independent readiness (D10) | `exam-mode` | STACK |
+| EXAM-02 | `learner-a` in an exam attempt sends `POST ATT-07` (replay) directly, bypassing the UI | 403 or 409; support usage unchanged; no audio served | `tests/security/exam-mode.test.mjs` | **BUILT** |
+| EXAM-03 | Same with `POST ATT-08` (hint) | 403 or 409; no hint content in the body | `exam-mode` | **BUILT** |
+| EXAM-04 | `learner-a` fetches `ATT-06` (audio) again in exam mode: a second full request, a Range request that rewinds, a request from a new session, a request after the grant ended | Only one forward-only stream per exam attempt; resuming forward from the furthest delivered byte is allowed; everything else refused (D9). Local recording on the device cannot be prevented (accepted risk). | `exam-mode` | **BUILT** |
+| EXAM-05 | `learner-a` saves answers or submits after the server-side deadline, or sends a client timestamp, `timeRemaining` or `deadline` field | Late write refused (or marked late per spec); client time fields ignored | `exam-mode` | **BUILT** (test controls the server clock) |
+| EXAM-06 | `learner-a` switches an exam attempt to guided (PATCH mode), or starts a guided attempt on the same item while the exam is open, to read a review | Mode is immutable; a second open attempt on the same item is refused (D10) | `exam-mode` | **BUILT** |
+| EXAM-07 | `learner-a` opens two exam attempts on one item in parallel; or submits a guided attempt, reads the review, then starts an exam on the same item | Parallel attempt refused; the later exam is allowed but flagged `seenBefore` and excluded from independent readiness (D10) | `exam-mode` | **BUILT** |
 
 ### 2.4 No secrets in code, fixtures, logs, client bundles or CI output; missing configuration stops the app
 
 | Case | Abuse case | Expected safe result | Test | Status |
 |---|---|---|---|---|
-| SECRET-01 | Someone commits a key or token anywhere in the repo or its history | CI fails | Secret scanner (e.g. gitleaks, pinned) over the full history on every CI run | STACK (CI provider undecided) |
+| SECRET-01 | Someone commits a key or token anywhere in the repo or its history | CI fails | Secret scanner (e.g. gitleaks, pinned) over the full history on every CI run | **CI** (gitleaks 8.30.1, full history) |
 | SECRET-02 | Test run with canary values in every secret env var; capture app logs, test output and CI logs | No canary in any captured output | `tests/security/secret-hygiene.test.*` | STACK |
 | SECRET-03 | Build the client with canary secret values | No canary and no server-only env var names in the bundle | `secret-hygiene` (bundle scan) | STACK |
 | SECRET-04 | Start the app with each required config value missing, one at a time | Process exits non-zero with a clear message; never starts with a control weakened (e.g. auth off, CORS `*`) | `secret-hygiene` (fail-closed config) | STACK |
@@ -87,12 +89,12 @@ Goal: every rule in `CODING_STANDARDS.md` section 2 and every row of the threat 
 
 | Case | Abuse case | Expected safe result | Test | Status |
 |---|---|---|---|---|
-| XSS-01 | `author-1` imports an item whose transcript cue text, landmark labels, prompts, notes or explanations contain an XSS payload corpus (`<script>`, `<img onerror>`, `javascript:` URLs, SVG, bidi and RTL override characters) | Either the import is rejected, or the review screen (Answer Replay transcript) renders it as text: no script runs, no element is injected | `tests/security/xss.test.*` (browser) | STACK |
-| XSS-02 | `learner-a` submits the payload corpus in an item report (`REP-01`) and in settings text (`ME-02`) | Stored as data; `ADM-06` and the settings screen render it as text; no script runs in the staff browser | `xss` (browser) | STACK |
-| XSS-03 | API responses that echo user text are served as `text/html` | Every API response is JSON with `nosniff`; CSP header present on pages | `xss` (headers) | STACK |
-| XSS-04 | Code uses raw HTML sinks (`innerHTML`, `dangerouslySetInnerHTML`, `v-html`, `|safe`, an unsanitised markdown renderer) | CI fails unless the line carries a reviewed exception | SAST rule (e.g. Semgrep, pinned) | STACK |
+| XSS-01 | `author-1` imports an item whose transcript cue text, landmark labels, prompts, notes or explanations contain an XSS payload corpus (`<script>`, `<img onerror>`, `javascript:` URLs, SVG, bidi and RTL override characters) | Either the import is rejected, or the review screen (Answer Replay transcript) renders it as text: no script runs, no element is injected | `tests/security/xss.test.mjs` (API level; browser part later) | **BUILT** at API level; browser rendering STACK (first UI ticket) |
+| XSS-02 | `learner-a` submits the payload corpus in an item report (`REP-01`) and in settings text (`ME-02`) | Stored as data; `ADM-06` and the settings screen render it as text; no script runs in the staff browser | `xss` (browser) | **BUILT** at API level; browser rendering STACK (first UI ticket) |
+| XSS-03 | API responses that echo user text are served as `text/html` | Every API response is JSON with `nosniff`; CSP header present on pages | `xss` (headers) | **BUILT** |
+| XSS-04 | Code uses raw HTML sinks (`innerHTML`, `dangerouslySetInnerHTML`, `v-html`, `|safe`, an unsanitised markdown renderer) | CI fails unless the line carries a reviewed exception | SAST rule (e.g. Semgrep, pinned) | **CI** (Semgrep, local rules `.semgrep/security.yml`) |
 | INPUT-01 | Oversized, wrong-type or extra-field bodies on every `acceptsUserText` or `massAssignmentRisk` endpoint | 400 or 413; nothing stored | `input-validation.test.*` (matrix-driven) | STACK |
-| INPUT-02 | String-built queries (SQL or NoSQL injection) | Parameterised queries only | SAST rule plus an injection payload smoke test | STACK |
+| INPUT-02 | String-built queries (SQL or NoSQL injection) | Parameterised queries only | SAST rule plus an injection payload smoke test | **CI** for the SAST rule; injection smoke test STACK |
 | INPUT-03 | AI output rendered (future tutor) | Same corpus as XSS-01, sent through the tutor response path | `xss` | DESIGN (feature deferred) |
 
 ### 2.6 Learner data minimised, kept out of logs and analytics, with defined retention and deletion
@@ -108,7 +110,7 @@ Goal: every rule in `CODING_STANDARDS.md` section 2 and every row of the threat 
 
 | Case | Abuse case | Expected safe result | Test | Status |
 |---|---|---|---|---|
-| DEP-01 | A dependency with a known vulnerability is added or present | CI fails at the agreed severity threshold | The package manager's audit, or OSV-Scanner (pinned), in CI | STACK |
+| DEP-01 | A dependency with a known vulnerability is added or present | CI fails at the agreed severity threshold | The package manager's audit, or OSV-Scanner (pinned), in CI | **CI** (OSV-Scanner 2.7.1; NOT VERIFIED while no lockfile exists) |
 | DEP-02 | A direct dependency uses a version range, or the lockfile is missing or out of date | CI fails | `tests/security/dependency-policy.test.*` (manifest plus lockfile check; frozen install in CI) | STACK |
 | DEP-03 | A direct dependency has no stated reason | CI fails unless it has a row in a dependency register (e.g. `docs/architecture/dependencies.md`) | `dependency-policy` | STACK |
 | DEP-04 | A package with install scripts (`preinstall`, `install`, `postinstall`) enters the tree | CI fails unless it is on an owner-reviewed allow-list; install scripts disabled by default in CI | `dependency-policy` | STACK |
@@ -119,7 +121,7 @@ Goal: every rule in `CODING_STANDARDS.md` section 2 and every row of the threat 
 | Threat | Threats named | Covered by | Gaps |
 |---|---|---|---|
 | **T1** Answer keys, authored routes, transcripts | Sent to the client early; guessable review endpoints | LEAK-01 to LEAK-08, AUTHZ-03 | LEAK-09 side channels: MANUAL |
-| **T2** Learner accounts, guest sessions and sessions | Credential stuffing; weak reset flow; session theft; enumeration; mass guest-session creation; guest-to-account upgrade hijack | SESS-01 to SESS-09 below | Depends on the auth provider (undecided). A managed provider moves some cases to configuration review. |
+| **T2** Learner accounts, guest sessions and sessions | Credential stuffing; weak reset flow; session theft; enumeration; mass guest-session creation; guest-to-account upgrade hijack | SESS-01 to SESS-09 below | Auth library chosen (Better Auth, ADR 0001). SESS-08 and SESS-09 BUILT; SESS-01 to SESS-06 not written yet (they test the library's configuration). |
 | **T3** Attempts and progress | Cross-user access (IDOR); tampering with scores or recommendations | AUTHZ-01 to AUTHZ-08 | none beyond STACK |
 | **T4** Exam-mode integrity | Replay or hint sent directly to the API; timer manipulation | EXAM-01 to EXAM-07 | Designs decided (D9, D10); local audio recording cannot be prevented (accepted risk) |
 | **T5** Content bank and authoring tools | Unvalidated import; learner or guest access to admin tools; XSS in transcripts | CONTENT-01 to CONTENT-05 below, XSS-01, XSS-02 | See CONTENT-04 |
@@ -138,15 +140,15 @@ Goal: every rule in `CODING_STANDARDS.md` section 2 and every row of the threat 
 | SESS-05 | Use an expired session; reuse a reset token; use a reset token after 1 hour | 401, refused, refused | `auth` | STACK |
 | SESS-06 | A reset link sent to `learner-a` is used by `learner-b`'s session; token present in logs or the Referer | Bound to the account; not logged | `auth` | STACK |
 | SESS-07 | Home-grown crypto or password hashing | Established provider or library | Code review | **MANUAL** |
-| SESS-08 | Anonymous client creates guest sessions in a loop (`AUTH-05`) | Rate-limited (429) per client; idle guest data expires (D11) | `auth` | STACK |
-| SESS-09 | `guest-a` upgrades to an account (`AUTH-01`) while presenting `guest-b`'s session id, or an attacker replays `guest-a`'s old session after the upgrade | Only the caller's own guest data moves to the new account; the old guest session is invalidated after upgrade | `auth` | STACK |
+| SESS-08 | Anonymous client creates guest sessions in a loop (`AUTH-05`) | Rate-limited (429) per client; idle guest data expires (D11) | `auth` | **BUILT** |
+| SESS-09 | `guest-a` upgrades to an account (`AUTH-01`) while presenting `guest-b`'s session id, or an attacker replays `guest-a`'s old session after the upgrade | Only the caller's own guest data moves to the new account; the old guest session is invalidated after upgrade | `auth` | **BUILT** |
 
 ### T5 cases: content bank and authoring tools
 
 | Case | Abuse case | Expected safe result | Test | Status |
 |---|---|---|---|---|
 | CONTENT-01 | `learner-a` calls every `/admin/*` endpoint | 403 or 404 | Matrix invariant (**NOW**) plus `authorization-enforcement` (STACK) | NOW + STACK |
-| CONTENT-02 | `learner-a` requests the draft fixture via `ITEM-02` and `ITEM-01`, and starts an attempt on it | 404; not listed; attempt refused | `authorization-enforcement` | STACK |
+| CONTENT-02 | `learner-a` requests the draft fixture via `ITEM-02` and `ITEM-01`, and starts an attempt on it | 404; not listed; attempt refused | `authorization-enforcement` | **BUILT** (inside AUTHZ-06: draft item 404, not listed, attempt refused) |
 | CONTENT-03 | `author-1` publishes (`ADM-05`), or edits a published item (`ADM-03`) | 403; published item unchanged | Matrix invariant (**NOW**) plus `authorization-enforcement` (STACK) | NOW + STACK |
 | CONTENT-04 | `author-1` imports an invalid item (route end off target, cue order wrong, markup in text) via `ADM-02` | Rejected by the same checks as `tools/validate-content.mjs`, including the plain-text rule (code `markup`, D4) | `content-import.test.*`; the validator's own markup tests already run (**NOW**) | PARTIAL NOW + STACK. Rendering must still escape (XSS-01). |
 | CONTENT-05 | Audio path traversal: an item with `audio.file = "../../etc/passwd"`, or `ATT-06` with a crafted path | Rejected at import (the validator already checks this with `--assets`); served only from the allow-listed location | `content-import` plus the existing `tools/validate-content.test.mjs` | PARTIAL NOW (validator unit test exists) + STACK |
@@ -155,8 +157,8 @@ Goal: every rule in `CODING_STANDARDS.md` section 2 and every row of the threat 
 
 | Case | Abuse case | Expected safe result | Test | Status |
 |---|---|---|---|---|
-| CI-01 | A workflow runs on untrusted PR events with secrets or write permissions, or runs an agent on PR text | CI lint fails (e.g. zizmor or actionlint, pinned): default `permissions: read`, actions pinned by SHA, no secrets on untrusted triggers | `ci-policy` step | STACK (CI provider undecided) |
-| CI-02 | An agent branch changes a protected file (`CODING_STANDARDS.md` section 7), including `tests/security/**` (protected since D3) | CI fails without owner approval; CODEOWNERS | CI protected-files check | STACK (needs the GitHub remote, D16) |
+| CI-01 | A workflow runs on untrusted PR events with secrets or write permissions, or runs an agent on PR text | CI lint fails (e.g. zizmor or actionlint, pinned): default `permissions: read`, actions pinned by SHA, no secrets on untrusted triggers | `ci-policy` step | **CI** (actionlint 1.7.12, zizmor 1.32.0) |
+| CI-02 | An agent branch changes a protected file (`CODING_STANDARDS.md` section 7), including `tests/security/**` (protected since D3) | CI fails without owner approval; CODEOWNERS | CI protected-files check | **CI** (`tools/check-protected-files.mjs`) + `.github/CODEOWNERS`; enforcement needs repository settings |
 | CI-03 | Production credentials reachable from agent or CI environments | — | Access review | **MANUAL** |
 
 ### T8 cases: future AI tutor (deferred feature)
@@ -176,19 +178,21 @@ AI-01 provider key never in the client (bundle scan, like SECRET-03). AI-02 per-
 | SESS-02 timing-based enumeration | Flaky in CI | Manual measurement against staging |
 | Whether a "denied" response is the right UX | Not a security property | Product review |
 
-## 6. Planned test files
+## 6. Test files
 
 | File | Covers | Status |
 |---|---|---|
-| `tests/security/authorization-matrix.test.mjs` | AUTHZ-01, AUTHZ-02, LEAK-01, EXAM-01, CONTENT-01 and CONTENT-03 (matrix side) | **Exists, runs** |
-| `tests/security/lib/matrix.mjs` | Shared matrix helpers for all tests below | **Exists** |
-| `tests/security/answer-key-leakage.test.*` | LEAK-02 to LEAK-08 | Waiting for the stack |
-| `tests/security/exam-mode.test.*` | EXAM-02 to EXAM-07 | Waiting for the stack |
-| `tests/security/cross-user-access.test.*`, `authorization-enforcement.test.*` | AUTHZ-03 to AUTHZ-08, CONTENT-01 to CONTENT-03 | Waiting for the stack |
-| `tests/security/xss.test.*`, `input-validation.test.*` | XSS-01 to XSS-04, INPUT-01 to INPUT-03 | Waiting for the stack (browser runner) |
-| `tests/security/auth.test.*` | SESS-01 to SESS-06, SESS-08, SESS-09 | Waiting for the stack and auth provider |
-| `tests/security/secret-hygiene.test.*`, `privacy.test.*`, `dependency-policy.test.*`, `content-import.test.*` | SECRET, PRIV, DEP, CONTENT-04 and CONTENT-05 | Waiting for the stack |
-| CI workflow: secret scan, dependency audit, SAST, CI lint, protected files | SECRET-01, DEP-01, XSS-04, INPUT-02, CI-01, CI-02 | Waiting for the CI provider (no remote yet) |
-| `tests/security/adapters/discover-endpoints.mjs` | Feeds the AUTHZ-02 coverage gate | Write when the stack is chosen; the gate fails closed without it |
+| `tests/security/authorization-matrix.test.mjs` | AUTHZ-01, AUTHZ-02, LEAK-01, EXAM-01, CONTENT-01 and CONTENT-03 (matrix side) | **Exists, runs** (coverage gate fixed 2026-11-12, see the baseline review) |
+| `tests/security/lib/matrix.mjs`, `lib/live.mjs`, `lib/json-reporter.mjs` | Shared helpers: matrix, live HTTP harness, leak detector | **Exist** |
+| `tests/security/answer-key-leakage.test.mjs` | LEAK-02 to LEAK-08 | **BUILT** |
+| `tests/security/exam-mode.test.mjs` | EXAM-02 to EXAM-07 | **BUILT** |
+| `tests/security/cross-user-access.test.mjs` | AUTHZ-03, -04, -05, -07, -08 | **BUILT** |
+| `tests/security/authorization-enforcement.test.mjs` | AUTHZ-06, CONTENT-02 | **BUILT** |
+| `tests/security/xss.test.mjs` | XSS-01 to XSS-03 (API level) | **BUILT**; browser rendering waits for the UI |
+| `tests/security/auth.test.mjs` | SESS-08, SESS-09 | **BUILT**; SESS-01 to SESS-06 not written |
+| `tests/security/fixture-proof.test.mjs` + `fixtures/fixture-server.mjs` | Proof that every live suite fails on the vulnerable fixture and passes on the safe one | **Exists, runs** |
+| `tests/security/adapters/discover-endpoints.mjs` + `discover-endpoints.test.mjs` | Feeds the AUTHZ-02 coverage gate (Fastify, static scan, fails closed) | **Exists, runs** |
+| `input-validation`, `secret-hygiene`, `privacy`, `dependency-policy`, `content-import` tests | INPUT-01, SECRET-02 to -05, PRIV-01 to -03, DEP-02 to -04, CONTENT-04/05 | Not written (STACK) |
+| `.github/workflows/security.yml` | SECRET-01, DEP-01, XSS-04, INPUT-02 (SAST), CI-01, CI-02, and the `node --test` jobs | **CI**; NOT VERIFIED on GitHub (never pushed by an agent) |
 
-Run today: `node --test tests/security/*.test.mjs`.
+Run today: `node --test tests/security/*.test.mjs tools/*.test.mjs scripts/lib/*.test.mjs`. Against a test instance: set the variables in `docs/security/test-harness-contract.md`.

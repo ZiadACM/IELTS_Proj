@@ -1,0 +1,80 @@
+{
+  "specVersion": 1,
+  "about": "Human-edited list of what this project installs and why. The AI never edits this file. After the owner changes it, the owner runs `node scripts/lock-manifest.mjs`, reviews the diff of skills-manifest.lock.json, and commits both.",
+  "audit_levels": {
+    "full": "SKILL.md and every script/hook read by a person or agent; companion docs pattern-scanned for commands and network calls",
+    "partial": "SKILL.md or scripts read only in part. Installing needs an explicit owner approval (field partialAuditApproved, or --accept-partial-audit=<name>)"
+  },
+  "sources": {
+    "mattpocock": { "url": "https://github.com/mattpocock/skills.git", "commit": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d", "license": "MIT", "licenseFiles": ["LICENSE"] },
+    "ponytail":   { "url": "https://github.com/DietrichGebert/ponytail.git", "commit": "96608e078b2d5ea607c5c3b8b5a54d1c1fba6846", "license": "MIT", "licenseFiles": ["LICENSE"] },
+    "pstack":     { "url": "https://github.com/cursor/plugins.git", "commit": "a5539b15a3d56e04992565aafee2b37051329ce3", "license": "MIT", "licenseFiles": ["pstack/LICENSE"] },
+    "trailofbits":{ "url": "https://github.com/trailofbits/skills.git", "commit": "e4dd0bb5b15535f7c5a0834187dffba6ac37e4ff", "license": "CC-BY-SA-4.0", "licenseFiles": ["LICENSE"] },
+    "impeccable": { "url": "https://github.com/pbakaus/impeccable.git", "commit": "b4bff1626c344067788c2679f048a20057c7cc5a", "license": "Apache-2.0", "licenseFiles": ["LICENSE", "NOTICE.md"] }
+  },
+  "entries": [
+    { "name": "grill-with-docs", "source": "mattpocock", "from": "skills/engineering/grill-with-docs", "phase": "A", "tier": "core", "audit": "full", "use": "Interview that sharpens a plan; writes GLOSSARY.md and ADRs" },
+    { "name": "grilling", "source": "mattpocock", "from": "skills/productivity/grilling", "phase": "A", "tier": "core", "audit": "full", "use": "The interview primitive grill-with-docs calls" },
+    { "name": "domain-modeling", "source": "mattpocock", "from": "skills/engineering/domain-modeling", "phase": "A", "tier": "core", "audit": "full", "use": "Glossary/ADR discipline grill-with-docs calls" },
+    { "name": "to-spec", "source": "mattpocock", "from": "skills/engineering/to-spec", "phase": "A", "tier": "core", "audit": "full", "use": "Turn the agreed conversation into a spec (we add required sections, see agent-rules.md)" },
+    { "name": "to-tickets", "source": "mattpocock", "from": "skills/engineering/to-tickets", "phase": "A", "tier": "core", "audit": "full", "use": "Split a spec into vertical-slice tickets" },
+    { "name": "handoff", "source": "mattpocock", "from": "skills/productivity/handoff", "phase": "A", "tier": "core", "audit": "full", "use": "Hand work to a fresh session (path overridden to docs/development/handoffs/)" },
+    { "name": "prototype", "source": "mattpocock", "from": "skills/engineering/prototype", "phase": "A", "tier": "core", "audit": "full", "use": "Throwaway prototype to answer one question (Answer Replay spike)" },
+    { "name": "wait-what", "source": "mattpocock", "from": "skills/productivity/wait-what", "phase": "A", "tier": "core", "audit": "full", "use": "Ask the agent to re-explain in simple technical English with our glossary terms" },
+    { "name": "writing-for-agents", "source": "mattpocock", "from": "skills/productivity/writing-for-agents", "phase": "A", "tier": "core", "audit": "full", "use": "Style guide for writing skills, AGENTS.md and CLAUDE.md" },
+    { "name": "research", "source": "mattpocock", "from": "skills/engineering/research", "phase": "A", "tier": "core", "audit": "full", "use": "Primary-source research into a file (IELTS format facts, library docs). Spawns one background agent" },
+    { "name": "impeccable", "source": "impeccable", "kind": "harness-built", "phase": "A", "tier": "core", "audit": "partial",
+      "partialAuditApproved": "2026-11-12: owner chose Impeccable as the main design skill. Read: SKILL.md in full, craft-floor.md in full, parts of hooks/audit/harden/live-setup, launcher and engine checksum logic; engine binary hash verified independently; installer and hook behaviour observed in a sandbox. NOT read: most reference/*.md, Rust engine source.",
+      "mappings": [
+        { "from": ".claude/skills/impeccable", "to": ".claude/skills/impeccable", "exclude": ["scripts/live-browser*.js"] },
+        { "from": ".agents/skills/impeccable", "to": ".agents/skills/impeccable", "exclude": ["scripts/live-browser*.js", "agents/impeccable_asset_producer.toml", "agents/impeccable_manual_edit_applier.toml"] },
+        { "from": ".claude/agents/impeccable-documenter.md", "to": ".claude/agents/impeccable-documenter.md" },
+        { "from": ".claude/agents/impeccable-finish-reviewer.md", "to": ".claude/agents/impeccable-finish-reviewer.md" }
+      ],
+      "use": "Main design skill: shape, critique, audit, polish, harden, adapt; design detector for CI",
+      "humanSteps": [
+        "Read docs/development/design-tooling.md first.",
+        "Enabling the design hook runs a downloaded binary after every UI edit, outside model approval. Only the owner approves: `sh .claude/skills/impeccable/scripts/impeccable hooks on` (Claude) and `/hooks` trust (Codex).",
+        "Set DO_NOT_TRACK=1 in the environment and keep \"telemetry\": false in .impeccable/config.json. Never run `impeccable auth login`."
+      ] },
+    { "name": "validate-ielts-content", "kind": "local", "phase": "B", "tier": "core", "use": "Validate content items (runs tools/validate-content.mjs)" },
+    { "name": "property-based-testing", "source": "trailofbits", "from": "plugins/property-based-testing/skills/property-based-testing", "phase": "B", "tier": "core", "audit": "full", "use": "Property tests for invariants (timestamps, route-ends-at-answer, scoring)" },
+    { "name": "ponytail", "source": "ponytail", "from": "skills/ponytail", "include": ["SKILL.md"], "phase": "C", "tier": "core", "audit": "full", "use": "Smallest-complete-change discipline (level full). Plugin hooks and band deliberately not installed" },
+    { "name": "tdd", "source": "mattpocock", "from": "skills/engineering/tdd", "phase": "C", "tier": "core", "audit": "full", "use": "Test-first loop for pure logic at agreed seams" },
+    { "name": "implement", "source": "mattpocock", "from": "skills/engineering/implement", "phase": "C", "tier": "core", "audit": "full", "use": "Build a spec/ticket with tdd, then code-review (agent/* branches only)" },
+    { "name": "codebase-design", "source": "mattpocock", "from": "skills/engineering/codebase-design", "phase": "C", "tier": "core", "audit": "full", "use": "Deep-module vocabulary tdd refers to. DESIGN-IT-TWICE spawns sub-agents: counts toward the cap" },
+    { "name": "diagnosing-bugs", "source": "mattpocock", "from": "skills/engineering/diagnosing-bugs", "phase": "C", "tier": "core", "audit": "full", "use": "Feedback-loop-first debugging (audio/route sync bugs); includes a human-in-the-loop script template" },
+    { "name": "code-review", "source": "mattpocock", "from": "skills/engineering/code-review", "phase": "C", "tier": "core", "audit": "full", "use": "Standards + Spec review of a diff (max 2 sub-agents)" },
+    { "name": "principle-prove-it-works", "source": "pstack", "from": "pstack/skills/principle-prove-it-works", "phase": "C", "tier": "core", "audit": "full", "use": "Verify the real artifact, not a proxy" },
+    { "name": "blast-radius", "source": "pstack", "from": "pstack/skills/blast-radius", "phase": "C", "tier": "core", "audit": "full", "use": "What a change could break elsewhere, proven by running code" },
+    { "name": "pr", "source": "mattpocock", "from": "skills/engineering/pr", "phase": "C", "tier": "core", "audit": "full", "use": "PR body: summary, before/after evidence, one-way/two-way door, blast radius" },
+    { "name": "verify-user-flow", "kind": "local", "phase": "C", "tier": "core", "use": "Drive the real app: mobile, desktop, RTL, keyboard, exam-mode rules" },
+    { "name": "create-verification-skill", "kind": "local", "phase": "D", "tier": "core", "use": "Run once after the first slice runs: generates verify-ielts-app. Adapted copy of pstack's (see SOURCES.md)" },
+    { "name": "retro", "source": "mattpocock", "from": "skills/engineering/retro", "phase": "D", "tier": "core", "audit": "full", "use": "Retrospective: improve the agent environment after a session. Reads local session logs" },
+    { "name": "ielts-security-review", "kind": "local", "phase": "pre-launch", "tier": "core", "use": "Full security review before public release (owner decision)" },
+
+    { "name": "to-questionnaire", "source": "mattpocock", "from": "skills/productivity/to-questionnaire", "phase": "optional", "tier": "optional", "audit": "full", "use": "Questionnaire for an IELTS teacher, Arabic reviewer or lawyer" },
+    { "name": "setup-pre-commit", "source": "mattpocock", "from": "skills/misc/setup-pre-commit", "phase": "optional", "tier": "optional", "audit": "full", "use": "Husky + lint-staged + Prettier. Only if the stack is Node/TypeScript" },
+    { "name": "show-me-your-work", "source": "pstack", "from": "pstack/skills/show-me-your-work", "phase": "optional", "tier": "optional", "audit": "full", "use": "Decision log for long unattended runs" },
+    { "name": "wayfinder", "source": "mattpocock", "from": "skills/engineering/wayfinder", "phase": "optional", "tier": "optional", "audit": "partial", "use": "Map a very large planning effort as decision tickets" },
+    { "name": "improve-codebase-architecture", "source": "mattpocock", "from": "skills/engineering/improve-codebase-architecture", "phase": "optional", "tier": "optional", "audit": "partial", "use": "After the first slice: architecture review as an HTML report (writes to the temp dir, tries to open it)" },
+    { "name": "differential-review", "source": "trailofbits", "from": "plugins/differential-review/skills/differential-review", "phase": "pre-launch-optional", "tier": "optional", "audit": "partial", "use": "Security diff review once a baseline exists; patterns are smart-contract flavoured" },
+    { "name": "supply-chain-risk-auditor", "source": "trailofbits", "from": "plugins/supply-chain-risk-auditor/skills/supply-chain-risk-auditor", "phase": "pre-launch-optional", "tier": "optional", "audit": "partial", "use": "Dependency risk audit. Its scripts query osv.dev, npm registry, deps.dev, scorecard (sends package names)" }
+  ],
+  "localHashed": [
+    "skills/create-verification-skill",
+    ".claude/hooks/block-dangerous-git.sh",
+    "third-party/upstream/block-dangerous-git.sh.orig"
+  ],
+  "rejected": [
+    { "repo": "mattpocock/skills", "items": ["implement-spec", "triage", "ask-matt", "grill-me", "teach", "wizard", "migrate-to-shoehorn", "scaffold-exercises", "setup-matt-pocock-skills", "git-guardrails-claude-code", "in-progress/*", "deprecated/*"], "reason": "implement-spec runs parallel sub-agents and merges without a human; the others are not needed (grill-me is covered by grill-with-docs; setup is replaced by docs/agents/*; git-guardrails is replaced by our fixed hook). Not audited beyond their descriptions." },
+    { "repo": "DietrichGebert/ponytail", "items": ["hooks", "band", "board", "webhook", "slash commands"], "reason": "Not needed; band-import reads past Claude Code transcripts and the band has an optional webhook." },
+    { "repo": "petergyang/no-ai-slop", "items": ["no-ai-slop"], "reason": "English-only editing rules could alter calibrated IELTS passages; no Arabic support." },
+    { "repo": "karpathy/autoresearch", "items": ["program.md"], "reason": "ML training on a GPU; idea adopted instead (protected measurement files)." },
+    { "repo": "Leonxlnx/taste-skill", "items": ["design-taste-frontend"], "reason": "Marketing-site builder with a 10-minute Stop hook; Impeccable is the single design skill." },
+    { "repo": "heygen-com/hyperframes", "items": ["all 9 skills"], "reason": "HTML-to-video; not needed." },
+    { "repo": "cursor/plugins pstack", "items": ["the other 55 skills"], "reason": "Not needed; not read." },
+    { "repo": "trailofbits/skills", "items": ["the other 44 plugins"], "reason": "Mostly smart-contract/native-code; revisit at pre-launch." },
+    { "repo": "anthropics/skills", "items": ["frontend-design", "webapp-testing"], "reason": "Impeccable is the design skill; our E2E is likely TypeScript Playwright." }
+  ]
+}

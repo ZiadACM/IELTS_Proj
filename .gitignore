@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Secrets (never commit)
+.env
+.env.*
+secrets/
+
+# Archives (the agent pack zip is not committed)
+*.zip
+
+# OS junk
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Impeccable (from docs/development/design-tooling.md)
+**/.impeccable/config.local.json
+**/.impeccable/hook.cache.json
+**/.impeccable/hook.pending.json
+**/.impeccable/*.png
+**/.impeccable/review/
+**/.impeccable/questions/
+**/.impeccable/live/
+.claude/settings.local.json

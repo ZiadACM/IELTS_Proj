@@ -1,0 +1,137 @@
+{
+  "installed": {
+    "grill-with-docs": {
+      "source": "mattpocock",
+      "commit": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "installedAt": "2026-11-12",
+      "mappings": [
+        {
+          "to": "skills/grill-with-docs",
+          "digest": "e2d794b748ac21bf6447fc4221451955a84b12b40f98b64627735f86376f269a"
+        }
+      ]
+    },
+    "grilling": {
+      "source": "mattpocock",
+      "commit": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "installedAt": "2026-11-12",
+      "mappings": [
+        {
+          "to": "skills/grilling",
+          "digest": "ff1ad7d4c806d74dbbcb09aa9fb23f2b61694976a5376760ce2c64088b146dc4"
+        }
+      ]
+    },
+    "domain-modeling": {
+      "source": "mattpocock",
+      "commit": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "installedAt": "2026-11-12",
+      "mappings": [
+        {
+          "to": "skills/domain-modeling",
+          "digest": "7475cfb39f39ac611e208c8f0dca6b996ca75001dc0b1183471cc908f4da1fe8"
+        }
+      ]
+    },
+    "to-spec": {
+      "source": "mattpocock",
+      "commit": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "installedAt": "2026-11-12",
+      "mappings": [
+        {
+          "to": "skills/to-spec",
+          "digest": "335956a6cf92a83479f3e1f835979b86ea970f4114c7d8316d2cda64a8f32fb3"
+        }
+      ]
+    },
+    "to-tickets": {
+      "source": "mattpocock",
+      "commit": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "installedAt": "2026-11-12",
+      "mappings": [
+        {
+          "to": "skills/to-tickets",
+          "digest": "3a02ede1814d5cc3916722ba5402b65adc57a8a702dc193882e47487f31c25c8"
+        }
+      ]
+    },
+    "handoff": {
+      "source": "mattpocock",
+      "commit": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "installedAt": "2026-11-12",
+      "mappings": [
+        {
+          "to": "skills/handoff",
+          "digest": "148199b4ef0250a8d0c584b0a60b1921d3d507ea918e694460adef60e631ada6"
+        }
+      ]
+    },
+    "prototype": {
+      "source": "mattpocock",
+      "commit": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "installedAt": "2026-11-12",
+      "mappings": [
+        {
+          "to": "skills/prototype",
+          "digest": "d648711c9150168529fa40d6164663959ccbbff945a4b51e40ca55b9b4c8d364"
+        }
+      ]
+    },
+    "wait-what": {
+      "source": "mattpocock",
+      "commit": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "installedAt": "2026-11-12",
+      "mappings": [
+        {
+          "to": "skills/wait-what",
+          "digest": "70f17d8dde137dedd2ef85460d05a19b8b6f7639fec06103cfd7e227618bbeed"
+        }
+      ]
+    },
+    "writing-for-agents": {
+      "source": "mattpocock",
+      "commit": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "installedAt": "2026-11-12",
+      "mappings": [
+        {
+          "to": "skills/writing-for-agents",
+          "digest": "28baa051daa22fd93b4cd18050887aba8c5f2439d7e2539ab4fa44d0ed5bb43b"
+        }
+      ]
+    },
+    "research": {
+      "source": "mattpocock",
+      "commit": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "installedAt": "2026-11-12",
+      "mappings": [
+        {
+          "to": "skills/research",
+          "digest": "c40943316f877c70bd41ef9e0ca9fa87a0c0efd98e23efe32d9fc102e4065833"
+        }
+      ]
+    },
+    "impeccable": {
+      "source": "impeccable",
+      "commit": "b4bff1626c344067788c2679f048a20057c7cc5a",
+      "installedAt": "2026-11-12",
+      "mappings": [
+        {
+          "to": ".claude/skills/impeccable",
+          "digest": "b807ccfd36f768d8e4eef4684e6a22bd5d94bc0955025649dc2b43fac775bdc8"
+        },
+        {
+          "to": ".agents/skills/impeccable",
+          "digest": "a3e3805fca22c5db8e118a9310d6f1493c6141208eee8e2e983a667019306e28"
+        },
+        {
+          "to": ".claude/agents/impeccable-documenter.md",
+          "digest": "651b51633671c8a88b20934e828e00bd566a317ca2778e43dd286f5316155706"
+        },
+        {
+          "to": ".claude/agents/impeccable-finish-reviewer.md",
+          "digest": "7b91f9818d1dfa2b01c16a2e6753ec614c2b2726e30d721c0f2887ab6d4b7043"
+        }
+      ]
+    }
+  }
+}

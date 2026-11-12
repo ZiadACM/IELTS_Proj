@@ -1,6 +1,6 @@
 # Agent rules (canonical)
 
-`AGENTS.md` and `CLAUDE.md` are thin adapters that point here. Edit **this** file, never the adapters, so the two tools cannot drift. Status of every rule: **Proposed** until the owner marks it Agreed.
+`AGENTS.md` and `CLAUDE.md` are thin adapters that point here. Edit **this** file, never the adapters, so the two tools cannot drift. Status of every rule: **Proposed** until the owner marks it Agreed. Agreed so far (2026-11-12): the sub-agent cap, test-first only for pure logic, the `.scratch/` tracker, protected files, the Tier 1 pre-pilot check, Ponytail (provisional), and Impeccable's hook deferred to the first UI ticket. See `docs/product/owner-decisions.md` (D1 to D16).
 
 ## 1. Always
 

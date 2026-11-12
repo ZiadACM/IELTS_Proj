@@ -49,3 +49,23 @@ test('audio.file may not escape the assets directory', () => {
 test('--require-published rejects drafts', () => assert.ok(codes(base(), { requirePublished: true }).includes('not-published')));
 test('published with reviewer passes', () => { const i = base(); i.validation = { status: 'published', reviewer: 'A. Reviewer', reviewedOn: '2026-11-12' }; assert.deepEqual(codes(i, { requirePublished: true }), []); });
 test('non-object input does not throw', () => { assert.ok(codes(null).length > 0); assert.ok(codes([]).length > 0); });
+
+// Plain-text rule (owner decision 2026-11-12): markup in any text field is rejected.
+const markupCases = [
+  ['script tag in transcript cue', (i) => { i.transcript.cues[1].text = 'Walk ahead <script>alert(1)</script>'; }],
+  ['img onerror in landmark label', (i) => { i.map.landmarks[1].label = '<img src=x onerror=alert(1)>'; }],
+  ['closing tag in question prompt', (i) => { i.questions[0].prompt = 'Reading room</b>'; }],
+  ['javascript: URL in distractor note', (i) => { i.events[3].note = 'see JavaScript :alert(1)'; }],
+  ['bidi override in prompt', (i) => { i.questions[1].prompt = 'Sports \u202Ehall'; }],
+  ['control character in cue', (i) => { i.transcript.cues[0].text = 'You are\u0000 here.'; }],
+  ['markup in a field the schema does not know yet', (i) => { i.explanation = { ar: '<iframe src=x>' }; }],
+];
+for (const [name, mutate] of markupCases) {
+  test(`detects markup: ${name}`, () => { const i = base(); mutate(i); assert.ok(codes(i).includes('markup'), `expected markup, got ${codes(i).join(',') || 'nothing'}`); });
+}
+test('plain text with a bare "<", ampersand and Arabic RLM mark passes', () => {
+  const i = base();
+  i.transcript.cues[0].text = 'Rooms 5 < 6 & 7 are closed.';
+  i.explanation = { ar: 'المكتبة\u200F القديمة' };
+  assert.deepEqual(codes(i), []);
+});

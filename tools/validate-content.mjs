@@ -101,6 +101,23 @@ export function validateItem(item, { assetsDir = null, requirePublished = false 
   else if (v.status !== 'draft' && (!isStr(v.reviewer) || !isStr(v.reviewedOn))) err('validation', `status "${v.status}" requires validation.reviewer and validation.reviewedOn`);
   if (requirePublished && o(v) && v.status !== 'published') err('not-published', `item is "${v?.status}", not "published"`);
 
+  // --- text is plain text (CODING_STANDARDS 2.5; owner decision 2026-11-12) -------------------------
+  // Defence in depth only: rendering must still escape. Rejects HTML-like tags, javascript: URLs,
+  // C0 control characters (except tab/newline) and bidi overrides (U+202D/U+202E) that visually reverse text.
+  // Allowed: a bare "<" before a space or digit ("5 < 6"), and LRM/RLM marks used in Arabic text.
+  const MARKUP = [
+    [/<[a-zA-Z!\/?]/, 'HTML-like tag'],
+    [/javascript\s*:/i, 'javascript: URL'],
+    [/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/, 'control character'],
+    [/[\u202D\u202E]/, 'bidi override character'],
+  ];
+  const walk = (v, at) => {
+    if (typeof v === 'string') { for (const [re, what] of MARKUP) if (re.test(v)) err('markup', `${at}: ${what} not allowed in content text`); }
+    else if (Array.isArray(v)) v.forEach((x, i) => walk(x, `${at}[${i}]`));
+    else if (o(v)) for (const [k, x] of Object.entries(v)) walk(x, at ? `${at}.${k}` : k);
+  };
+  walk(item, '');
+
   // --- asset files ---------------------------------------------------------------------------------
   if (assetsDir && isStr(item.audio?.file)) {
     const resolved = path.resolve(assetsDir, item.audio.file);

@@ -1,13 +1,14 @@
 {
-  "_comment": "Machine-readable authorization matrix. Source of truth; docs/security/authorization-matrix.md must match it (checked by tests/security/authorization-matrix.test.mjs). Status Proposed: NO API EXISTS YET. Endpoints are a logical, stack-neutral inventory derived from the product blueprint; the owner and the first feature spec must confirm or change them. Paths use {param} placeholders.",
+  "_comment": "Machine-readable authorization matrix. Source of truth; docs/security/authorization-matrix.md must match it (checked by tests/security/authorization-matrix.test.mjs). Status Proposed: NO API EXISTS YET. Owner decisions applied 2026-11-12 (docs/product/owner-decisions.md). Endpoints are a logical, stack-neutral inventory derived from the product blueprint; the owner and the first feature spec must confirm or change them. Paths use {param} placeholders.",
   "version": 1,
   "status": "proposed",
   "roles": {
-    "anonymous": "No session. Whether a guest (anonymous practice) role exists is an OPEN owner decision (threat model open questions); until decided, anonymous is denied everything except sign-up, sign-in and reset.",
+    "anonymous": "No session. May only create a guest session, create an account, sign in or request a password reset.",
+    "guest": "Server-issued guest session, no personal data (owner decision D5). Practises on its own data exactly like a learner; can upgrade to an account, keeping its data.",
     "learner": "A signed-in learner. Acts only on their own data.",
     "content_author": "Staff: drafts and imports items. Cannot publish. Also practises as a learner on their own data.",
     "content_reviewer": "Staff, a human: reviews and publishes items (CODING_STANDARDS 3.1). Also practises as a learner on their own data.",
-    "admin": "Operator: manages staff roles only. No read access to learners' attempts or progress (data minimisation, CODING_STANDARDS 2.6) unless the owner decides otherwise."
+    "admin": "Operator: manages staff roles only. No access to learners' or guests' attempts or progress (owner decision D7)."
   },
   "decisions": {
     "allow": "Permitted.",
@@ -20,66 +21,678 @@
     "draft-only": "Permitted only on items that are not published. Editing a published item is refused."
   },
   "endpoints": [
-    { "id": "AUTH-01", "method": "POST", "path": "/accounts", "purpose": "Create a learner account", "resource": "account", "flags": ["acceptsUserText", "enumerationSensitive"], "refs": ["T2", "CS2.5", "CS2.6"],
-      "access": { "anonymous": "allow", "learner": "deny", "content_author": "deny", "content_reviewer": "deny", "admin": "deny" } },
-    { "id": "AUTH-02", "method": "POST", "path": "/auth/sessions", "purpose": "Sign in", "resource": "session", "flags": ["enumerationSensitive", "rateLimited"], "refs": ["T2"],
-      "access": { "anonymous": "allow", "learner": "allow", "content_author": "allow", "content_reviewer": "allow", "admin": "allow" } },
-    { "id": "AUTH-03", "method": "DELETE", "path": "/auth/sessions/current", "purpose": "Sign out (server-side session invalidation)", "resource": "session", "flags": ["ownerScoped"], "refs": ["T2"],
-      "access": { "anonymous": "deny", "learner": "own", "content_author": "own", "content_reviewer": "own", "admin": "own" } },
-    { "id": "AUTH-04", "method": "POST", "path": "/auth/password-resets", "purpose": "Request a password reset", "resource": "account", "flags": ["enumerationSensitive", "rateLimited"], "refs": ["T2"],
-      "access": { "anonymous": "allow", "learner": "allow", "content_author": "allow", "content_reviewer": "allow", "admin": "allow" } },
-
-    { "id": "ME-01", "method": "GET", "path": "/me/settings", "purpose": "Read own settings (goal band, language)", "resource": "settings", "flags": ["ownerScoped"], "refs": ["T3", "CS2.1"],
-      "access": { "anonymous": "deny", "learner": "own", "content_author": "own", "content_reviewer": "own", "admin": "own" } },
-    { "id": "ME-02", "method": "PATCH", "path": "/me/settings", "purpose": "Update own settings", "resource": "settings", "flags": ["ownerScoped", "acceptsUserText", "massAssignmentRisk"], "refs": ["T3", "CS2.1", "CS2.5"],
-      "access": { "anonymous": "deny", "learner": "own", "content_author": "own", "content_reviewer": "own", "admin": "own" } },
-    { "id": "ME-03", "method": "DELETE", "path": "/me", "purpose": "Delete own account and learner data", "resource": "account", "flags": ["ownerScoped"], "refs": ["T2", "T3", "CS2.6"],
-      "access": { "anonymous": "deny", "learner": "own", "content_author": "own", "content_reviewer": "own", "admin": "own" } },
-
-    { "id": "ITEM-01", "method": "GET", "path": "/items", "purpose": "List practice items (metadata only)", "resource": "item", "flags": ["deliveryPayload"], "refs": ["T1", "T5", "CS2.2", "CS3.1"],
-      "access": { "anonymous": "deny", "learner": "published", "content_author": "published", "content_reviewer": "published", "admin": "published" } },
-    { "id": "ITEM-02", "method": "GET", "path": "/items/{itemId}", "purpose": "Item delivery payload for answering (map, targets, prompts; no answers, route, transcript or explanations)", "resource": "item", "flags": ["deliveryPayload"], "refs": ["T1", "T5", "CS2.2", "CS3.1"],
-      "access": { "anonymous": "deny", "learner": "published", "content_author": "published", "content_reviewer": "published", "admin": "published" } },
-    { "id": "REP-01", "method": "POST", "path": "/items/{itemId}/reports", "purpose": "Learner reports a problem with an item (free text)", "resource": "report", "flags": ["acceptsUserText"], "refs": ["T5", "CS2.5"],
-      "access": { "anonymous": "deny", "learner": "published", "content_author": "published", "content_reviewer": "published", "admin": "published" } },
-
-    { "id": "ATT-01", "method": "POST", "path": "/attempts", "purpose": "Start an attempt on a published item in a mode (guided | exam)", "resource": "attempt", "flags": ["massAssignmentRisk"], "refs": ["T1", "T3", "T4", "CS2.1", "CS2.3"],
-      "access": { "anonymous": "deny", "learner": "allow", "content_author": "allow", "content_reviewer": "allow", "admin": "allow" } },
-    { "id": "ATT-02", "method": "GET", "path": "/me/attempts", "purpose": "List own attempts", "resource": "attempt", "flags": ["ownerScoped"], "refs": ["T3", "CS2.1"],
-      "access": { "anonymous": "deny", "learner": "own", "content_author": "own", "content_reviewer": "own", "admin": "own" } },
-    { "id": "ATT-03", "method": "GET", "path": "/attempts/{attemptId}", "purpose": "Read attempt state (answers so far, mode, deadline)", "resource": "attempt", "flags": ["ownerScoped", "deliveryPayload"], "refs": ["T1", "T3", "CS2.1", "CS2.2"],
-      "access": { "anonymous": "deny", "learner": "own", "content_author": "own", "content_reviewer": "own", "admin": "deny" } },
-    { "id": "ATT-04", "method": "PUT", "path": "/attempts/{attemptId}/answers", "purpose": "Save answers", "resource": "attempt", "flags": ["ownerScoped", "massAssignmentRisk"], "refs": ["T3", "T4", "CS2.1", "CS2.3"],
-      "access": { "anonymous": "deny", "learner": "own-open", "content_author": "own-open", "content_reviewer": "own-open", "admin": "deny" } },
-    { "id": "ATT-05", "method": "POST", "path": "/attempts/{attemptId}/submit", "purpose": "Submit; the server scores", "resource": "attempt", "flags": ["ownerScoped", "massAssignmentRisk"], "refs": ["T3", "T4", "CS2.1", "CS2.3"],
-      "access": { "anonymous": "deny", "learner": "own-open", "content_author": "own-open", "content_reviewer": "own-open", "admin": "deny" } },
-    { "id": "ATT-06", "method": "GET", "path": "/attempts/{attemptId}/audio", "purpose": "Stream the attempt's audio (exam: one listen)", "resource": "attempt", "flags": ["ownerScoped", "examSingleUse"], "refs": ["T4", "CS2.1", "CS2.3"],
-      "access": { "anonymous": "deny", "learner": "own-open", "content_author": "own-open", "content_reviewer": "own-open", "admin": "deny" } },
-    { "id": "ATT-07", "method": "POST", "path": "/attempts/{attemptId}/replays", "purpose": "Request an audio replay (support usage)", "resource": "attempt", "flags": ["ownerScoped", "examForbidden"], "refs": ["T4", "CS2.3"],
-      "access": { "anonymous": "deny", "learner": "own-open-guided", "content_author": "own-open-guided", "content_reviewer": "own-open-guided", "admin": "deny" } },
-    { "id": "ATT-08", "method": "POST", "path": "/attempts/{attemptId}/hints", "purpose": "Request a hint (support usage)", "resource": "attempt", "flags": ["ownerScoped", "examForbidden"], "refs": ["T4", "CS2.3"],
-      "access": { "anonymous": "deny", "learner": "own-open-guided", "content_author": "own-open-guided", "content_reviewer": "own-open-guided", "admin": "deny" } },
-    { "id": "ATT-09", "method": "GET", "path": "/attempts/{attemptId}/review", "purpose": "Review: correct answers, authored route, transcript, explanations (Answer Replay, Evidence Reveal)", "resource": "attempt", "flags": ["ownerScoped", "returnsAnswerData"], "refs": ["T1", "T3", "CS2.1", "CS2.2"],
-      "access": { "anonymous": "deny", "learner": "own-submitted", "content_author": "own-submitted", "content_reviewer": "own-submitted", "admin": "deny" } },
-
-    { "id": "PROG-01", "method": "GET", "path": "/me/progress", "purpose": "Own progress (question-type and micro-skill progress, independent readiness)", "resource": "progress", "flags": ["ownerScoped"], "refs": ["T3", "CS2.1"],
-      "access": { "anonymous": "deny", "learner": "own", "content_author": "own", "content_reviewer": "own", "admin": "own" } },
-    { "id": "PROG-02", "method": "GET", "path": "/me/recommendations", "purpose": "Own provisional recommendation (next challenge)", "resource": "recommendation", "flags": ["ownerScoped"], "refs": ["T3", "CS2.1"],
-      "access": { "anonymous": "deny", "learner": "own", "content_author": "own", "content_reviewer": "own", "admin": "own" } },
-
-    { "id": "ADM-01", "method": "GET", "path": "/admin/items", "purpose": "List all items including drafts", "resource": "item", "flags": ["staffOnly"], "refs": ["T5"],
-      "access": { "anonymous": "deny", "learner": "deny", "content_author": "allow", "content_reviewer": "allow", "admin": "deny" } },
-    { "id": "ADM-02", "method": "POST", "path": "/admin/items", "purpose": "Import a draft item (validated by tools/validate-content.mjs)", "resource": "item", "flags": ["staffOnly", "acceptsUserText"], "refs": ["T5", "CS2.5", "CS3.2"],
-      "access": { "anonymous": "deny", "learner": "deny", "content_author": "allow", "content_reviewer": "allow", "admin": "deny" } },
-    { "id": "ADM-03", "method": "PUT", "path": "/admin/items/{itemId}", "purpose": "Edit an unpublished item", "resource": "item", "flags": ["staffOnly", "acceptsUserText"], "refs": ["T5", "CS2.5"],
-      "access": { "anonymous": "deny", "learner": "deny", "content_author": "draft-only", "content_reviewer": "draft-only", "admin": "deny" } },
-    { "id": "ADM-04", "method": "GET", "path": "/admin/items/{itemId}/preview", "purpose": "Staff preview including answers, route and transcript", "resource": "item", "flags": ["staffOnly", "returnsAnswerData"], "refs": ["T1", "T5"],
-      "access": { "anonymous": "deny", "learner": "deny", "content_author": "allow", "content_reviewer": "allow", "admin": "deny" } },
-    { "id": "ADM-05", "method": "POST", "path": "/admin/items/{itemId}/publish", "purpose": "Publish an item (human reviewer only)", "resource": "item", "flags": ["staffOnly", "publishAction"], "refs": ["T5", "CS3.1"],
-      "access": { "anonymous": "deny", "learner": "deny", "content_author": "deny", "content_reviewer": "allow", "admin": "deny" } },
-    { "id": "ADM-06", "method": "GET", "path": "/admin/reports", "purpose": "Read learner item reports (renders learner text)", "resource": "report", "flags": ["staffOnly", "rendersUserText"], "refs": ["T5", "CS2.5", "CS2.6"],
-      "access": { "anonymous": "deny", "learner": "deny", "content_author": "allow", "content_reviewer": "allow", "admin": "deny" } },
-    { "id": "ADM-07", "method": "PUT", "path": "/admin/users/{userId}/roles", "purpose": "Grant or remove staff roles", "resource": "account", "flags": ["staffOnly", "massAssignmentRisk"], "refs": ["T2", "CS2.1"],
-      "access": { "anonymous": "deny", "learner": "deny", "content_author": "deny", "content_reviewer": "deny", "admin": "allow" } }
+    {
+      "id": "AUTH-01",
+      "method": "POST",
+      "path": "/accounts",
+      "purpose": "Create a learner account",
+      "resource": "account",
+      "flags": [
+        "acceptsUserText",
+        "enumerationSensitive"
+      ],
+      "refs": [
+        "T2",
+        "CS2.5",
+        "CS2.6"
+      ],
+      "access": {
+        "anonymous": "allow",
+        "guest": "allow",
+        "learner": "deny",
+        "content_author": "deny",
+        "content_reviewer": "deny",
+        "admin": "deny"
+      }
+    },
+    {
+      "id": "AUTH-02",
+      "method": "POST",
+      "path": "/auth/sessions",
+      "purpose": "Sign in",
+      "resource": "session",
+      "flags": [
+        "enumerationSensitive",
+        "rateLimited"
+      ],
+      "refs": [
+        "T2"
+      ],
+      "access": {
+        "anonymous": "allow",
+        "guest": "allow",
+        "learner": "allow",
+        "content_author": "allow",
+        "content_reviewer": "allow",
+        "admin": "allow"
+      }
+    },
+    {
+      "id": "AUTH-03",
+      "method": "DELETE",
+      "path": "/auth/sessions/current",
+      "purpose": "Sign out (server-side session invalidation)",
+      "resource": "session",
+      "flags": [
+        "ownerScoped"
+      ],
+      "refs": [
+        "T2"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "own",
+        "learner": "own",
+        "content_author": "own",
+        "content_reviewer": "own",
+        "admin": "own"
+      }
+    },
+    {
+      "id": "AUTH-04",
+      "method": "POST",
+      "path": "/auth/password-resets",
+      "purpose": "Request a password reset",
+      "resource": "account",
+      "flags": [
+        "enumerationSensitive",
+        "rateLimited"
+      ],
+      "refs": [
+        "T2"
+      ],
+      "access": {
+        "anonymous": "allow",
+        "guest": "deny",
+        "learner": "allow",
+        "content_author": "allow",
+        "content_reviewer": "allow",
+        "admin": "allow"
+      }
+    },
+    {
+      "id": "AUTH-05",
+      "method": "POST",
+      "path": "/auth/guest-sessions",
+      "purpose": "Start a guest session (no personal data)",
+      "resource": "session",
+      "flags": [
+        "rateLimited"
+      ],
+      "refs": [
+        "T2",
+        "CS2.6"
+      ],
+      "access": {
+        "anonymous": "allow",
+        "guest": "deny",
+        "learner": "deny",
+        "content_author": "deny",
+        "content_reviewer": "deny",
+        "admin": "deny"
+      }
+    },
+    {
+      "id": "ME-01",
+      "method": "GET",
+      "path": "/me/settings",
+      "purpose": "Read own settings (goal band, language)",
+      "resource": "settings",
+      "flags": [
+        "ownerScoped"
+      ],
+      "refs": [
+        "T3",
+        "CS2.1"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "own",
+        "learner": "own",
+        "content_author": "own",
+        "content_reviewer": "own",
+        "admin": "own"
+      }
+    },
+    {
+      "id": "ME-02",
+      "method": "PATCH",
+      "path": "/me/settings",
+      "purpose": "Update own settings",
+      "resource": "settings",
+      "flags": [
+        "ownerScoped",
+        "acceptsUserText",
+        "massAssignmentRisk"
+      ],
+      "refs": [
+        "T3",
+        "CS2.1",
+        "CS2.5"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "own",
+        "learner": "own",
+        "content_author": "own",
+        "content_reviewer": "own",
+        "admin": "own"
+      }
+    },
+    {
+      "id": "ME-03",
+      "method": "DELETE",
+      "path": "/me",
+      "purpose": "Delete own account and learner data",
+      "resource": "account",
+      "flags": [
+        "ownerScoped"
+      ],
+      "refs": [
+        "T2",
+        "T3",
+        "CS2.6"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "own",
+        "learner": "own",
+        "content_author": "own",
+        "content_reviewer": "own",
+        "admin": "own"
+      }
+    },
+    {
+      "id": "ITEM-01",
+      "method": "GET",
+      "path": "/items",
+      "purpose": "List practice items (metadata only)",
+      "resource": "item",
+      "flags": [
+        "deliveryPayload"
+      ],
+      "refs": [
+        "T1",
+        "T5",
+        "CS2.2",
+        "CS3.1"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "published",
+        "learner": "published",
+        "content_author": "published",
+        "content_reviewer": "published",
+        "admin": "published"
+      }
+    },
+    {
+      "id": "ITEM-02",
+      "method": "GET",
+      "path": "/items/{itemId}",
+      "purpose": "Item delivery payload for answering (map, targets, prompts; no answers, route, transcript or explanations)",
+      "resource": "item",
+      "flags": [
+        "deliveryPayload"
+      ],
+      "refs": [
+        "T1",
+        "T5",
+        "CS2.2",
+        "CS3.1"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "published",
+        "learner": "published",
+        "content_author": "published",
+        "content_reviewer": "published",
+        "admin": "published"
+      }
+    },
+    {
+      "id": "REP-01",
+      "method": "POST",
+      "path": "/items/{itemId}/reports",
+      "purpose": "Learner reports a problem with an item (free text)",
+      "resource": "report",
+      "flags": [
+        "acceptsUserText"
+      ],
+      "refs": [
+        "T5",
+        "CS2.5"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "published",
+        "learner": "published",
+        "content_author": "published",
+        "content_reviewer": "published",
+        "admin": "published"
+      }
+    },
+    {
+      "id": "ATT-01",
+      "method": "POST",
+      "path": "/attempts",
+      "purpose": "Start an attempt on a published item in a mode (guided | exam)",
+      "resource": "attempt",
+      "flags": [
+        "massAssignmentRisk"
+      ],
+      "refs": [
+        "T1",
+        "T3",
+        "T4",
+        "CS2.1",
+        "CS2.3"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "allow",
+        "learner": "allow",
+        "content_author": "allow",
+        "content_reviewer": "allow",
+        "admin": "allow"
+      }
+    },
+    {
+      "id": "ATT-02",
+      "method": "GET",
+      "path": "/me/attempts",
+      "purpose": "List own attempts",
+      "resource": "attempt",
+      "flags": [
+        "ownerScoped"
+      ],
+      "refs": [
+        "T3",
+        "CS2.1"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "own",
+        "learner": "own",
+        "content_author": "own",
+        "content_reviewer": "own",
+        "admin": "own"
+      }
+    },
+    {
+      "id": "ATT-03",
+      "method": "GET",
+      "path": "/attempts/{attemptId}",
+      "purpose": "Read attempt state (answers so far, mode, deadline)",
+      "resource": "attempt",
+      "flags": [
+        "ownerScoped",
+        "deliveryPayload"
+      ],
+      "refs": [
+        "T1",
+        "T3",
+        "CS2.1",
+        "CS2.2"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "own",
+        "learner": "own",
+        "content_author": "own",
+        "content_reviewer": "own",
+        "admin": "deny"
+      }
+    },
+    {
+      "id": "ATT-04",
+      "method": "PUT",
+      "path": "/attempts/{attemptId}/answers",
+      "purpose": "Save answers",
+      "resource": "attempt",
+      "flags": [
+        "ownerScoped",
+        "massAssignmentRisk"
+      ],
+      "refs": [
+        "T3",
+        "T4",
+        "CS2.1",
+        "CS2.3"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "own-open",
+        "learner": "own-open",
+        "content_author": "own-open",
+        "content_reviewer": "own-open",
+        "admin": "deny"
+      }
+    },
+    {
+      "id": "ATT-05",
+      "method": "POST",
+      "path": "/attempts/{attemptId}/submit",
+      "purpose": "Submit; the server scores",
+      "resource": "attempt",
+      "flags": [
+        "ownerScoped",
+        "massAssignmentRisk"
+      ],
+      "refs": [
+        "T3",
+        "T4",
+        "CS2.1",
+        "CS2.3"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "own-open",
+        "learner": "own-open",
+        "content_author": "own-open",
+        "content_reviewer": "own-open",
+        "admin": "deny"
+      }
+    },
+    {
+      "id": "ATT-06",
+      "method": "GET",
+      "path": "/attempts/{attemptId}/audio",
+      "purpose": "Stream the attempt's audio (exam: one listen)",
+      "resource": "attempt",
+      "flags": [
+        "ownerScoped",
+        "examSingleUse"
+      ],
+      "refs": [
+        "T4",
+        "CS2.1",
+        "CS2.3"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "own-open",
+        "learner": "own-open",
+        "content_author": "own-open",
+        "content_reviewer": "own-open",
+        "admin": "deny"
+      }
+    },
+    {
+      "id": "ATT-07",
+      "method": "POST",
+      "path": "/attempts/{attemptId}/replays",
+      "purpose": "Request an audio replay (support usage)",
+      "resource": "attempt",
+      "flags": [
+        "ownerScoped",
+        "examForbidden"
+      ],
+      "refs": [
+        "T4",
+        "CS2.3"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "own-open-guided",
+        "learner": "own-open-guided",
+        "content_author": "own-open-guided",
+        "content_reviewer": "own-open-guided",
+        "admin": "deny"
+      }
+    },
+    {
+      "id": "ATT-08",
+      "method": "POST",
+      "path": "/attempts/{attemptId}/hints",
+      "purpose": "Request a hint (support usage)",
+      "resource": "attempt",
+      "flags": [
+        "ownerScoped",
+        "examForbidden"
+      ],
+      "refs": [
+        "T4",
+        "CS2.3"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "own-open-guided",
+        "learner": "own-open-guided",
+        "content_author": "own-open-guided",
+        "content_reviewer": "own-open-guided",
+        "admin": "deny"
+      }
+    },
+    {
+      "id": "ATT-09",
+      "method": "GET",
+      "path": "/attempts/{attemptId}/review",
+      "purpose": "Review: correct answers, authored route, transcript, explanations (Answer Replay, Evidence Reveal)",
+      "resource": "attempt",
+      "flags": [
+        "ownerScoped",
+        "returnsAnswerData"
+      ],
+      "refs": [
+        "T1",
+        "T3",
+        "CS2.1",
+        "CS2.2"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "own-submitted",
+        "learner": "own-submitted",
+        "content_author": "own-submitted",
+        "content_reviewer": "own-submitted",
+        "admin": "deny"
+      }
+    },
+    {
+      "id": "PROG-01",
+      "method": "GET",
+      "path": "/me/progress",
+      "purpose": "Own progress (question-type and micro-skill progress, independent readiness)",
+      "resource": "progress",
+      "flags": [
+        "ownerScoped"
+      ],
+      "refs": [
+        "T3",
+        "CS2.1"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "own",
+        "learner": "own",
+        "content_author": "own",
+        "content_reviewer": "own",
+        "admin": "own"
+      }
+    },
+    {
+      "id": "PROG-02",
+      "method": "GET",
+      "path": "/me/recommendations",
+      "purpose": "Own provisional recommendation (next challenge)",
+      "resource": "recommendation",
+      "flags": [
+        "ownerScoped"
+      ],
+      "refs": [
+        "T3",
+        "CS2.1"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "own",
+        "learner": "own",
+        "content_author": "own",
+        "content_reviewer": "own",
+        "admin": "own"
+      }
+    },
+    {
+      "id": "ADM-01",
+      "method": "GET",
+      "path": "/admin/items",
+      "purpose": "List all items including drafts",
+      "resource": "item",
+      "flags": [
+        "staffOnly"
+      ],
+      "refs": [
+        "T5"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "deny",
+        "learner": "deny",
+        "content_author": "allow",
+        "content_reviewer": "allow",
+        "admin": "deny"
+      }
+    },
+    {
+      "id": "ADM-02",
+      "method": "POST",
+      "path": "/admin/items",
+      "purpose": "Import a draft item (validated by tools/validate-content.mjs)",
+      "resource": "item",
+      "flags": [
+        "staffOnly",
+        "acceptsUserText"
+      ],
+      "refs": [
+        "T5",
+        "CS2.5",
+        "CS3.2"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "deny",
+        "learner": "deny",
+        "content_author": "allow",
+        "content_reviewer": "allow",
+        "admin": "deny"
+      }
+    },
+    {
+      "id": "ADM-03",
+      "method": "PUT",
+      "path": "/admin/items/{itemId}",
+      "purpose": "Edit an unpublished item",
+      "resource": "item",
+      "flags": [
+        "staffOnly",
+        "acceptsUserText"
+      ],
+      "refs": [
+        "T5",
+        "CS2.5"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "deny",
+        "learner": "deny",
+        "content_author": "draft-only",
+        "content_reviewer": "draft-only",
+        "admin": "deny"
+      }
+    },
+    {
+      "id": "ADM-04",
+      "method": "GET",
+      "path": "/admin/items/{itemId}/preview",
+      "purpose": "Staff preview including answers, route and transcript",
+      "resource": "item",
+      "flags": [
+        "staffOnly",
+        "returnsAnswerData"
+      ],
+      "refs": [
+        "T1",
+        "T5"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "deny",
+        "learner": "deny",
+        "content_author": "allow",
+        "content_reviewer": "allow",
+        "admin": "deny"
+      }
+    },
+    {
+      "id": "ADM-05",
+      "method": "POST",
+      "path": "/admin/items/{itemId}/publish",
+      "purpose": "Publish an item (human reviewer only)",
+      "resource": "item",
+      "flags": [
+        "staffOnly",
+        "publishAction"
+      ],
+      "refs": [
+        "T5",
+        "CS3.1"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "deny",
+        "learner": "deny",
+        "content_author": "deny",
+        "content_reviewer": "allow",
+        "admin": "deny"
+      }
+    },
+    {
+      "id": "ADM-06",
+      "method": "GET",
+      "path": "/admin/reports",
+      "purpose": "Read learner item reports (renders learner text)",
+      "resource": "report",
+      "flags": [
+        "staffOnly",
+        "rendersUserText"
+      ],
+      "refs": [
+        "T5",
+        "CS2.5",
+        "CS2.6"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "deny",
+        "learner": "deny",
+        "content_author": "allow",
+        "content_reviewer": "allow",
+        "admin": "deny"
+      }
+    },
+    {
+      "id": "ADM-07",
+      "method": "PUT",
+      "path": "/admin/users/{userId}/roles",
+      "purpose": "Grant or remove staff roles",
+      "resource": "account",
+      "flags": [
+        "staffOnly",
+        "massAssignmentRisk"
+      ],
+      "refs": [
+        "T2",
+        "CS2.1"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "deny",
+        "learner": "deny",
+        "content_author": "deny",
+        "content_reviewer": "deny",
+        "admin": "allow"
+      }
+    }
   ]
 }

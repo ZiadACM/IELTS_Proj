@@ -1,6 +1,6 @@
 # Security test plan
 
-Status: **Proposed** (2026-11-12). Stack: **not decided** (no ADR in `docs/adr/`, nothing in `docs/architecture/`). This plan is stack-neutral: it says what each test sends and what must come back. It does not say which framework runs it.
+Status: **Proposed** (2026-11-12). Stack: **not decided** (no ADR in `docs/adr/`, nothing in `docs/architecture/`). This plan is stack-neutral: it says what each test sends and what must come back. It does not say which framework runs it. Owner decisions D1 to D16 (`docs/product/owner-decisions.md`) are applied; CI is GitHub Actions (D16).
 
 Inputs: `CODING_STANDARDS.md` section 2, `docs/security/threat-model.md`, `skills/ielts-security-review/SKILL.md` (used as reference only, not installed), `docs/security/pre-launch-review.md`, the product blueprint and the agentic playbook (sections 9 and 10). Terms follow `GLOSSARY.md`.
 
@@ -24,7 +24,7 @@ Goal: every rule in `CODING_STANDARDS.md` section 2 and every row of the threat 
 
 ## 2. Test approach (applies to every STACK case)
 
-1. **Synthetic accounts only.** `learner-a`, `learner-b`, `author-1`, `reviewer-1`, `admin-1`, created by test setup in a test environment, with addresses on `example.test` (a reserved test domain). No real learner data, no production credentials, no real secrets. Secret canaries are random strings generated for each run.
+1. **Synthetic accounts only.** `learner-a`, `learner-b`, `guest-a`, `guest-b` (guest sessions, D5), `author-1`, `reviewer-1`, `admin-1`, created by test setup in a test environment, with addresses on `example.test` (a reserved test domain). No real learner data, no production credentials, no real secrets. Secret canaries are random strings generated for each run.
 2. **Synthetic content.** A published fixture item, built from the shape of `tools/fixtures/map-001.valid.json` but stored under `tests/security/fixtures/`. Its transcript cue text, distractor notes and explanations contain unique **canary strings** (e.g. `CANARY-TRANSCRIPT-<run-id>`). A second fixture item stays `draft`.
 3. **Matrix-driven.** Leakage, cross-user and exam tests loop over `docs/security/authorization-matrix.json` using its flags (`deliveryPayload`, `ownerScoped`, `examForbidden`, `returnsAnswerData`, `acceptsUserText`). A new endpoint is covered automatically. The matrix coverage gate makes sure every real endpoint has a row.
 4. **Leak detection is structural plus canaries.** Map targets and their labels have to reach the client, so a leaked single letter (`"C"`) cannot be detected by string search. A response **fails** if it contains: any canary string; any forbidden key (`answerLabel`, `eventId`, `events`, `transcript`, `cues`, `note`, `explanation`, `rationale`, `evidence`, `route`, `correct*`, `isCorrect`); or any question-to-target association.
@@ -39,7 +39,7 @@ Goal: every rule in `CODING_STANDARDS.md` section 2 and every row of the threat 
 |---|---|---|---|---|
 | AUTHZ-01 | Matrix lists an owner-scoped endpoint as `allow`, or anonymous gets learner data | Build fails | `tests/security/authorization-matrix.test.mjs` | **NOW** |
 | AUTHZ-02 | A real endpoint exists that is not in the matrix | Build fails | same file, coverage gate (fails closed once app code exists without a discovery adapter) | **NOW** (skips with NOT VERIFIED until app code exists) |
-| AUTHZ-03 | `learner-b` sends GET/PUT/POST to every `ownerScoped` endpoint with `learner-a`'s `attemptId` | 404 (or 403), no `learner-a` data in body; `learner-a`'s attempt unchanged | `tests/security/cross-user-access.test.*` | STACK |
+| AUTHZ-03 | `learner-b` sends GET/PUT/POST to every `ownerScoped` endpoint with `learner-a`'s `attemptId`; repeat as `guest-b` against `guest-a`, and guest against learner and back | 404 (or 403), no data from the other user in the body; the other user's attempt unchanged | `tests/security/cross-user-access.test.*` | STACK |
 | AUTHZ-04 | `learner-b` calls `/me/*` with `?userId=`, `X-User-Id` header or `userId` in the body set to `learner-a` | Response is `learner-b`'s own data; the override is ignored or rejected | `cross-user-access` | STACK |
 | AUTHZ-05 | No session; every endpoint whose anonymous cell is `deny` | 401, no data | `cross-user-access` | STACK |
 | AUTHZ-06 | Every role calls every endpoint; compare the status with the matrix cell | Matches the matrix (allowed is 2xx; denied is 401, 403 or 404) | `authorization-enforcement.test.*` (matrix-driven) | STACK |
@@ -67,10 +67,10 @@ Goal: every rule in `CODING_STANDARDS.md` section 2 and every row of the threat 
 | EXAM-01 | Matrix lets replay or hint run in exam mode, or lets an attempt be written after submit | Build fails | `authorization-matrix.test.mjs` | **NOW** |
 | EXAM-02 | `learner-a` in an exam attempt sends `POST ATT-07` (replay) directly, bypassing the UI | 403 or 409; support usage unchanged; no audio served | `tests/security/exam-mode.test.*` | STACK |
 | EXAM-03 | Same with `POST ATT-08` (hint) | 403 or 409; no hint content in the body | `exam-mode` | STACK |
-| EXAM-04 | `learner-a` fetches `ATT-06` (audio) a second time in exam mode, including Range requests and a new session | Second full fetch refused | `exam-mode` | DESIGN: the one-listen mechanism must be specified (e.g. single-use audio token per exam attempt). A client can always record audio locally; that is out of reach of any server test. |
+| EXAM-04 | `learner-a` fetches `ATT-06` (audio) again in exam mode: a second full request, a Range request that rewinds, a request from a new session, a request after the grant ended | Only one forward-only stream per exam attempt; resuming forward from the furthest delivered byte is allowed; everything else refused (D9). Local recording on the device cannot be prevented (accepted risk). | `exam-mode` | STACK |
 | EXAM-05 | `learner-a` saves answers or submits after the server-side deadline, or sends a client timestamp, `timeRemaining` or `deadline` field | Late write refused (or marked late per spec); client time fields ignored | `exam-mode` | STACK (test controls the server clock) |
-| EXAM-06 | `learner-a` switches an exam attempt to guided (PATCH mode, or a new attempt on the same item to read a review, then resubmits the exam) | Mode is immutable; reviews from other attempts do not reveal the open exam (until the exam is submitted) | `exam-mode` | DESIGN: rule for parallel attempts on the same item |
-| EXAM-07 | `learner-a` opens two exam attempts in parallel to get extra listens | Refused, or each attempt still limited to one listen | `exam-mode` | DESIGN |
+| EXAM-06 | `learner-a` switches an exam attempt to guided (PATCH mode), or starts a guided attempt on the same item while the exam is open, to read a review | Mode is immutable; a second open attempt on the same item is refused (D10) | `exam-mode` | STACK |
+| EXAM-07 | `learner-a` opens two exam attempts on one item in parallel; or submits a guided attempt, reads the review, then starts an exam on the same item | Parallel attempt refused; the later exam is allowed but flagged `seenBefore` and excluded from independent readiness (D10) | `exam-mode` | STACK |
 
 ### 2.4 No secrets in code, fixtures, logs, client bundles or CI output; missing configuration stops the app
 
@@ -101,8 +101,8 @@ Goal: every rule in `CODING_STANDARDS.md` section 2 and every row of the threat 
 |---|---|---|---|---|
 | PRIV-01 | Run every learner flow with canary personal data (name, email, report text); capture logs, error-tracker payloads and analytics calls | No canary in any of them | `tests/security/privacy.test.*` | STACK |
 | PRIV-02 | `learner-a` calls `DELETE /me` (`ME-03`); then sign in, read their attempts with an old session, query storage via a test hook | Sign-in fails; old session 401; no attempts, progress, reports or settings left for that user | `privacy` | STACK (deletion path) |
-| PRIV-03 | Data older than the retention period is still stored | Retention job deletes it | `privacy` | DESIGN: retention period not decided (threat model open question) |
-| PRIV-04 | Is the collected data the minimum, and are there legal duties for minors or data residency? | — | Owner and legal review | **MANUAL** |
+| PRIV-03 | Data older than the retention period is still stored: guest data idle over 30 days; account idle over 24 months; logs older than 30 days (D11) | The retention job deletes it (test controls the clock) | `privacy` | STACK |
+| PRIV-04 | Is the collected data the minimum? Public age policy and parental consent (D12b) and data residency (D13) are OPEN; the pilot is adults-only (D12), checked at invitation | — | Owner and legal review | **MANUAL** |
 
 ### 2.7 A new dependency needs a stated reason, a pinned version and a read of its install scripts
 
@@ -119,10 +119,10 @@ Goal: every rule in `CODING_STANDARDS.md` section 2 and every row of the threat 
 | Threat | Threats named | Covered by | Gaps |
 |---|---|---|---|
 | **T1** Answer keys, authored routes, transcripts | Sent to the client early; guessable review endpoints | LEAK-01 to LEAK-08, AUTHZ-03 | LEAK-09 side channels: MANUAL |
-| **T2** Learner accounts and sessions | Credential stuffing; weak reset flow; session theft; enumeration | AUTH-01 to AUTH-07 below | Depends on the auth provider (undecided). A managed provider moves some cases to configuration review. |
+| **T2** Learner accounts, guest sessions and sessions | Credential stuffing; weak reset flow; session theft; enumeration; mass guest-session creation; guest-to-account upgrade hijack | SESS-01 to SESS-09 below | Depends on the auth provider (undecided). A managed provider moves some cases to configuration review. |
 | **T3** Attempts and progress | Cross-user access (IDOR); tampering with scores or recommendations | AUTHZ-01 to AUTHZ-08 | none beyond STACK |
-| **T4** Exam-mode integrity | Replay or hint sent directly to the API; timer manipulation | EXAM-01 to EXAM-07 | EXAM-04, EXAM-06 and EXAM-07 need design decisions; local audio recording cannot be prevented |
-| **T5** Content bank and authoring tools | Unvalidated import; learner access to admin tools; XSS in transcripts | CONTENT-01 to CONTENT-05 below, XSS-01, XSS-02 | See CONTENT-04 |
+| **T4** Exam-mode integrity | Replay or hint sent directly to the API; timer manipulation | EXAM-01 to EXAM-07 | Designs decided (D9, D10); local audio recording cannot be prevented (accepted risk) |
+| **T5** Content bank and authoring tools | Unvalidated import; learner or guest access to admin tools; XSS in transcripts | CONTENT-01 to CONTENT-05 below, XSS-01, XSS-02 | See CONTENT-04 |
 | **T6** Secrets and CI | Keys in repo or logs; agents with production credentials; prompt injection through PR text | SECRET-01 to SECRET-05, CI-01 to CI-03 below | SECRET-06 and CI-03: MANUAL |
 | **T7** Dependencies | Malicious or abandoned packages; install scripts | DEP-01 to DEP-05 | "Abandoned" and "malicious" are only partly detectable |
 | **T8** Future AI tutor and voice | Prompt injection via content or user text; key exposure; unbounded spend | AI-01 to AI-05 below | Feature deferred: all DESIGN |
@@ -131,13 +131,15 @@ Goal: every rule in `CODING_STANDARDS.md` section 2 and every row of the threat 
 
 | Case | Abuse case | Expected safe result | Test | Status |
 |---|---|---|---|---|
-| AUTH-01 | 20 wrong passwords for `learner-a` from one client, then from rotating clients (credential stuffing) | Rate-limited (429) or locked with backoff; the correct password is not accepted while throttled | `tests/security/auth.test.*` | STACK |
-| AUTH-02 | Sign-in and reset with an existing vs a non-existent email | Same status and body. Timing is compared only loosely; strict timing checks are flaky (PARTIAL) | `auth` | STACK |
-| AUTH-03 | Inspect the session cookie or token storage | `Secure`, `HttpOnly`, `SameSite=Lax` or `Strict`; no token in `localStorage` (if cookies are used) | `auth` | STACK |
-| AUTH-04 | Sign out, then replay the old session cookie | 401 (session invalidated server-side) | `auth` | STACK |
-| AUTH-05 | Use an expired session; reuse a reset token; use a reset token after 1 hour | 401, refused, refused | `auth` | STACK |
-| AUTH-06 | A reset link sent to `learner-a` is used by `learner-b`'s session; token present in logs or the Referer | Bound to the account; not logged | `auth` | STACK |
-| AUTH-07 | Home-grown crypto or password hashing | Established provider or library | Code review | **MANUAL** |
+| SESS-01 | 20 wrong passwords for `learner-a` from one client, then from rotating clients (credential stuffing) | Rate-limited (429) or locked with backoff; the correct password is not accepted while throttled | `tests/security/auth.test.*` | STACK |
+| SESS-02 | Sign-in and reset with an existing vs a non-existent email | Same status and body. Timing is compared only loosely; strict timing checks are flaky (PARTIAL) | `auth` | STACK |
+| SESS-03 | Inspect the session cookie or token storage | `Secure`, `HttpOnly`, `SameSite=Lax` or `Strict`; no token in `localStorage` (if cookies are used) | `auth` | STACK |
+| SESS-04 | Sign out, then replay the old session cookie | 401 (session invalidated server-side) | `auth` | STACK |
+| SESS-05 | Use an expired session; reuse a reset token; use a reset token after 1 hour | 401, refused, refused | `auth` | STACK |
+| SESS-06 | A reset link sent to `learner-a` is used by `learner-b`'s session; token present in logs or the Referer | Bound to the account; not logged | `auth` | STACK |
+| SESS-07 | Home-grown crypto or password hashing | Established provider or library | Code review | **MANUAL** |
+| SESS-08 | Anonymous client creates guest sessions in a loop (`AUTH-05`) | Rate-limited (429) per client; idle guest data expires (D11) | `auth` | STACK |
+| SESS-09 | `guest-a` upgrades to an account (`AUTH-01`) while presenting `guest-b`'s session id, or an attacker replays `guest-a`'s old session after the upgrade | Only the caller's own guest data moves to the new account; the old guest session is invalidated after upgrade | `auth` | STACK |
 
 ### T5 cases: content bank and authoring tools
 
@@ -146,7 +148,7 @@ Goal: every rule in `CODING_STANDARDS.md` section 2 and every row of the threat 
 | CONTENT-01 | `learner-a` calls every `/admin/*` endpoint | 403 or 404 | Matrix invariant (**NOW**) plus `authorization-enforcement` (STACK) | NOW + STACK |
 | CONTENT-02 | `learner-a` requests the draft fixture via `ITEM-02` and `ITEM-01`, and starts an attempt on it | 404; not listed; attempt refused | `authorization-enforcement` | STACK |
 | CONTENT-03 | `author-1` publishes (`ADM-05`), or edits a published item (`ADM-03`) | 403; published item unchanged | Matrix invariant (**NOW**) plus `authorization-enforcement` (STACK) | NOW + STACK |
-| CONTENT-04 | `author-1` imports an invalid item (route end off target, cue order wrong) via `ADM-02` | Rejected by the same checks as `tools/validate-content.mjs` | `content-import.test.*` | STACK. Note: the validator does **not** reject HTML or script in text fields today, so XSS-01 must be enforced at render time. |
+| CONTENT-04 | `author-1` imports an invalid item (route end off target, cue order wrong, markup in text) via `ADM-02` | Rejected by the same checks as `tools/validate-content.mjs`, including the plain-text rule (code `markup`, D4) | `content-import.test.*`; the validator's own markup tests already run (**NOW**) | PARTIAL NOW + STACK. Rendering must still escape (XSS-01). |
 | CONTENT-05 | Audio path traversal: an item with `audio.file = "../../etc/passwd"`, or `ATT-06` with a crafted path | Rejected at import (the validator already checks this with `--assets`); served only from the allow-listed location | `content-import` plus the existing `tools/validate-content.test.mjs` | PARTIAL NOW (validator unit test exists) + STACK |
 
 ### T6 cases: CI and agent tooling
@@ -154,7 +156,7 @@ Goal: every rule in `CODING_STANDARDS.md` section 2 and every row of the threat 
 | Case | Abuse case | Expected safe result | Test | Status |
 |---|---|---|---|---|
 | CI-01 | A workflow runs on untrusted PR events with secrets or write permissions, or runs an agent on PR text | CI lint fails (e.g. zizmor or actionlint, pinned): default `permissions: read`, actions pinned by SHA, no secrets on untrusted triggers | `ci-policy` step | STACK (CI provider undecided) |
-| CI-02 | An agent branch changes a protected file (`CODING_STANDARDS.md` section 7), including `tests/security/**` once it is added there | CI fails without owner approval; CODEOWNERS | CI protected-files check | STACK (needs a remote and CI) |
+| CI-02 | An agent branch changes a protected file (`CODING_STANDARDS.md` section 7), including `tests/security/**` (protected since D3) | CI fails without owner approval; CODEOWNERS | CI protected-files check | STACK (needs the GitHub remote, D16) |
 | CI-03 | Production credentials reachable from agent or CI environments | — | Access review | **MANUAL** |
 
 ### T8 cases: future AI tutor (deferred feature)
@@ -166,12 +168,12 @@ AI-01 provider key never in the client (bundle scan, like SECRET-03). AI-02 per-
 | Item | Why | Who checks |
 |---|---|---|
 | LEAK-09 side channels (ordering, sizes) | No reliable oracle | Security reviewer, on the delivery payload design |
-| EXAM-04 local recording of exam audio | Happens on the learner's device | Accepted risk; owner decision |
+| EXAM-04 local recording of exam audio | Happens on the learner's device | Accepted risk (owner decision D9) |
 | SECRET-06, CI-03 production credentials reachable by agents | Environment and access configuration, outside the repo | Owner |
-| PRIV-04 minimisation, minors, consent, residency | Legal and product judgement | Owner and legal |
+| PRIV-04 minimisation, minors, consent, residency | Legal and product judgement (D12b, D13 open) | Owner and legal |
 | DEP-05 "install scripts were read", "maintained" | Human judgement | Owner (allow-list records it) |
-| AUTH-07 crypto and auth design | Needs a qualified reviewer | Human security assessment before launch (`pre-launch-review.md`) |
-| AUTH-02 timing-based enumeration | Flaky in CI | Manual measurement against staging |
+| SESS-07 crypto and auth design | Needs a qualified reviewer | Human security assessment before launch (`pre-launch-review.md`) |
+| SESS-02 timing-based enumeration | Flaky in CI | Manual measurement against staging |
 | Whether a "denied" response is the right UX | Not a security property | Product review |
 
 ## 6. Planned test files
@@ -181,10 +183,10 @@ AI-01 provider key never in the client (bundle scan, like SECRET-03). AI-02 per-
 | `tests/security/authorization-matrix.test.mjs` | AUTHZ-01, AUTHZ-02, LEAK-01, EXAM-01, CONTENT-01 and CONTENT-03 (matrix side) | **Exists, runs** |
 | `tests/security/lib/matrix.mjs` | Shared matrix helpers for all tests below | **Exists** |
 | `tests/security/answer-key-leakage.test.*` | LEAK-02 to LEAK-08 | Waiting for the stack |
-| `tests/security/exam-mode.test.*` | EXAM-02 to EXAM-07 | Waiting for the stack (plus design for 04, 06, 07) |
+| `tests/security/exam-mode.test.*` | EXAM-02 to EXAM-07 | Waiting for the stack |
 | `tests/security/cross-user-access.test.*`, `authorization-enforcement.test.*` | AUTHZ-03 to AUTHZ-08, CONTENT-01 to CONTENT-03 | Waiting for the stack |
 | `tests/security/xss.test.*`, `input-validation.test.*` | XSS-01 to XSS-04, INPUT-01 to INPUT-03 | Waiting for the stack (browser runner) |
-| `tests/security/auth.test.*` | AUTH-01 to AUTH-06 | Waiting for the stack and auth provider |
+| `tests/security/auth.test.*` | SESS-01 to SESS-06, SESS-08, SESS-09 | Waiting for the stack and auth provider |
 | `tests/security/secret-hygiene.test.*`, `privacy.test.*`, `dependency-policy.test.*`, `content-import.test.*` | SECRET, PRIV, DEP, CONTENT-04 and CONTENT-05 | Waiting for the stack |
 | CI workflow: secret scan, dependency audit, SAST, CI lint, protected files | SECRET-01, DEP-01, XSS-04, INPUT-02, CI-01, CI-02 | Waiting for the CI provider (no remote yet) |
 | `tests/security/adapters/discover-endpoints.mjs` | Feeds the AUTHZ-02 coverage gate | Write when the stack is chosen; the gate fails closed without it |

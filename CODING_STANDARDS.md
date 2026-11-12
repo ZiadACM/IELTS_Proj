@@ -8,7 +8,7 @@ Approved spec > ADRs > this file > the agent's habits. A spec may not waive sect
 ## 2. Security (non-negotiable)
 The full security review is deferred to pre-launch (`docs/security/pre-launch-review.md`), but these rules are **design constraints now**: they are cheap to follow while building and expensive to retrofit.
 1. Authorization is enforced on the server for every read and write of attempts, progress, settings and recommendations; the client is never the gate.
-2. Correct answers, authored routes, transcripts and explanations are **not sent to the client** before an attempt is submitted, and never in exam/independent mode.
+2. Correct answers, authored routes, transcripts and explanations are **not sent to the client** before an attempt is submitted, and never while an exam simulation or independent check is in progress. Review after submission is allowed (owner decision D6, `docs/product/owner-decisions.md`).
 3. Exam-mode rules (one listen, no hint, no replay, timer) are enforced server-side.
 4. No secrets in code, fixtures, logs, client bundles or CI output. Missing configuration stops the app; it never weakens a control.
 5. All external input is validated at the boundary and rendered escaped. User text, imported files and AI output are untrusted.
@@ -17,7 +17,7 @@ The full security review is deferred to pre-launch (`docs/security/pre-launch-re
 
 ## 3. Content and answers
 1. Only items with `validation.status = published` reach learners; only a human sets that value.
-2. `node tools/validate-content.mjs <item> --assets <dir>` exits 0 before an item is committed as reviewed or published.
+2. `node tools/validate-content.mjs <item> --assets <dir>` exits 0 before an item is committed as reviewed or published. Content text is plain text; the validator rejects markup (owner decision D4).
 3. Original content only. No copied Cambridge/IELTS material. Every item shows the **Unofficial practice** label.
 4. AI-drafted content is `draft` until a person has done the judgement checks in `validate-ielts-content`.
 5. Arabic explanations are reviewed by a fluent reader before they ship.
@@ -46,4 +46,4 @@ The full security review is deferred to pre-launch (`docs/security/pre-launch-re
 3. Errors are handled or surfaced; nothing is swallowed silently. A deliberate shortcut gets `shortcut: <limit>, <when to revisit>`.
 
 ## 7. Protected files (agents may not edit without an explicit human instruction in the current task)
-`tools/validate-content.mjs`, `tools/validate-content.test.mjs`, `tools/fixtures/**`, golden scenario fixtures and scoring/adaptive-rule tests (`tests/golden/**` once created), `CODING_STANDARDS.md`, `.claude/settings.json`, `.claude/hooks/**`, `skills-manifest.src.json`, `skills-manifest.lock.json`, `scripts/**`, `third-party/**`. Reason: if an agent can edit the measurement, it can pass it. Enforce with CODEOWNERS plus a CI check that fails when these change in an `agent/*` branch without owner approval.
+`tools/validate-content.mjs`, `tools/validate-content.test.mjs`, `tools/fixtures/**`, golden scenario fixtures and scoring/adaptive-rule tests (`tests/golden/**` once created), security tests and their fixtures (`tests/security/**`; a task may add new files there only with explicit owner authorisation, and may never weaken existing ones), `CODING_STANDARDS.md`, `.claude/settings.json`, `.claude/hooks/**`, `skills-manifest.src.json`, `skills-manifest.lock.json`, `scripts/**`, `third-party/**`. Reason: if an agent can edit the measurement, it can pass it. Enforce with CODEOWNERS plus a CI check that fails when these change in an `agent/*` branch without owner approval.

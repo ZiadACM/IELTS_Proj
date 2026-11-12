@@ -19,12 +19,13 @@ const roles = Object.freeze(Object.keys(matrix.roles)); // column order of the M
 const decisions = new Set(Object.keys(matrix.decisions));
 const OWNER_DATA = new Set(['attempt', 'progress', 'settings', 'recommendation']);
 const OWNER_DECISIONS = new Set(['deny', 'own', 'own-open', 'own-open-guided', 'own-submitted']);
+const NON_STAFF = ['anonymous', 'guest', 'learner'];
 const has = (e, flag) => (e.flags ?? []).includes(flag);
 const each = (fn) => { for (const e of matrix.endpoints) for (const r of roles) fn(e, r, e.access[r]); };
 
 // --- completeness --------------------------------------------------------------------------------
-test('matrix declares the five expected roles', () => {
-  assert.deepEqual([...roles].sort(), ['admin', 'anonymous', 'content_author', 'content_reviewer', 'learner']);
+test('matrix declares the six expected roles (guest added by owner decision D5)', () => {
+  assert.deepEqual([...roles].sort(), ['admin', 'anonymous', 'content_author', 'content_reviewer', 'guest', 'learner']);
 });
 
 test('every endpoint has a decision for every role, from the known vocabulary', () => {
@@ -70,7 +71,7 @@ test('CS2.2/T1: learner-facing endpoints returning answer data require a submitt
   each((e, r, d) => {
     if (!has(e, 'returnsAnswerData')) return;
     const staffPath = e.path.startsWith('/admin/');
-    if (staffPath ? ['anonymous', 'learner'].includes(r) && d !== 'deny' : !['deny', 'own-submitted'].includes(d)) bad.push(`${e.id}/${r}=${d}`);
+    if (staffPath ? NON_STAFF.includes(r) && d !== 'deny' : !['deny', 'own-submitted'].includes(d)) bad.push(`${e.id}/${r}=${d}`);
   });
   assert.deepEqual(bad, []);
 });
@@ -97,8 +98,8 @@ test('CS2.3/T3/T4: writes to an attempt are refused once it is submitted or past
   assert.deepEqual(bad, []);
 });
 
-test('T5: /admin endpoints are staff-only (learner and anonymous denied)', () => {
-  const bad = matrix.endpoints.filter((e) => e.path.startsWith('/admin/') && (!has(e, 'staffOnly') || e.access.learner !== 'deny' || e.access.anonymous !== 'deny'));
+test('T5: /admin endpoints are staff-only (anonymous, guest and learner denied)', () => {
+  const bad = matrix.endpoints.filter((e) => e.path.startsWith('/admin/') && (!has(e, 'staffOnly') || NON_STAFF.some((r) => e.access[r] !== 'deny')));
   assert.deepEqual(bad.map((e) => e.id), []);
 });
 

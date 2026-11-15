@@ -16,3 +16,6 @@ Spec: `../spec.md`
 - [ ] Spec section 'Content model additions' is satisfied
 
 ## Comments
+
+- 2026-11-15, owner: "install phase B skills and start ticket 01". Recorded as the owner's approval to edit the protected content validator, its tests and its fixtures for this ticket only. It does not cover `tests/security/**` (see below if that becomes necessary).
+- 2026-11-15, agent: validator, valid fixture and tests updated; tool tests 78/78 pass; mutation check: each new rule, when disabled, makes at least 2 tests fail. **Blocked:** `tests/security/fixture-proof.test.mjs` now fails 2 cases (36/36 before this change), because the SYNTHETIC security fixture item (`tests/security/fixtures/items/security-map.template.json`) is in the old format and staff imports (ADM-02, ADM-03) now return 422. Fixing it needs edits under `tests/security/**` (protected, D3), which the approval above does not cover. Waiting for the owner.

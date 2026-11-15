@@ -7,11 +7,11 @@ An adaptive practice product for IELTS Academic Reading and Listening, built fir
 ### Ways of practising
 
 **Skill challenge**:
-One short interactive task aimed at a single micro-skill; feedback appears when it is finished.
+One short interactive task of about 1 to 3 questions aimed at a single micro-skill; feedback appears when it is finished.
 _Avoid_: drill, mini-quiz
 
 **Practice set**:
-About 4 to 10 related items answered without interruption and reviewed together afterwards.
+About 4 to 10 related questions, usually from one item, answered without interruption and reviewed together afterwards.
 _Avoid_: quiz, test
 
 **Exam simulation**:
@@ -44,6 +44,14 @@ _Avoid_: course, level ladder
 The rule that the product recommends the next challenge but never locks a learner out of any practice.
 _Avoid_: gating, unlock
 
+**Skill state**:
+A learner's standing on one micro-skill: not seen yet, building, secure with support, or secure independently.
+_Avoid_: mastery level, score, percentage
+
+**Secure independently**:
+The skill state reached only by answering correctly in an independent check; guided practice alone never reaches it.
+_Avoid_: mastered, passed
+
 **Provisional recommendation**:
 A next-step suggestion built on thin evidence that sharpens with more attempts.
 _Avoid_: diagnosis, placement
@@ -70,6 +78,26 @@ _Avoid_: topic, lesson
 One authored unit of practice content, such as a map with its audio and questions, or a passage with its questions.
 _Avoid_: exercise, test (a single prompt inside an item is a **question**)
 
+**Question**:
+One prompt inside an item that the learner answers, such as choosing the map letter for a named place.
+_Avoid_: item, task
+
+**Guided tour item**:
+A Listening map item in which the speaker leads along one route from a start point, passing each answer place in order.
+_Avoid_: directions task, route item
+
+**First listen**:
+The initial play of an item's audio, straight through without pausing or seeking.
+_Avoid_: first play, initial attempt
+
+**Difficulty tier**:
+The coarse difficulty label (1, 2 or 3) shown to learners for an item; the item's individual difficulty dimensions sit underneath it.
+_Avoid_: level, grade
+
+**Hint**:
+A requested aid for one question in guided practice, given in levels (first the last landmark before the answer place, then the transcript sentence); always counted as support usage.
+_Avoid_: tip, clue
+
 **Authored route**:
 The verified correct path of a Listening map item together with its audio cue times; the only source for Answer Replay.
 _Avoid_: generated route, AI route
@@ -85,6 +113,10 @@ _Avoid_: highlighting, explanation
 **Published item**:
 An item whose answers, evidence and media passed validation and human review; only these reach learners.
 _Avoid_: live item, approved item
+
+**Problem report**:
+A learner's flag on one question in review, saying the answer key, audio or map may be wrong or unclear.
+_Avoid_: complaint, ticket, feedback
 
 **Unofficial practice**:
 The label every original item carries to show it is not Cambridge or official IELTS material.

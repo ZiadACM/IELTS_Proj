@@ -22,7 +22,8 @@ const FIELDS = {
   'landmark label': (i, p) => { i.map.landmarks[0].label = p; },
   prompt: (i, p) => { i.questions[0].prompt = p; },
   'distractor note': (i, p) => { i.events.find((e) => e.kind === 'distractor').note = p; },
-  explanation: (i, p) => { i.questions[0].explanation = p; },
+  'English explanation': (i, p) => { i.questions[0].explanation.en = p; },
+  'Arabic explanation': (i, p) => { i.questions[0].explanation.ar = `شرح ${p}`; },
 };
 const isJson = (r) => /^application\/(problem\+)?json\b/i.test(r.headers.get('content-type') ?? '');
 const nosniff = (r) => (r.headers.get('x-content-type-options') ?? '').toLowerCase() === 'nosniff';

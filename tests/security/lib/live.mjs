@@ -172,7 +172,7 @@ async function createEnv() {
 }
 
 // ---- leak detection (test-plan section 2, item 4: structural plus canaries) ----------------------------
-export const FORBIDDEN_KEYS = new Set(['answerLabel', 'eventId', 'events', 'transcript', 'cues', 'note', 'explanation', 'rationale', 'evidence', 'route', 'isCorrect', 'hint']);
+export const FORBIDDEN_KEYS = new Set(['answerLabel', 'eventId', 'events', 'transcript', 'cues', 'note', 'explanation', 'rationale', 'evidence', 'route', 'isCorrect', 'hint', 'hints']);
 const isForbiddenKey = (k) => FORBIDDEN_KEYS.has(k) || /^correct/i.test(k);
 
 export function findLeaks(res, env) {

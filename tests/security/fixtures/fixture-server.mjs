@@ -323,7 +323,7 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
     for (const [q, v] of Object.entries(body.answers)) {
       const question = i.questions.find((x) => x.id === q);
       if (!question || typeof v !== 'string' || !labels.has(v)) {
-        return err(res, 400, vuln('LEAK-07') && question ? `invalid answer for ${q}: expected ${question.answerLabel} (${question.explanation})` : `invalid answer for ${q}`);
+        return err(res, 400, vuln('LEAK-07') && question ? `invalid answer for ${q}: expected ${question.answerLabel} (${question.explanation?.en})` : `invalid answer for ${q}`);
       }
     }
     Object.assign(a.answers, body.answers);
@@ -382,7 +382,16 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
     const q = items.get(a.itemId).item.questions.find((x) => x.id === body.questionId);
     if (!q) return err(res, 400, 'unknown questionId');
     a.hintCount++;
-    json(res, 201, { questionId: q.id, hint: q.hint, supportUsage: { replayCount: a.replayCount, hintCount: a.hintCount } });
+    // content format v1: level 1 names the last landmark before the answer place, level 2 the transcript sentence
+    a.hintLevels ??= {};
+    const level = Math.min((a.hintLevels[q.id] ?? 0) + 1, 2);
+    a.hintLevels[q.id] = level;
+    const h = q.hints.find((x) => x.level === level);
+    const it = items.get(a.itemId).item;
+    const hint = level === 1
+      ? { level, landmark: it.map.landmarks.find((l) => l.id === h.landmarkId)?.label ?? null }
+      : { level, text: it.transcript.cues.find((c) => c.id === h.cueId)?.text ?? null };
+    json(res, 201, { questionId: q.id, hint, supportUsage: { replayCount: a.replayCount, hintCount: a.hintCount } });
   });
   route('GET', '/attempts/{attemptId}/review', (req, res, body, url, p) => {
     const o = ownAttempt(req, res, p.attemptId); if (!o) return;

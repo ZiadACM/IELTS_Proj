@@ -30,6 +30,15 @@ CODING_STANDARDS.md  GLOSSARY.md  docs/security/*  docs/agents/*        skills/ 
 | **pre-launch** | ielts-security-review (ours; full security review deferred by owner decision) |
 | optional (ask by name) | to-questionnaire, setup-pre-commit, show-me-your-work, wayfinder*, improve-codebase-architecture*, differential-review*, supply-chain-risk-auditor* (*partial audit: needs owner approval) |
 
+## Run the app (Node 24.16+, Docker)
+```bash
+npm ci            # .npmrc turns off dependency install scripts
+npm start         # starts PostgreSQL (compose.yaml), builds web/, runs the server on http://127.0.0.1:3000
+npm test          # server tests (needs the database: npm run db:up)
+npm run lint && npm run typecheck && npm run build
+```
+Security suites against the running app: start it with `SECURITY_TEST_SUPPORT_TOKEN=<random 32+ chars> npm start`, then run `SECURITY_BASE_URL=http://127.0.0.1:3000 SECURITY_TEST_SUPPORT_TOKEN=<same> node --test --test-concurrency=1 tests/security/*.test.mjs` (`docs/security/test-harness-contract.md`).
+
 ## Check the pack yourself (Node 22+, bash, git)
 ```bash
 node --test tools/*.test.mjs scripts/lib/*.test.mjs

@@ -2,7 +2,22 @@
 
 Status: **Proposed** (2026-11-12). Required by `CODING_STANDARDS.md` 2.7: every dependency has a stated reason, a pinned version and a record of who read its install scripts and when. Test-plan DEP-03 will check this file against the manifests once the app has any.
 
-**Application and test dependencies: none.** The security tests, fixture server, endpoint adapter and tools use only Node.js built-ins (`node:test`, `node:http`, `node:crypto`, `fetch`). There is no `package.json` yet. The app dependencies chosen in `docs/adr/0001-stack.md` (React, Vite, Fastify, Better Auth, pg, Playwright) are **not installed**; each gets a row here, with its install scripts read, when the first ticket adds it.
+## Application dependencies (`package.json`, `server/package.json`, `web/package.json`; ticket 03)
+
+Exact versions (`.npmrc`: `save-exact`), locked by `package-lock.json`. `.npmrc` sets `ignore-scripts=true`, so no dependency runs install scripts. Install scripts checked 2026-11-16 by the agent: `npm view <pkg>@<version> scripts` for every direct dependency (none has `preinstall`, `install` or `postinstall`), and `npm query` over the whole installed tree (115 packages): no `preinstall`/`install`/`postinstall` anywhere; 15 transitive packages have only `prepare`, which npm does not run for registry installs. Policy: newest release at least 7 days old, so a just-published (possibly compromised) release is not picked up. Package source code was **not** reviewed. Playwright and Better Auth (ADR 0001) are not installed yet.
+
+| Dependency | Why | Pinned to | Install scripts / notes | Read by / on |
+|---|---|---|---|---|
+| `fastify` | API server (ADR 0001) | 5.12.8 | none | agent, 2026-11-16 |
+| `@fastify/static` | Serves the built SPA from the same service (ADR 0001) | 10.1.10 (10.1.11 skipped: 3 days old) | none | agent, 2026-11-16 |
+| `pg` | PostgreSQL client (ADR 0001) | 8.23.1 | none. Optional `pg-native` not installed | agent, 2026-11-16 |
+| `react`, `react-dom` | UI (ADR 0001) | 19.3.1 | none | agent, 2026-11-16 |
+| `vite` | Build the SPA (ADR 0001) | 8.3.6 (8.3.8 skipped: 5 days old) | none; native bundler binaries arrive as optional platform packages | agent, 2026-11-16 |
+| `@vitejs/plugin-react` | JSX in Vite | 6.2.1 (6.3.0 skipped: 7 days old) | none | agent, 2026-11-16 |
+| `typescript` | Type check (`tsc --noEmit`); the server runs `.ts` with Node's built-in type stripping, so no build step | 7.0.2 | none | agent, 2026-11-16 |
+| `@biomejs/biome` | Lint and format, one dev dependency instead of ESLint + plugins | 2.6.6 (2.6.8 skipped: 1 day old) | none; native binary via optional platform packages | agent, 2026-11-16 |
+| `@types/node`, `@types/pg`, `@types/react`, `@types/react-dom` | Types only | 24.19.2, 8.23.1, 19.3.0, 19.3.0 | none | agent, 2026-11-16 |
+| `postgres` image | Local database (`compose.yaml`) and CI service (`ci.yml`) | `postgres:18.7-alpine@sha256:b6972e11…da0f015` (multi-arch index) | Digest from Docker Hub registry, 2026-11-16. Local: trust auth bound to 127.0.0.1 | agent, 2026-11-16 |
 
 ## CI dependencies (`.github/workflows/security.yml`)
 

@@ -16,3 +16,6 @@ Spec: `../spec.md`
 - [ ] API tests at the HTTP seam; SESS-08 rate-limit case passes
 
 ## Comments
+
+### 2026-11-16, owner (via agent `implement` session)
+Approved the protected changes for this ticket: matrix AUTH-05 gets `enumerationSensitive` and an invite-code purpose (AUTH-01 waits for 05); new test-support route `POST /__test__/invite-codes` in the harness contract; `tests/security/lib/live.mjs` `env.guest()` and the SESS-08 loop send `{inviteCode, ageConfirmed: true}`; the synthetic fixture-server accepts the same body. UI design pass (Impeccable critique/audit) and browser verification deferred to ticket 07.

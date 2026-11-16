@@ -40,7 +40,7 @@ Status: **Proposed**. **No API exists yet.** The endpoints below are a logical, 
 | AUTH-02 | POST | `/auth/sessions` | `allow` | `allow` | `allow` | `allow` | `allow` | `allow` | enumerationSensitive, rateLimited | T2 |
 | AUTH-03 | DELETE | `/auth/sessions/current` | `deny` | `own` | `own` | `own` | `own` | `own` | ownerScoped | T2 |
 | AUTH-04 | POST | `/auth/password-resets` | `allow` | `deny` | `allow` | `allow` | `allow` | `allow` | enumerationSensitive, rateLimited | T2 |
-| AUTH-05 | POST | `/auth/guest-sessions` | `allow` | `deny` | `deny` | `deny` | `deny` | `deny` | rateLimited | T2, CS2.6 |
+| AUTH-05 | POST | `/auth/guest-sessions` | `allow` | `deny` | `deny` | `deny` | `deny` | `deny` | rateLimited, enumerationSensitive | T2, CS2.6 |
 | ME-01 | GET | `/me/settings` | `deny` | `own` | `own` | `own` | `own` | `own` | ownerScoped | T3, CS2.1 |
 | ME-02 | PATCH | `/me/settings` | `deny` | `own` | `own` | `own` | `own` | `own` | ownerScoped, acceptsUserText, massAssignmentRisk | T3, CS2.1, CS2.5 |
 | ME-03 | DELETE | `/me` | `deny` | `own` | `own` | `own` | `own` | `own` | ownerScoped | T2, T3, CS2.6 |

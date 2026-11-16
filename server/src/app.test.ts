@@ -1,17 +1,10 @@
 // HTTP seam (spec, Testing Decisions, seam 1): Fastify inject() against the real app and a real database.
 // Expected values come from docs/security/test-harness-contract.md and ticket 03.
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
 import { after, before, describe, test } from 'node:test';
 import type { FastifyInstance } from 'fastify';
-import pg from 'pg';
-import { buildApp } from './app.ts';
-import { createClock } from './clock.ts';
-import { databaseUrlForTests } from './test-database.ts';
+import { createTestApps, TEST_SUPPORT_TOKEN as TOKEN } from './test-app.ts';
 
-const TOKEN = 'synthetic-test-support-token-0123456789';
 const SUPPORT_ROUTES = [
   ['GET', '/__test__/health'],
   ['POST', '/__test__/users'],
@@ -19,25 +12,14 @@ const SUPPORT_ROUTES = [
   ['POST', '/__test__/items'],
   ['POST', '/__test__/clock'],
   ['POST', '/__test__/rate-limits/reset'],
+  ['POST', '/__test__/invite-codes'],
   ['POST', '/__test__/jobs/retention'],
 ] as const;
 
-const webRoot = mkdtempSync(path.join(tmpdir(), 'web-root-'));
-writeFileSync(path.join(webRoot, 'index.html'), '<!doctype html><html lang="ar" dir="rtl"><body></body></html>');
-const db = new pg.Pool({ connectionString: databaseUrlForTests() });
-const apps: FastifyInstance[] = [];
+const apps = createTestApps();
+const appWith = (testSupportToken: string | null) => apps.app(testSupportToken);
 
-async function appWith(testSupportToken: string | null) {
-  const app = await buildApp({ config: { testSupportToken }, db, clock: createClock(), webRoot });
-  apps.push(app);
-  return app;
-}
-
-after(async () => {
-  await Promise.all(apps.map((a) => a.close()));
-  await db.end();
-  rmSync(webRoot, { recursive: true, force: true });
-});
+after(() => apps.close());
 
 describe('page', () => {
   test('GET / serves the RTL frame with nosniff and a strict script policy', async () => {
@@ -132,6 +114,12 @@ describe('test-support routes', () => {
   test('POST /__test__/rate-limits/reset is 2xx', async () => {
     const res = await support('POST', '/__test__/rate-limits/reset');
     assert.ok(res.statusCode >= 200 && res.statusCode < 300);
+  });
+
+  test('POST /__test__/invite-codes returns a fresh code in the owner-script format', async () => {
+    const res = await support('POST', '/__test__/invite-codes');
+    assert.equal(res.statusCode, 201);
+    assert.match(res.json().code, /^[0-9A-HJKMNP-TV-Z]{5}-[0-9A-HJKMNP-TV-Z]{5}$/);
   });
 
   test('routes for features not built yet answer 501, never a fake success', async () => {

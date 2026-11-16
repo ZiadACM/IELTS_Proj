@@ -7,9 +7,14 @@ export type Config = {
   production: boolean;
   // Enables /__test__/* (docs/security/test-harness-contract.md). Never set in production (SECRET-04).
   testSupportToken: string | null;
+  // Signs session cookies (Better Auth). Required everywhere; the committed dev value is refused in production.
+  authSecret: string;
+  // The address learners use, e.g. https://masar.example. Required in production.
+  publicOrigin: string;
 };
 
 const MIN_TOKEN_LENGTH = 32;
+export const DEV_AUTH_SECRET = 'local-development-only-not-a-secret-0000';
 
 export function loadConfig(env: Record<string, string | undefined>): Config {
   const production = env.NODE_ENV === 'production';
@@ -27,5 +32,15 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     throw new Error(`SECURITY_TEST_SUPPORT_TOKEN must be at least ${MIN_TOKEN_LENGTH} characters`);
   }
 
-  return { databaseUrl, host: env.HOST ?? '127.0.0.1', port, production, testSupportToken };
+  const authSecret = env.AUTH_SECRET;
+  if (!authSecret) throw new Error('AUTH_SECRET is not set');
+  if (authSecret.length < MIN_TOKEN_LENGTH)
+    throw new Error(`AUTH_SECRET must be at least ${MIN_TOKEN_LENGTH} characters`);
+  if (production && authSecret === DEV_AUTH_SECRET)
+    throw new Error('AUTH_SECRET is the development value in production');
+
+  const publicOrigin = env.PUBLIC_ORIGIN ?? (production ? undefined : `http://localhost:${port}`);
+  if (!publicOrigin) throw new Error('PUBLIC_ORIGIN is not set');
+
+  return { databaseUrl, host: env.HOST ?? '127.0.0.1', port, production, testSupportToken, authSecret, publicOrigin };
 }

@@ -36,7 +36,9 @@ npm ci            # .npmrc turns off dependency install scripts
 npm start         # starts PostgreSQL (compose.yaml), builds web/, runs the server on http://127.0.0.1:3000
 npm test          # server tests (needs the database: npm run db:up)
 npm run lint && npm run typecheck && npm run build
+npm run invite-codes -w server -- create 3     # owner only: new invite codes (shown once); also: list, withdraw <id>
 ```
+Production needs `AUTH_SECRET` (32+ random characters, not the `server/dev.env` value) and `PUBLIC_ORIGIN`; the app refuses to start without them.
 Security suites against the running app: start it with `SECURITY_TEST_SUPPORT_TOKEN=<random 32+ chars> npm start`, then run `SECURITY_BASE_URL=http://127.0.0.1:3000 SECURITY_TEST_SUPPORT_TOKEN=<same> node --test --test-concurrency=1 tests/security/*.test.mjs` (`docs/security/test-harness-contract.md`).
 
 ## Check the pack yourself (Node 22+, bash, git)

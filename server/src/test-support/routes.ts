@@ -4,13 +4,15 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { Pool } from 'pg';
+import { createInviteCode } from '../access/invite-codes.ts';
+import type { RateLimit } from '../access/rate-limit.ts';
 import type { Clock } from '../clock.ts';
 
-type Options = { token: string; db: Pool; clock: Clock };
+type Options = { token: string; db: Pool; clock: Clock; rateLimits: RateLimit[] };
 
 const digest = (value: string) => createHash('sha256').update(value).digest();
 
-export async function testSupportRoutes(fastify: FastifyInstance, { token, db, clock }: Options) {
+export async function testSupportRoutes(fastify: FastifyInstance, { token, db, clock, rateLimits }: Options) {
   const expected = digest(token);
   fastify.addHook('onRequest', async (request, reply) => {
     const given = request.headers['x-test-support-token'];
@@ -37,8 +39,16 @@ export async function testSupportRoutes(fastify: FastifyInstance, { token, db, c
     async (request) => ({ now: clock.advance(request.body.advanceSeconds).toISOString() }),
   );
 
-  // shortcut: no rate limits exist yet, so there is nothing to reset; implement with 04-invite-guest-onboarding.
-  fastify.post('/__test__/rate-limits/reset', async () => ({ reset: true }));
+  fastify.post('/__test__/rate-limits/reset', async () => {
+    for (const limit of rateLimits) limit.reset();
+    return { reset: true };
+  });
+
+  // A fresh, unused invite code, so the suites can start guest sessions through the real AUTH-05.
+  fastify.post('/__test__/invite-codes', async (_request, reply) => {
+    const { code } = await createInviteCode(db);
+    return reply.code(201).send({ code });
+  });
 
   // shortcut: users, items and retention do not exist yet; each route is built in the named ticket. 501 makes the
   // suites fail loudly instead of passing on a fake.

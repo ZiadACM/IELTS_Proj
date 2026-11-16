@@ -114,10 +114,10 @@
       "id": "AUTH-05",
       "method": "POST",
       "path": "/auth/guest-sessions",
-      "purpose": "Start a guest session (no personal data)",
+      "purpose": "Start a guest session (no personal data) with a valid, single-use invite code and the 18+ confirmation",
       "resource": "session",
       "flags": [
-        "rateLimited"
+        "rateLimited", "enumerationSensitive"
       ],
       "refs": [
         "T2",

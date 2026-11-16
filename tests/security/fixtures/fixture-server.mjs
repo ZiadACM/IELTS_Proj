@@ -31,6 +31,9 @@ export const VULNERABILITIES = Object.freeze({
   'XSS-01': 'item import skips validation and staff preview is served as text/html',
   'XSS-02': 'staff report view renders learner text as raw HTML',
   'XSS-03': 'no nosniff header on API responses and no CSP on pages',
+  'SESS-02': 'sign-in and reset requests say when an email has no account',
+  'SESS-04': 'sign-out clears the cookie but keeps the server session',
+  'SESS-05': 'a password-reset token can be used again',
   'SESS-08': 'guest sessions are not rate-limited and idle guest data is never deleted',
   'SESS-09': 'guest upgrade adopts the guest session named in the body; the old session stays valid',
 });
@@ -54,6 +57,7 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
   const now = () => Date.now() + clockOffset;
   const users = new Map(); const sessions = new Map(); const items = new Map(); const attempts = new Map();
   const reports = []; const progressOverrides = new Map(); const guestRate = new Map(); const inviteCodes = new Set();
+  const resetTokens = new Map(); // token -> { userId, email }
   let seq = 1000;
   const newAttemptId = () => (vuln('LEAK-06') ? String(++seq) : randomUUID());
   const audioBytes = randomBytes(4096);
@@ -182,8 +186,10 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
   route('POST', '/accounts', async (req, res, body) => {
     const c = caller(req);
     if (c && c.user.role !== 'guest') return err(res, 403, 'already have an account');
-    const allowed = ['email', 'password'];
+    const allowed = c ? ['email', 'password'] : ['email', 'password', 'inviteCode', 'ageConfirmed'];
     if (!vuln('SESS-09') && !onlyKeys(body, allowed)) return err(res, 400, 'unexpected field');
+    // without a session an account needs a fresh invite code and the 18+ confirmation (ticket 05)
+    if (!c && (body.ageConfirmed !== true || !inviteCodes.delete(body.inviteCode))) return err(res, 400, 'invite_code_not_valid');
     if (typeof body.email !== 'string' || !/^[^@\s]+@[^@\s]+$/.test(body.email) || typeof body.password !== 'string' || body.password.length < 12) return err(res, 400, 'invalid email or password');
     if ([...users.values()].some((u) => u.email === body.email)) return err(res, 409, 'cannot create account');
     let u;
@@ -202,13 +208,14 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
   route('POST', '/auth/sessions', (req, res, body) => {
     if (!onlyKeys(body, ['email', 'password']) || typeof body.email !== 'string' || typeof body.password !== 'string') return err(res, 400, 'invalid request');
     const u = [...users.values()].find((x) => x.email === body.email);
+    if (!u && vuln('SESS-02')) return err(res, 404, 'no account with this email');
     if (!u || !checkPw(body.password, u.pw)) return err(res, 401, 'invalid credentials');
     newSession(res, u.id);
     json(res, 200, { userId: u.id, role: u.role });
   });
   route('DELETE', '/auth/sessions/current', (req, res) => {
     const c = requireUser(req, res); if (!c) return;
-    sessions.delete(c.token);
+    if (!vuln('SESS-04')) sessions.delete(c.token);
     res.setHeader('set-cookie', 'sid=; Max-Age=0; Path=/');
     json(res, 204);
   });
@@ -216,7 +223,20 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
     const c = caller(req);
     if (c?.user.role === 'guest') return err(res, 403, 'forbidden');
     if (!onlyKeys(body, ['email']) || typeof body.email !== 'string') return err(res, 400, 'invalid request');
+    const u = [...users.values()].find((x) => x.email === body.email);
+    if (!u && vuln('SESS-02')) return err(res, 404, 'no account with this email');
+    if (u) resetTokens.set(randomBytes(18).toString('base64url'), { userId: u.id, email: u.email });
     json(res, 202, { status: 'if the account exists, a reset email was sent' });
+  });
+  route('POST', '/auth/password-resets/complete', (req, res, body) => {
+    if (caller(req)) return err(res, 403, 'already signed in');
+    if (!onlyKeys(body, ['token', 'newPassword']) || typeof body.token !== 'string' || typeof body.newPassword !== 'string' || body.newPassword.length < 12) return err(res, 400, 'invalid request');
+    const t = resetTokens.get(body.token);
+    if (!t) return err(res, 400, 'reset_token_not_valid');
+    if (!vuln('SESS-05')) resetTokens.delete(body.token);
+    users.get(t.userId).pw = hash(body.newPassword);
+    for (const [k, s] of sessions) if (s.userId === t.userId) sessions.delete(k);
+    json(res, 200, { passwordReset: true });
   });
 
   // ME
@@ -496,6 +516,11 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
   route('POST', '/__test__/clock', (req, res, body) => { clockOffset += (Number(body.advanceSeconds) || 0) * 1000; json(res, 200, { now: new Date(now()).toISOString() }); });
   route('POST', '/__test__/rate-limits/reset', (req, res) => { guestRate.clear(); json(res, 204); });
   route('POST', '/__test__/invite-codes', (req, res) => { const code = randomUUID(); inviteCodes.add(code); json(res, 201, { code }); });
+  route('GET', '/__test__/password-resets/latest', (req, res, body, url) => {
+    const latest = [...resetTokens].filter(([, t]) => t.email === url.searchParams.get('email')).at(-1);
+    if (!latest) return err(res, 404, 'not found');
+    json(res, 200, { token: latest[0] });
+  });
   route('POST', '/__test__/jobs/retention', (req, res) => {
     let deleted = 0;
     if (!vuln('SESS-08')) for (const u of [...users.values()]) {

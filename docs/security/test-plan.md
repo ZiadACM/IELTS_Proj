@@ -121,7 +121,7 @@ Goal: every rule in `CODING_STANDARDS.md` section 2 and every row of the threat 
 | Threat | Threats named | Covered by | Gaps |
 |---|---|---|---|
 | **T1** Answer keys, authored routes, transcripts | Sent to the client early; guessable review endpoints | LEAK-01 to LEAK-08, AUTHZ-03 | LEAK-09 side channels: MANUAL |
-| **T2** Learner accounts, guest sessions and sessions | Credential stuffing; weak reset flow; session theft; enumeration; mass guest-session creation; guest-to-account upgrade hijack | SESS-01 to SESS-09 below | Auth library chosen (Better Auth, ADR 0001). SESS-08 and SESS-09 BUILT; SESS-01 to SESS-06 not written yet (they test the library's configuration). |
+| **T2** Learner accounts, guest sessions and sessions | Credential stuffing; weak reset flow; session theft; enumeration; mass guest-session creation; guest-to-account upgrade hijack | SESS-01 to SESS-09 below | Auth library chosen (Better Auth, ADR 0001). SESS-02, SESS-04, SESS-05 (token reuse), SESS-08 and SESS-09 BUILT; SESS-01, SESS-03 and SESS-06 not written yet (SESS-01 and SESS-02/SESS-05 behaviour has app-level HTTP tests, ticket 05). |
 | **T3** Attempts and progress | Cross-user access (IDOR); tampering with scores or recommendations | AUTHZ-01 to AUTHZ-08 | none beyond STACK |
 | **T4** Exam-mode integrity | Replay or hint sent directly to the API; timer manipulation | EXAM-01 to EXAM-07 | Designs decided (D9, D10); local audio recording cannot be prevented (accepted risk) |
 | **T5** Content bank and authoring tools | Unvalidated import; learner or guest access to admin tools; XSS in transcripts | CONTENT-01 to CONTENT-05 below, XSS-01, XSS-02 | See CONTENT-04 |
@@ -134,10 +134,10 @@ Goal: every rule in `CODING_STANDARDS.md` section 2 and every row of the threat 
 | Case | Abuse case | Expected safe result | Test | Status |
 |---|---|---|---|---|
 | SESS-01 | 20 wrong passwords for `learner-a` from one client, then from rotating clients (credential stuffing) | Rate-limited (429) or locked with backoff; the correct password is not accepted while throttled | `tests/security/auth.test.*` | STACK |
-| SESS-02 | Sign-in and reset with an existing vs a non-existent email | Same status and body. Timing is compared only loosely; strict timing checks are flaky (PARTIAL) | `auth` | STACK |
+| SESS-02 | Sign-in and reset with an existing vs a non-existent email | Same status and body. Timing is compared only loosely; strict timing checks are flaky (PARTIAL) | `auth` | **BUILT** (status and body) |
 | SESS-03 | Inspect the session cookie or token storage | `Secure`, `HttpOnly`, `SameSite=Lax` or `Strict`; no token in `localStorage` (if cookies are used) | `auth` | STACK |
-| SESS-04 | Sign out, then replay the old session cookie | 401 (session invalidated server-side) | `auth` | STACK |
-| SESS-05 | Use an expired session; reuse a reset token; use a reset token after 1 hour | 401, refused, refused | `auth` | STACK |
+| SESS-04 | Sign out, then replay the old session cookie | 401 (session invalidated server-side) | `auth` | **BUILT** |
+| SESS-05 | Use an expired session; reuse a reset token; use a reset token after 1 hour | 401, refused, refused | `auth` | **BUILT** for token reuse; expiry parts STACK (Better Auth uses the real clock, not the test clock) |
 | SESS-06 | A reset link sent to `learner-a` is used by `learner-b`'s session; token present in logs or the Referer | Bound to the account; not logged | `auth` | STACK |
 | SESS-07 | Home-grown crypto or password hashing | Established provider or library | Code review | **MANUAL** |
 | SESS-08 | Anonymous client creates guest sessions in a loop (`AUTH-05`) | Rate-limited (429) per client; idle guest data expires (D11) | `auth` | **BUILT** |
@@ -189,7 +189,7 @@ AI-01 provider key never in the client (bundle scan, like SECRET-03). AI-02 per-
 | `tests/security/cross-user-access.test.mjs` | AUTHZ-03, -04, -05, -07, -08 | **BUILT** |
 | `tests/security/authorization-enforcement.test.mjs` | AUTHZ-06, CONTENT-02 | **BUILT** |
 | `tests/security/xss.test.mjs` | XSS-01 to XSS-03 (API level) | **BUILT**; browser rendering waits for the UI |
-| `tests/security/auth.test.mjs` | SESS-08, SESS-09 | **BUILT**; SESS-01 to SESS-06 not written |
+| `tests/security/auth.test.mjs` | SESS-02, SESS-04, SESS-05, SESS-08, SESS-09 | **BUILT**; SESS-01, SESS-03, SESS-06 not written |
 | `tests/security/fixture-proof.test.mjs` + `fixtures/fixture-server.mjs` | Proof that every live suite fails on the vulnerable fixture and passes on the safe one | **Exists, runs** |
 | `tests/security/adapters/discover-endpoints.mjs` + `discover-endpoints.test.mjs` | Feeds the AUTHZ-02 coverage gate (Fastify, static scan, fails closed) | **Exists, runs** |
 | `input-validation`, `secret-hygiene`, `privacy`, `dependency-policy`, `content-import` tests | INPUT-01, SECRET-02 to -05, PRIV-01 to -03, DEP-02 to -04, CONTENT-04/05 | Not written (STACK) |

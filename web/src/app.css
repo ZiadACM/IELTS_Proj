@@ -178,3 +178,22 @@ body {
   outline: 3px solid #0b57d0;
   outline-offset: 2px;
 }
+
+/* Settings: account section (ticket 05) */
+.account {
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.account h2 {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.account form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  inline-size: 100%;
+}

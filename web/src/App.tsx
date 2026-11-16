@@ -1,4 +1,5 @@
-import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
+import { type FormEvent, type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react';
+import { AccountSection, ResetComplete, ResetRequest, SignIn, SignUp } from './Account.tsx';
 import {
   type Failure,
   getSettings,
@@ -11,23 +12,49 @@ import {
 } from './api.ts';
 import { STRINGS, type Strings } from './strings.ts';
 
-type Screen = 'loading' | 'load-failed' | 'onboarding' | 'target-band' | 'home' | 'settings';
+type Screen =
+  | 'loading'
+  | 'load-failed'
+  | 'onboarding'
+  | 'sign-in'
+  | 'sign-up'
+  | 'reset-request'
+  | 'reset-complete'
+  | 'target-band'
+  | 'home'
+  | 'settings';
+type SessionKind = 'guest' | 'account';
 
-// Per-browser hint only, so a returning guest whose session ended is told why (spec: Failure & Empty States).
-const HAD_SESSION_KEY = 'masar.hadGuestSession';
-function hadSession() {
+// Per-browser hint of what the last session here was, so an ended session gets the right message (spec: Failure &
+// Empty States: an account returns to sign-in, a guest is told its session ended) and Settings offers the right
+// account action. Every session starts in this app, which sets it; a stale value only changes which form shows, and
+// the server refuses anything the session may not do.
+const SESSION_KIND_KEY = 'masar.sessionKind';
+function storedSessionKind(): SessionKind | null {
   try {
-    return localStorage.getItem(HAD_SESSION_KEY) === '1';
+    const value = localStorage.getItem(SESSION_KIND_KEY);
+    return value === 'guest' || value === 'account' ? value : null;
   } catch {
-    return false;
+    return null;
   }
 }
-function rememberHadSession() {
+function storeSessionKind(kind: SessionKind | null) {
   try {
-    localStorage.setItem(HAD_SESSION_KEY, '1');
+    if (kind) localStorage.setItem(SESSION_KIND_KEY, kind);
+    else localStorage.removeItem(SESSION_KIND_KEY);
   } catch {
-    // storage blocked: the session-ended notice is a convenience, the app works without it
+    // storage blocked: the hint is a convenience, the app works without it
   }
+}
+
+// A reset link carries its token in the URL fragment, which never reaches the server or a Referer (SESS-06).
+const RESET_FRAGMENT = /^#reset-password=([^&]+)$/;
+function takeResetToken(): string | null {
+  const match = RESET_FRAGMENT.exec(window.location.hash);
+  if (!match) return null;
+  // Drop it from the address bar and history straight away.
+  history.replaceState(null, '', window.location.pathname + window.location.search);
+  return decodeURIComponent(match[1]);
 }
 
 const otherLanguage = (language: InterfaceLanguage): InterfaceLanguage => (language === 'ar' ? 'en' : 'ar');
@@ -44,11 +71,30 @@ export function App() {
   const [screen, setScreen] = useState<Screen>('loading');
   // Before a session exists the language lives here only; with a session the server's settings are the source.
   const [settings, setSettings] = useState<Settings>({ interfaceLanguage: 'ar', targetBand: null });
-  const [sessionEnded, setSessionEnded] = useState(false);
+  const [sessionEnded, setSessionEnded] = useState<SessionKind | null>(null);
+  const [sessionKind, setSessionKind] = useState<SessionKind | null>(storedSessionKind);
+  const [resetToken, setResetToken] = useState<string | null>(null);
+  const [signInNotice, setSignInNotice] = useState<string | null>(null);
   const [settingsError, setSettingsError] = useState<Failure | null>(null);
   const language = settings.interfaceLanguage;
   const t = STRINGS[language];
   const signedIn = screen === 'target-band' || screen === 'home' || screen === 'settings';
+
+  const startedSession = (kind: SessionKind) => {
+    setSessionEnded(null);
+    setSignInNotice(null);
+    setSessionKind(kind);
+    storeSessionKind(kind);
+  };
+
+  // The session is gone (expired, signed out elsewhere, or deleted): an account goes to sign-in, a guest to the start.
+  const sessionGone = useCallback(() => {
+    const kind = storedSessionKind();
+    setSessionEnded(kind);
+    setSessionKind(null);
+    storeSessionKind(null);
+    setScreen(kind === 'account' ? 'sign-in' : 'onboarding');
+  }, []);
 
   useEffect(() => {
     document.documentElement.lang = language;
@@ -62,14 +108,16 @@ export function App() {
     if (res.ok) {
       setSettings(res.value);
       setScreen('home');
-    } else if (res.failure === 'unauthenticated') {
-      setSessionEnded(hadSession());
-      setScreen('onboarding');
-    } else setScreen('load-failed');
-  }, []);
+    } else if (res.failure === 'unauthenticated') sessionGone();
+    else setScreen('load-failed');
+  }, [sessionGone]);
 
   useEffect(() => {
-    load();
+    const token = takeResetToken();
+    if (token) {
+      setResetToken(token);
+      setScreen('reset-complete');
+    } else load();
   }, [load]);
 
   // Saves a settings change for a signed-in guest. Returns whether it was saved.
@@ -80,10 +128,8 @@ export function App() {
       setSettings(res.value);
       return true;
     }
-    if (res.failure === 'unauthenticated') {
-      setSessionEnded(true);
-      setScreen('onboarding');
-    } else setSettingsError(res.failure);
+    if (res.failure === 'unauthenticated') sessionGone();
+    else setSettingsError(res.failure);
     return false;
   };
 
@@ -92,9 +138,8 @@ export function App() {
     await save({ interfaceLanguage: next });
   };
 
-  const onGuestStarted = async () => {
-    setSessionEnded(false);
-    rememberHadSession();
+  const onSessionStarted = async (kind: SessionKind) => {
+    startedSession(kind);
     setScreen('target-band');
     // Keep a language chosen before the session existed; a failure shows on the next screen.
     if (language !== 'ar') await save({ interfaceLanguage: language });
@@ -118,7 +163,46 @@ export function App() {
             </button>
           </section>
         )}
-        {screen === 'onboarding' && <Onboarding t={t} sessionEnded={sessionEnded} onStarted={onGuestStarted} />}
+        {screen === 'onboarding' && (
+          <Onboarding
+            t={t}
+            sessionEnded={sessionEnded === 'guest'}
+            onStarted={() => onSessionStarted('guest')}
+            onSignIn={() => setScreen('sign-in')}
+            onSignUp={() => setScreen('sign-up')}
+          />
+        )}
+        {screen === 'sign-in' && (
+          <SignIn
+            t={t}
+            notice={signInNotice ?? (sessionEnded === 'account' ? t.sessionEndedAccount : null)}
+            onSignedIn={() => {
+              startedSession('account');
+              load();
+            }}
+            onForgot={() => setScreen('reset-request')}
+            onBack={() => setScreen('onboarding')}
+          />
+        )}
+        {screen === 'sign-up' && (
+          <SignUp t={t} onCreated={() => onSessionStarted('account')} onBack={() => setScreen('onboarding')} />
+        )}
+        {screen === 'reset-request' && <ResetRequest t={t} onBack={() => setScreen('sign-in')} />}
+        {screen === 'reset-complete' && resetToken && (
+          <ResetComplete
+            t={t}
+            token={resetToken}
+            onDone={(done) => {
+              setResetToken(null);
+              // A reset ends every session of the account, so the next step is always sign-in.
+              setSignInNotice(done ? t.resetDone : null);
+              if (done) {
+                storeSessionKind(null);
+                setScreen('sign-in');
+              } else load();
+            }}
+          />
+        )}
         {screen === 'target-band' && (
           <TargetBandStep
             t={t}
@@ -145,6 +229,20 @@ export function App() {
             error={settingsError}
             save={save}
             onBack={() => setScreen('home')}
+            account={
+              <AccountSection
+                t={t}
+                isGuest={sessionKind !== 'account'}
+                onUpgraded={() => startedSession('account')}
+                onSignedOut={() => {
+                  setSessionKind(null);
+                  storeSessionKind(null);
+                  setSessionEnded(null);
+                  setSettings((s) => ({ ...s, targetBand: null }));
+                  setScreen('sign-in');
+                }}
+              />
+            }
           />
         )}
       </main>
@@ -152,7 +250,19 @@ export function App() {
   );
 }
 
-function Onboarding({ t, sessionEnded, onStarted }: { t: Strings; sessionEnded: boolean; onStarted: () => void }) {
+function Onboarding({
+  t,
+  sessionEnded,
+  onStarted,
+  onSignIn,
+  onSignUp,
+}: {
+  t: Strings;
+  sessionEnded: boolean;
+  onStarted: () => void;
+  onSignIn: () => void;
+  onSignUp: () => void;
+}) {
   const [code, setCode] = useState('');
   const [adult, setAdult] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -212,6 +322,12 @@ function Onboarding({ t, sessionEnded, onStarted }: { t: Strings; sessionEnded: 
       <button type="submit" className="primary" disabled={busy}>
         {busy ? t.starting : t.start}
       </button>
+      <button type="button" className="link" onClick={onSignIn}>
+        {t.haveAccount}
+      </button>
+      <button type="button" className="link" onClick={onSignUp}>
+        {t.signUpWithCode}
+      </button>
     </form>
   );
 }
@@ -257,12 +373,14 @@ function SettingsScreen({
   error,
   save,
   onBack,
+  account,
 }: {
   t: Strings;
   settings: Settings;
   error: Failure | null;
   save: (change: Partial<Settings>) => Promise<boolean>;
   onBack: () => void;
+  account: ReactNode;
 }) {
   const [saved, setSaved] = useState(false);
   const bandId = useId();
@@ -306,6 +424,7 @@ function SettingsScreen({
       <p role="status" className={error ? 'error' : 'hint'}>
         {error ? failureMessage(t, error) : saved ? t.saved : ''}
       </p>
+      {account}
       <button type="button" onClick={onBack}>
         {t.backHome}
       </button>

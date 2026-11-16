@@ -158,11 +158,11 @@
       "id": "ME-02",
       "method": "PATCH",
       "path": "/me/settings",
-      "purpose": "Update own settings",
+      "purpose": "Update own settings (interface language, target band; no free text)",
       "resource": "settings",
       "flags": [
         "ownerScoped",
-        "acceptsUserText",
+        
         "massAssignmentRisk"
       ],
       "refs": [

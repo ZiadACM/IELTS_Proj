@@ -175,7 +175,7 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
     if (!vuln('SESS-08') && recent.length >= GUEST_LIMIT) return err(res, 429, 'too many guest sessions');
     recent.push(now()); guestRate.set(ip, recent);
     if (body?.ageConfirmed !== true || !inviteCodes.delete(body?.inviteCode)) return err(res, 400, 'invite_code_not_valid');
-    const u = { id: randomUUID(), role: 'guest', email: null, pw: null, settings: { displayName: '', language: 'ar', goalBand: null }, lastActiveAt: now() };
+    const u = { id: randomUUID(), role: 'guest', email: null, pw: null, settings: { interfaceLanguage: 'ar', targetBand: null }, lastActiveAt: now() };
     users.set(u.id, u); newSession(res, u.id);
     json(res, 201, { userId: u.id, role: 'guest' });
   });
@@ -192,7 +192,7 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
       if (vuln('SESS-09') && typeof body.guestSessionId === 'string' && sessions.get(body.guestSessionId)) u = users.get(sessions.get(body.guestSessionId).userId);
       if (!vuln('SESS-09')) for (const [t, s] of sessions) if (s.userId === u.id) sessions.delete(t);
     } else {
-      u = { id: randomUUID(), settings: { displayName: '', language: 'ar', goalBand: null } };
+      u = { id: randomUUID(), settings: { interfaceLanguage: 'ar', targetBand: null } };
       users.set(u.id, u);
     }
     Object.assign(u, { role: 'learner', email: body.email, pw: hash(body.password), lastActiveAt: now() });
@@ -228,19 +228,18 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
   route('GET', '/me/settings', (req, res, body, url) => {
     const c = requireUser(req, res); if (!c) return;
     const u = meTarget(req, c, body, url);
-    json(res, 200, { userId: u.id, settings: u.settings });
+    json(res, 200, u.settings);
   });
   route('PATCH', '/me/settings', (req, res, body, url) => {
     const c = requireUser(req, res); if (!c) return;
     const u = meTarget(req, c, body, url);
-    if (vuln('AUTHZ-07')) { const { settings, ...rest } = body; Object.assign(u, rest); Object.assign(u.settings, body); return json(res, 200, { userId: u.id, settings: u.settings }); }
-    const allowed = vuln('AUTHZ-04') ? ['displayName', 'language', 'goalBand', 'userId'] : ['displayName', 'language', 'goalBand'];
+    if (vuln('AUTHZ-07')) { const { settings, ...rest } = body; Object.assign(u, rest); Object.assign(u.settings, body); return json(res, 200, u.settings); }
+    const allowed = vuln('AUTHZ-04') ? ['interfaceLanguage', 'targetBand', 'userId'] : ['interfaceLanguage', 'targetBand'];
     if (!onlyKeys(body, allowed)) return err(res, 400, 'unexpected field');
-    if (body.displayName !== undefined && (typeof body.displayName !== 'string' || body.displayName.length > 80)) return err(res, 400, 'invalid displayName');
-    if (body.language !== undefined && !['ar', 'en'].includes(body.language)) return err(res, 400, 'invalid language');
-    if (body.goalBand !== undefined && body.goalBand !== null && !(typeof body.goalBand === 'number' && body.goalBand >= 4 && body.goalBand <= 9)) return err(res, 400, 'invalid goalBand');
-    for (const k of ['displayName', 'language', 'goalBand']) if (body[k] !== undefined) u.settings[k] = body[k];
-    json(res, 200, { userId: u.id, settings: u.settings });
+    if (body.interfaceLanguage !== undefined && !['ar', 'en'].includes(body.interfaceLanguage)) return err(res, 400, 'invalid interfaceLanguage');
+    if (body.targetBand !== undefined && body.targetBand !== null && !['5.5', '6.0', '6.5', '7.0+'].includes(body.targetBand)) return err(res, 400, 'invalid targetBand');
+    for (const k of ['interfaceLanguage', 'targetBand']) if (body[k] !== undefined) u.settings[k] = body[k];
+    json(res, 200, u.settings);
   });
   route('DELETE', '/me', (req, res) => {
     const c = requireUser(req, res); if (!c) return;
@@ -483,7 +482,7 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
   route('GET', '/__test__/health', (req, res) => json(res, 200, { ok: true, synthetic: true }));
   route('POST', '/__test__/users', (req, res, body) => {
     if (!['learner', ...ROLES_STAFF].includes(body.role)) return err(res, 400, 'invalid role');
-    const u = { id: randomUUID(), role: body.role, email: body.email, pw: hash(body.password), settings: { displayName: '', language: 'ar', goalBand: null }, lastActiveAt: now() };
+    const u = { id: randomUUID(), role: body.role, email: body.email, pw: hash(body.password), settings: { interfaceLanguage: 'ar', targetBand: null }, lastActiveAt: now() };
     users.set(u.id, u); json(res, 201, { userId: u.id });
   });
   route('GET', '/__test__/users/{userId}', (req, res, body, url, p) => {

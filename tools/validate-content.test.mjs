@@ -32,6 +32,30 @@ const cases = [
   ['validation', (i) => { i.validation = { status: 'published' }; }],
   ['audio', (i) => { delete i.audio.durationSec; }],
   ['duplicate', (i) => { i.map.landmarks[1].id = 'entrance'; }],
+  // content format v1 (ticket 01)
+  ['tier', (i) => { delete i.tier; }],
+  ['tier', (i) => { i.tier = 4; }],
+  ['skills', (i) => { i.skills = ['directions.basic']; }],
+  ['question-skill', (i) => { i.questions[0].microSkill = 'orientation'; }],
+  ['question-skill', (i) => { delete i.questions[1].microSkill; }],
+  ['hint', (i) => { i.questions[0].hints.pop(); }],
+  ['hint', (i) => { i.questions[0].hints.reverse(); }],
+  ['hint-landmark', (i) => { i.questions[0].hints[0].landmarkId = 'old-library'; }],
+  ['hint-landmark', (i) => { i.questions[0].hints[0].landmarkId = 'fountain'; }],
+  ['hint-cue', (i) => { i.questions[0].hints[1].cueId = 'nope'; }],
+  ['hint-cue', (i) => { i.questions[0].hints[1].cueId = 'c7'; }],
+  ['explanation', (i) => { delete i.questions[0].explanation.en; }],
+  ['explanation', (i) => { delete i.questions[0].explanation.ar; }],
+  ['explanation', (i) => { i.questions[0].explanation.ar = 'Not Arabic at all'; }],
+  ['correction-note', (i) => { i.events[3].kind = 'correction'; delete i.events[3].note; }],
+  ['question-order', (i) => { [i.questions[0], i.questions[1]] = [i.questions[1], i.questions[0]]; }],
+  ['purpose', (i) => { delete i.purpose; }],
+  ['purpose', (i) => { i.purpose = 'skill-challenge'; }],
+  ['purpose', (i) => { i.focusSkill = 'orientation'; }],
+  ['purpose', (i) => { i.purpose = 'first-challenge'; }],
+  ['purpose', (i) => { i.purpose = 'pilot-transfer'; }],
+  ['audio-source', (i) => { delete i.audio.source; }],
+  ['audio-source', (i) => { i.validation = { status: 'published', reviewer: 'A. Reviewer', reviewedOn: '2026-11-15' }; }],
 ];
 for (const [code, mutate] of cases) {
   test(`detects: ${code}`, () => { const i = base(); mutate(i); assert.ok(codes(i).includes(code), `expected ${code}, got ${codes(i).join(',') || 'nothing'}`); });
@@ -47,7 +71,7 @@ test('audio.file may not escape the assets directory', () => {
   assert.ok(codes(i, { assetsDir: dir }).includes('audio-path'));
 });
 test('--require-published rejects drafts', () => assert.ok(codes(base(), { requirePublished: true }).includes('not-published')));
-test('published with reviewer passes', () => { const i = base(); i.validation = { status: 'published', reviewer: 'A. Reviewer', reviewedOn: '2026-11-12' }; assert.deepEqual(codes(i, { requirePublished: true }), []); });
+test('published with reviewer and human audio passes', () => { const i = base(); i.audio.source = 'human'; i.validation = { status: 'published', reviewer: 'A. Reviewer', reviewedOn: '2026-11-12' }; assert.deepEqual(codes(i, { requirePublished: true }), []); });
 test('non-object input does not throw', () => { assert.ok(codes(null).length > 0); assert.ok(codes([]).length > 0); });
 
 // Plain-text rule (owner decision 2026-11-12): markup in any text field is rejected.
@@ -69,3 +93,9 @@ test('plain text with a bare "<", ampersand and Arabic RLM mark passes', () => {
   i.explanation = { ar: 'المكتبة\u200F القديمة' };
   assert.deepEqual(codes(i), []);
 });
+
+// content format v1: valid variants of the purpose flags (ticket 01)
+test('a skill challenge naming one of its skills passes', () => { const i = base(); i.purpose = 'skill-challenge'; i.focusSkill = 'landmark-vs-answer'; assert.deepEqual(codes(i), []); });
+test('a tier 2 first challenge with 3 questions passes', () => { const i = base(); i.tier = 2; i.purpose = 'first-challenge'; assert.deepEqual(codes(i), []); });
+test('a tier 2 pilot transfer item passes', () => { const i = base(); i.tier = 2; i.purpose = 'pilot-transfer'; assert.deepEqual(codes(i), []); });
+test('markup in an Arabic explanation is rejected', () => { const i = base(); i.questions[0].explanation.ar = 'شرح <b>عريض</b>'; assert.ok(codes(i).includes('markup')); });

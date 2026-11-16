@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Dependency-free validator for Listening Map Labelling items (schema v0, DRAFT).
+// Dependency-free validator for Listening Map Labelling guided tour items (content format v1).
 // Usage: node tools/validate-content.mjs <item.json> [more.json ...] [--assets <dir>] [--require-published]
 // Exit codes: 0 all valid | 1 at least one item invalid | 2 usage or unreadable file
 // NOTE: when the stack is chosen, port the structural checks to its schema library (e.g. zod) and keep
@@ -8,6 +8,10 @@ import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 
 const TOL = 20; // map units: how close the destination event must be to its answer target
+// The five prototype micro-skills (spec: .scratch/listening-map-prototype/spec.md).
+export const MICRO_SKILLS = Object.freeze(['spatial-language', 'following-sequence', 'landmark-vs-answer', 'corrections-distractors', 'orientation']);
+const PURPOSES = new Set(['standard', 'first-challenge', 'skill-challenge', 'pilot-transfer']);
+const ARABIC = /[\u0600-\u06FF]/;
 
 export function validateItem(item, { assetsDir = null, requirePublished = false } = {}) {
   const errors = [];
@@ -22,11 +26,20 @@ export function validateItem(item, { assetsDir = null, requirePublished = false 
   if (!isStr(item.id)) err('id', 'id is required');
   if (item.type !== 'listening.map-labelling') err('type', `type must be "listening.map-labelling", got ${JSON.stringify(item.type)}`);
   if (!Number.isInteger(item.version) || item.version < 1) err('version', 'version must be an integer >= 1');
-  if (!Array.isArray(item.skills) || item.skills.length === 0 || !item.skills.every(isStr)) err('skills', 'skills must be a non-empty array of strings');
+  const skillSet = new Set(MICRO_SKILLS);
+  if (!Array.isArray(item.skills) || item.skills.length === 0 || !item.skills.every((k) => skillSet.has(k))) err('skills', `skills must be a non-empty array of micro-skills from: ${MICRO_SKILLS.join(', ')}`);
+  const itemSkills = new Set(Array.isArray(item.skills) ? item.skills : []);
+  if (![1, 2, 3].includes(item.tier)) err('tier', `tier must be 1, 2 or 3, got ${JSON.stringify(item.tier)}`);
+  if (!PURPOSES.has(item.purpose)) err('purpose', `purpose must be one of ${[...PURPOSES].join('|')}, got ${JSON.stringify(item.purpose)}`);
+  if (item.purpose === 'skill-challenge') { if (!itemSkills.has(item.focusSkill)) err('purpose', 'a skill-challenge needs focusSkill, one of the item\'s skills'); }
+  else if (item.focusSkill !== undefined) err('purpose', 'focusSkill is only allowed on a skill-challenge');
+  if (item.purpose === 'first-challenge' && (item.tier !== 2 || !Array.isArray(item.questions) || item.questions.length !== 3)) err('purpose', 'the first challenge must be tier 2 with exactly 3 questions');
+  if (item.purpose === 'pilot-transfer' && item.tier !== 2) err('purpose', 'a pilot transfer item must be tier 2');
   if (!o(item.difficulty)) err('difficulty', 'difficulty object is required (dimensions, not a single number)');
   if (!o(item.supportPolicy) || !o(item.supportPolicy.learning) || !o(item.supportPolicy.exam)) err('supportPolicy', 'supportPolicy.learning and supportPolicy.exam are required');
   if (o(item.supportPolicy) && o(item.supportPolicy.exam) && item.supportPolicy.exam.replay === true) err('exam-replay', 'exam mode must not allow replay (independent-readiness checks are one-listen)');
   if (!o(item.audio) || !isStr(item.audio.file) || !isNum(item.audio.durationSec) || item.audio.durationSec <= 0) err('audio', 'audio.file and positive audio.durationSec are required');
+  if (o(item.audio) && !['synthetic', 'human'].includes(item.audio.source)) err('audio-source', 'audio.source must be "synthetic" or "human"');
   const map = item.map;
   if (!o(map) || !isNum(map.width) || !isNum(map.height) || !Array.isArray(map.landmarks) || !Array.isArray(map.targets)) {
     err('map', 'map.width, map.height, map.landmarks[], map.targets[] are required');
@@ -71,13 +84,16 @@ export function validateItem(item, { assetsDir = null, requirePublished = false 
     if (e.landmarkId !== undefined && !landmarks.has(e.landmarkId)) err('event-landmark', `event ${e.id} references unknown landmark ${JSON.stringify(e.landmarkId)}`);
     if ((e.kind === 'landmark' || e.kind === 'distractor') && e.landmarkId === undefined) err('event-landmark', `event ${e.id} (${e.kind}) must name a landmarkId`);
     if (e.kind === 'distractor' && !isStr(e.note)) err('distractor-note', `distractor event ${e.id} needs a note explaining why it is misleading (used by Answer Replay)`);
+    if (e.kind === 'correction' && !isStr(e.note)) err('correction-note', `correction event ${e.id} needs a note explaining what the speaker corrected (used by Answer Replay)`);
   }
   const events = new Map(item.events.map((e) => [e.id, e]));
+  const routeIndex = new Map(item.events.map((e, i) => [e?.id, i]));
 
   // --- questions <-> destination events <-> answer targets -------------------------------------
   dup(item.questions, 'id', 'question id');
   const usedLabels = new Set();
   const destinationRefs = new Map();
+  let prevDestIndex = -1;
   for (const q of item.questions) {
     if (!isStr(q.id) || !isStr(q.prompt)) { err('question', `question ${JSON.stringify(q?.id)} needs id and prompt`); continue; }
     if (!targets.has(q.answerLabel)) { err('answer-label', `question ${q.id}: answerLabel ${JSON.stringify(q.answerLabel)} is not a map target`); continue; }
@@ -87,6 +103,25 @@ export function validateItem(item, { assetsDir = null, requirePublished = false 
     if (!ev) { err('question-event', `question ${q.id}: eventId ${JSON.stringify(q.eventId)} does not exist`); continue; }
     if (ev.kind !== 'destination') err('question-event', `question ${q.id}: its event ${ev.id} must be kind "destination" (is "${ev.kind}")`);
     destinationRefs.set(ev.id, (destinationRefs.get(ev.id) || 0) + 1);
+    // guided tour: questions follow the route, so their destinations appear in route order
+    const destIndex = routeIndex.get(ev.id);
+    if (destIndex < prevDestIndex) err('question-order', `question ${q.id}: its destination comes earlier on the route than the previous question's`);
+    prevDestIndex = Math.max(prevDestIndex, destIndex);
+    if (!itemSkills.has(q.microSkill)) err('question-skill', `question ${q.id}: microSkill ${JSON.stringify(q.microSkill)} must be one of the item's skills`);
+    if (!o(q.explanation) || !isStr(q.explanation.en) || !isStr(q.explanation.ar)) err('explanation', `question ${q.id}: explanation.en and explanation.ar are required`);
+    else if (!ARABIC.test(q.explanation.ar)) err('explanation', `question ${q.id}: explanation.ar must be written in Arabic`);
+    const hints = Array.isArray(q.hints) ? q.hints : [];
+    const h1 = hints[0], h2 = hints[1];
+    if (hints.length !== 2 || !o(h1) || h1.level !== 1 || !isStr(h1.landmarkId) || !o(h2) || h2.level !== 2 || !isStr(h2.cueId)) {
+      err('hint', `question ${q.id}: hints must be [{level: 1, landmarkId}, {level: 2, cueId}] in that order`);
+    } else {
+      // level 1 names a real landmark the route passes before this answer place (never a distractor)
+      const passed = item.events.slice(0, destIndex).some((e) => (e.kind === 'landmark' || e.kind === 'turn') && e.landmarkId === h1.landmarkId);
+      if (!passed) err('hint-landmark', `question ${q.id}: level 1 hint landmark ${JSON.stringify(h1.landmarkId)} is not a landmark on the route before the answer place`);
+      const hintCue = cueById.get(h2.cueId), destCue = cueById.get(ev.cueId);
+      if (!hintCue) err('hint-cue', `question ${q.id}: level 2 hint cue ${JSON.stringify(h2.cueId)} does not exist`);
+      else if (destCue && hintCue.start > destCue.start) err('hint-cue', `question ${q.id}: level 2 hint cue ${h2.cueId} comes after the answer place is spoken`);
+    }
     const t = targets.get(q.answerLabel);
     if (inBounds(ev.at) && Math.hypot(ev.at.x - t.x, ev.at.y - t.y) > TOL) err('answer-mismatch', `question ${q.id}: route ends at (${ev.at.x},${ev.at.y}) but target ${q.answerLabel} is at (${t.x},${t.y}); Answer Replay would teach the wrong place`);
   }
@@ -100,6 +135,7 @@ export function validateItem(item, { assetsDir = null, requirePublished = false 
   if (!o(v) || !['draft', 'reviewed', 'published'].includes(v.status)) err('validation', 'validation.status must be draft|reviewed|published');
   else if (v.status !== 'draft' && (!isStr(v.reviewer) || !isStr(v.reviewedOn))) err('validation', `status "${v.status}" requires validation.reviewer and validation.reviewedOn`);
   if (requirePublished && o(v) && v.status !== 'published') err('not-published', `item is "${v?.status}", not "published"`);
+  if (o(v) && v.status === 'published' && item.audio?.source !== 'human') err('audio-source', 'a published item must use a human recording (audio.source "human")');
 
   // --- text is plain text (CODING_STANDARDS 2.5; owner decision 2026-11-12) -------------------------
   // Defence in depth only: rendering must still escape. Rejects HTML-like tags, javascript: URLs,

@@ -132,6 +132,17 @@
           "digest": "7b91f9818d1dfa2b01c16a2e6753ec614c2b2726e30d721c0f2887ab6d4b7043"
         }
       ]
+    },
+    "property-based-testing": {
+      "source": "trailofbits",
+      "commit": "e4dd0bb5b15535f7c5a0834187dffba6ac37e4ff",
+      "installedAt": "2026-11-15",
+      "mappings": [
+        {
+          "to": "skills/property-based-testing",
+          "digest": "7ca3833de66aff4ebe01941554b5cc11a9c75cf57297885540249e20195f42eb"
+        }
+      ]
     }
   }
 }

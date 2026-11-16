@@ -27,3 +27,6 @@ Desktop.ini
 **/.impeccable/questions/
 **/.impeccable/live/
 .claude/settings.local.json
+
+# Build output
+dist/

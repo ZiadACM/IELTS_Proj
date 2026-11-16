@@ -1,0 +1,51 @@
+/* Placeholder frame only; the real layout is planned with `impeccable shape` before UI tickets (spec, Screens).
+   Logical properties only (CODING_STANDARDS 4.2). */
+:root {
+  font-family: system-ui, "Segoe UI", "Noto Sans Arabic", sans-serif;
+  color: #1a1a1a;
+  background: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 0.5rem;
+  padding-inline: 1rem;
+  border-block-end: 1px solid #d0d0d0;
+}
+
+.app-name {
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.app-header button {
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  padding-inline: 1rem;
+  font: inherit;
+  color: inherit;
+  background: #ffffff;
+  border: 1px solid #5c5c5c;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.app-header button:focus-visible {
+  outline: 3px solid #0b57d0;
+  outline-offset: 2px;
+}
+
+.app-main {
+  padding: 1rem;
+}

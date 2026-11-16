@@ -1,0 +1,19 @@
+{
+  "name": "masar",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24.16.0" },
+  "workspaces": ["server", "web"],
+  "scripts": {
+    "start": "docker compose up -d --wait db && npm run build -w web && npm run dev -w server",
+    "db:up": "docker compose up -d --wait db",
+    "build": "npm run build -w web",
+    "lint": "biome check .",
+    "typecheck": "tsc -p server && tsc -p web",
+    "test": "npm test -w server"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.6",
+    "typescript": "7.0.2"
+  }
+}

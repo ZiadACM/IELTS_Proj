@@ -53,7 +53,7 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
   let clockOffset = 0;
   const now = () => Date.now() + clockOffset;
   const users = new Map(); const sessions = new Map(); const items = new Map(); const attempts = new Map();
-  const reports = []; const progressOverrides = new Map(); const guestRate = new Map();
+  const reports = []; const progressOverrides = new Map(); const guestRate = new Map(); const inviteCodes = new Set();
   let seq = 1000;
   const newAttemptId = () => (vuln('LEAK-06') ? String(++seq) : randomUUID());
   const audioBytes = randomBytes(4096);
@@ -168,12 +168,13 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
   route('GET', '/assets/app.js.map', (req, res) => (vuln('LEAK-05') ? json(res, 200, { version: 3, sources: ['src/answers.ts'], sourcesContent: ['export const KEY = "C"'] }) : err(res, 404, 'not found')));
 
   // AUTH
-  route('POST', '/auth/guest-sessions', (req, res) => {
+  route('POST', '/auth/guest-sessions', (req, res, body) => {
     if (caller(req)) return err(res, 403, 'already signed in');
     const ip = req.socket.remoteAddress;
     const recent = (guestRate.get(ip) ?? []).filter((t) => now() - t < GUEST_WINDOW_MS);
     if (!vuln('SESS-08') && recent.length >= GUEST_LIMIT) return err(res, 429, 'too many guest sessions');
     recent.push(now()); guestRate.set(ip, recent);
+    if (body?.ageConfirmed !== true || !inviteCodes.delete(body?.inviteCode)) return err(res, 400, 'invite_code_not_valid');
     const u = { id: randomUUID(), role: 'guest', email: null, pw: null, settings: { displayName: '', language: 'ar', goalBand: null }, lastActiveAt: now() };
     users.set(u.id, u); newSession(res, u.id);
     json(res, 201, { userId: u.id, role: 'guest' });
@@ -495,6 +496,7 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
   });
   route('POST', '/__test__/clock', (req, res, body) => { clockOffset += (Number(body.advanceSeconds) || 0) * 1000; json(res, 200, { now: new Date(now()).toISOString() }); });
   route('POST', '/__test__/rate-limits/reset', (req, res) => { guestRate.clear(); json(res, 204); });
+  route('POST', '/__test__/invite-codes', (req, res) => { const code = randomUUID(); inviteCodes.add(code); json(res, 201, { code }); });
   route('POST', '/__test__/jobs/retention', (req, res) => {
     let deleted = 0;
     if (!vuln('SESS-08')) for (const u of [...users.values()]) {

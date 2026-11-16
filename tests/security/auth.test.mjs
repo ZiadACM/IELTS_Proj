@@ -13,7 +13,8 @@ liveTest('SESS-08: guest sessions are rate-limited per client, and idle guest da
   const problems = [];
   await env.supportOk('POST', '/rate-limits/reset');
   const statuses = [];
-  for (let i = 0; i < PROBE; i++) statuses.push((await env.anonymous(`loop-${i}`).req(e.method, e.path)).status);
+  // each try has a fresh valid invite code, so only the rate limit can refuse it
+  for (let i = 0; i < PROBE; i++) statuses.push((await env.anonymous(`loop-${i}`).req(e.method, e.path, { body: await env.guestSessionBody() })).status);
   if (!ok2xx(statuses[0])) problems.push(`first guest session should succeed, got ${statuses[0]}`);
   if (!statuses.includes(429)) problems.push(`${PROBE} guest sessions from one client, no 429 (statuses: ${[...new Set(statuses)].join(',')})`);
   await env.supportOk('POST', '/rate-limits/reset');

@@ -35,7 +35,7 @@ async function prepare(env, e, role, actor, allowed) {
     'AUTH-02': async () => ({ body: await freshCreds() }),
     'AUTH-03': () => ({}),
     'AUTH-04': () => ({ body: { email: actor.email ?? env.email('nobody') } }),
-    'AUTH-05': async () => { await env.supportOk('POST', '/rate-limits/reset'); return {}; },
+    'AUTH-05': async () => { await env.supportOk('POST', '/rate-limits/reset'); return { body: await env.guestSessionBody() }; },
     'ME-01': () => ({}), 'ME-02': () => ({ body: { displayName: 'synthetic' } }), 'ME-03': () => ({}),
     'ITEM-01': () => ({ negative: { kind: 'list-excludes-draft' } }),
     'ITEM-02': () => ({ params: { itemId: env.items.p1 }, negative: { params: { itemId: env.items.draft }, expect: [404] } }),

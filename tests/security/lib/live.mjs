@@ -122,12 +122,15 @@ async function createEnv() {
   env.serverNow = async () => Date.parse((await supportOk('POST', '/clock', { advanceSeconds: 0 })).now);
   env.advanceClock = (seconds) => supportOk('POST', '/clock', { advanceSeconds: seconds });
 
+  // A fresh invite code with the 18+ confirmation: the body AUTH-05 requires (ticket 04).
+  env.guestSessionBody = async () => ({ inviteCode: (await supportOk('POST', '/invite-codes')).code, ageConfirmed: true });
+
   // Actors. Staff and learners are created through test-support, then sign in through the REAL endpoint (AUTH-02).
   env.anonymous = (name = 'anonymous') => new Actor(name);
   env.guest = async (name = 'guest') => {
     await supportOk('POST', '/rate-limits/reset');
     const a = new Actor(name);
-    const r = await a.req('POST', '/auth/guest-sessions');
+    const r = await a.req('POST', '/auth/guest-sessions', { body: await env.guestSessionBody() });
     assert.ok(ok2xx(r.status) && a.cookies.size > 0, `could not start a guest session for ${name}: ${r.status} ${r.text.slice(0, 200)}`);
     a.userId = r.json?.userId ?? null;
     return a;

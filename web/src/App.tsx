@@ -13,6 +13,23 @@ import { STRINGS, type Strings } from './strings.ts';
 
 type Screen = 'loading' | 'load-failed' | 'onboarding' | 'target-band' | 'home' | 'settings';
 
+// Per-browser hint only, so a returning guest whose session ended is told why (spec: Failure & Empty States).
+const HAD_SESSION_KEY = 'masar.hadGuestSession';
+function hadSession() {
+  try {
+    return localStorage.getItem(HAD_SESSION_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+function rememberHadSession() {
+  try {
+    localStorage.setItem(HAD_SESSION_KEY, '1');
+  } catch {
+    // storage blocked: the session-ended notice is a convenience, the app works without it
+  }
+}
+
 const otherLanguage = (language: InterfaceLanguage): InterfaceLanguage => (language === 'ar' ? 'en' : 'ar');
 
 function failureMessage(t: Strings, failure: Failure) {
@@ -45,7 +62,10 @@ export function App() {
     if (res.ok) {
       setSettings(res.value);
       setScreen('home');
-    } else setScreen(res.failure === 'unauthenticated' ? 'onboarding' : 'load-failed');
+    } else if (res.failure === 'unauthenticated') {
+      setSessionEnded(hadSession());
+      setScreen('onboarding');
+    } else setScreen('load-failed');
   }, []);
 
   useEffect(() => {
@@ -74,9 +94,10 @@ export function App() {
 
   const onGuestStarted = async () => {
     setSessionEnded(false);
-    // Keep a language chosen before the session existed.
-    if (language !== 'ar') await updateSettings({ interfaceLanguage: language });
+    rememberHadSession();
     setScreen('target-band');
+    // Keep a language chosen before the session existed; a failure shows on the next screen.
+    if (language !== 'ar') await save({ interfaceLanguage: language });
   };
 
   return (

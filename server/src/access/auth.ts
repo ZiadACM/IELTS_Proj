@@ -53,6 +53,12 @@ export function requireSession(auth: Auth) {
   };
 }
 
+// The signed-in caller of a route guarded by requireSession. Throws (500) if the guard is missing: fail closed.
+export function callerId(request: FastifyRequest): string {
+  if (!request.user) throw new Error(`${request.method} ${request.url} has no session guard`);
+  return request.user.id;
+}
+
 declare module 'fastify' {
   interface FastifyRequest {
     user?: SessionUser;

@@ -46,7 +46,7 @@ export async function accessRoutes(fastify: FastifyInstance, { auth, db, clock, 
           return reply.code(400).send(NOT_VALID);
         }
         // Better Auth writes the user and session on its own connection. If anything below fails, the claim rolls
-        // back and the orphan guest (never handed a cookie) is removed by retention (ticket 17).
+        // back. shortcut: the orphan guest (never handed a cookie) stays until retention exists; ticket 17.
         const { headers, response } = await auth.api.signInAnonymous({
           headers: cookieHeaders(request),
           returnHeaders: true,

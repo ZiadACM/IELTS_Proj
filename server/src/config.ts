@@ -13,7 +13,7 @@ export type Config = {
   publicOrigin: string;
 };
 
-const MIN_TOKEN_LENGTH = 32;
+const MIN_SECRET_LENGTH = 32;
 export const DEV_AUTH_SECRET = 'local-development-only-not-a-secret-0000';
 
 export function loadConfig(env: Record<string, string | undefined>): Config {
@@ -28,14 +28,14 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
   if (testSupportToken && production) {
     throw new Error('SECURITY_TEST_SUPPORT_TOKEN is set with NODE_ENV=production; refusing to start (SECRET-04)');
   }
-  if (testSupportToken && testSupportToken.length < MIN_TOKEN_LENGTH) {
-    throw new Error(`SECURITY_TEST_SUPPORT_TOKEN must be at least ${MIN_TOKEN_LENGTH} characters`);
+  if (testSupportToken && testSupportToken.length < MIN_SECRET_LENGTH) {
+    throw new Error(`SECURITY_TEST_SUPPORT_TOKEN must be at least ${MIN_SECRET_LENGTH} characters`);
   }
 
   const authSecret = env.AUTH_SECRET;
   if (!authSecret) throw new Error('AUTH_SECRET is not set');
-  if (authSecret.length < MIN_TOKEN_LENGTH)
-    throw new Error(`AUTH_SECRET must be at least ${MIN_TOKEN_LENGTH} characters`);
+  if (authSecret.length < MIN_SECRET_LENGTH)
+    throw new Error(`AUTH_SECRET must be at least ${MIN_SECRET_LENGTH} characters`);
   if (production && authSecret === DEV_AUTH_SECRET)
     throw new Error('AUTH_SECRET is the development value in production');
 

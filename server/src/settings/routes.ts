@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { Pool } from 'pg';
-import { type Auth, requireSession } from '../access/auth.ts';
+import { type Auth, callerId, requireSession } from '../access/auth.ts';
 
 // Spec, Settings: interface language (Arabic default) and an optional target band, stored and shown only.
 const INTERFACE_LANGUAGES = ['ar', 'en'] as const;
@@ -20,7 +20,7 @@ export async function settingsRoutes(fastify: FastifyInstance, { auth, db }: { a
 
   fastify.get('/me/settings', { preValidation }, async (request) => {
     const { rows } = await db.query<Settings>(`select ${SETTINGS_COLUMNS} from learner_settings where user_id = $1`, [
-      request.user?.id,
+      callerId(request),
     ]);
     return rows[0] ?? DEFAULTS;
   });
@@ -51,7 +51,7 @@ export async function settingsRoutes(fastify: FastifyInstance, { auth, db }: { a
            target_band = case when $4 then $3 else learner_settings.target_band end,
            updated_at = now()
          returning ${SETTINGS_COLUMNS}`,
-        [request.user?.id, interfaceLanguage ?? null, targetBand ?? null, targetBand !== undefined],
+        [callerId(request), interfaceLanguage ?? null, targetBand ?? null, targetBand !== undefined],
       );
       return rows[0];
     },

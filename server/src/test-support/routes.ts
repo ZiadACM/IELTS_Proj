@@ -37,11 +37,11 @@ export async function testSupportRoutes(fastify: FastifyInstance, { token, db, c
     async (request) => ({ now: clock.advance(request.body.advanceSeconds).toISOString() }),
   );
 
-  // No rate limits exist yet (they arrive with the Access ticket, 04), so there is nothing to reset.
-  fastify.post('/__test__/rate-limits/reset', async (_request, reply) => reply.code(204).send());
+  // shortcut: no rate limits exist yet, so there is nothing to reset; implement with 04-invite-guest-onboarding.
+  fastify.post('/__test__/rate-limits/reset', async () => ({ reset: true }));
 
-  // Not built yet: these need users, items and retention, which later tickets add. 501 makes the suites fail
-  // loudly instead of passing on a fake.
+  // shortcut: users, items and retention do not exist yet; each route is built in the named ticket. 501 makes the
+  // suites fail loudly instead of passing on a fake.
   const notBuilt = (ticket: string) => async (_request: FastifyRequest, reply: FastifyReply) =>
     reply.code(501).send({ error: 'not_implemented', ticket });
   fastify.post('/__test__/users', notBuilt('05-accounts'));

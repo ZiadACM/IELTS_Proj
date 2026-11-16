@@ -143,6 +143,105 @@
           "digest": "7ca3833de66aff4ebe01941554b5cc11a9c75cf57297885540249e20195f42eb"
         }
       ]
+    },
+    "tdd": {
+      "source": "mattpocock",
+      "commit": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "installedAt": "2026-11-16",
+      "mappings": [
+        {
+          "to": "skills/tdd",
+          "digest": "edefe595d0b603e6387727027435530ee337ebc42347ac04c987c32a5f5ab786"
+        }
+      ]
+    },
+    "implement": {
+      "source": "mattpocock",
+      "commit": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "installedAt": "2026-11-16",
+      "mappings": [
+        {
+          "to": "skills/implement",
+          "digest": "911d1c94b306b446a0998300db65c1be43ebc8e2ef1c038dde113621905c79b7"
+        }
+      ]
+    },
+    "codebase-design": {
+      "source": "mattpocock",
+      "commit": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "installedAt": "2026-11-16",
+      "mappings": [
+        {
+          "to": "skills/codebase-design",
+          "digest": "c6c5eace3039041dacff46be51654cd49abe328c2b12d514acf5c40c810f38cb"
+        }
+      ]
+    },
+    "diagnosing-bugs": {
+      "source": "mattpocock",
+      "commit": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "installedAt": "2026-11-16",
+      "mappings": [
+        {
+          "to": "skills/diagnosing-bugs",
+          "digest": "d9d9ba64ef109e9c573f34ade2bb8b5878a9452d3fe3f096102789c3992f4dd5"
+        }
+      ]
+    },
+    "code-review": {
+      "source": "mattpocock",
+      "commit": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "installedAt": "2026-11-16",
+      "mappings": [
+        {
+          "to": "skills/code-review",
+          "digest": "cfaa34c0c8600f34c878ccb12d9626e441c32ebb2d60644b5010bab9c85d0dfa"
+        }
+      ]
+    },
+    "pr": {
+      "source": "mattpocock",
+      "commit": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "installedAt": "2026-11-16",
+      "mappings": [
+        {
+          "to": "skills/pr",
+          "digest": "8e859f0bfecbba3df77994938bdf12b15297b5d951d1cb1d884a2f8bf5129b2a"
+        }
+      ]
+    },
+    "ponytail": {
+      "source": "ponytail",
+      "commit": "96608e078b2d5ea607c5c3b8b5a54d1c1fba6846",
+      "installedAt": "2026-11-16",
+      "mappings": [
+        {
+          "to": "skills/ponytail",
+          "digest": "9bdccd145597bd1395581e0f118b59657bf47cb016c252a29f16f0613ff90f5a"
+        }
+      ]
+    },
+    "principle-prove-it-works": {
+      "source": "pstack",
+      "commit": "a5539b15a3d56e04992565aafee2b37051329ce3",
+      "installedAt": "2026-11-16",
+      "mappings": [
+        {
+          "to": "skills/principle-prove-it-works",
+          "digest": "42b426da402a5f80f4afb35fcac808afa94a00b3ef2f9747c46ccf885ddb10a1"
+        }
+      ]
+    },
+    "blast-radius": {
+      "source": "pstack",
+      "commit": "a5539b15a3d56e04992565aafee2b37051329ce3",
+      "installedAt": "2026-11-16",
+      "mappings": [
+        {
+          "to": "skills/blast-radius",
+          "digest": "e93746539203f7aa126bb1463719384ead288d47e278d25e37daad360900f617"
+        }
+      ]
     }
   }
 }

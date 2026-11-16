@@ -5,7 +5,7 @@ import { anonymous } from 'better-auth/plugins';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { Pool } from 'pg';
 import type { Config } from '../config.ts';
-import { queueResetLink, RESET_TOKEN_SECONDS } from './password-reset-outbox.ts';
+import { forgetResetLinks, queueResetLink, RESET_TOKEN_SECONDS } from './password-reset-outbox.ts';
 
 const DAY_SECONDS = 24 * 60 * 60;
 export const PASSWORD_LENGTH = { min: 8, max: 128 };
@@ -22,6 +22,7 @@ export function createAuth(db: Pool, config: Pick<Config, 'authSecret' | 'public
       maxPasswordLength: PASSWORD_LENGTH.max,
       resetPasswordTokenExpiresIn: RESET_TOKEN_SECONDS,
       revokeSessionsOnPasswordReset: true,
+      onPasswordReset: ({ user }) => forgetResetLinks(db, user.email),
       // No email provider (owner decision, ticket 05): the link waits in an outbox the owner reads with a script.
       sendResetPassword: async ({ user, token }) => {
         // A guest has a placeholder email and no password: no link for it.

@@ -40,14 +40,14 @@ type CreatedUser = { userId: string; headers: Headers };
 export async function accessRoutes(fastify: FastifyInstance, { auth, db, clock, limits }: Options) {
   // shortcut: request.ip is the proxy's address behind a reverse proxy; set Fastify trustProxy for the host when
   // deployment is decided, or every tester shares one limit.
-  const limited = (limit: RateLimit) => (request: FastifyRequest, reply: FastifyReply) => {
+  const refuseOverLimit = (limit: RateLimit) => (request: FastifyRequest, reply: FastifyReply) => {
     if (!limit.allow(request.ip)) {
       reply.code(429).send({ error: 'rate_limited' });
       return true;
     }
     return false;
   };
-  const redemptionLimited = limited(limits.redemption);
+  const redemptionLimited = refuseOverLimit(limits.redemption);
 
   // Redeems a code (with the 18+ confirmation, D12) for a user that createUser makes. The claim, the redemption
   // record and the new learner's settings commit together; on any failure the code stays unused.
@@ -148,6 +148,7 @@ export async function accessRoutes(fastify: FastifyInstance, { auth, db, clock, 
     } finally {
       tx.release();
     }
+    // shortcut: if this sign-in fails, the account exists but has no session; the learner signs in by hand.
     const { headers } = await auth.api.signInEmail({
       body: { email, password },
       headers: new Headers(),
@@ -222,11 +223,15 @@ export async function accessRoutes(fastify: FastifyInstance, { auth, db, clock, 
           headers: new Headers(),
           returnHeaders: true,
         });
+        // A guest signing in to an account leaves its guest session: end it on the server, not just in the cookie.
+        if ((await sessionUser(auth, request, reply))?.isGuest) {
+          await auth.api.signOut({ headers: cookieHeaders(request) });
+        }
         forwardCookies(headers, reply);
         return { userId: response.user.id };
       } catch (err) {
         if (!isAPIError(err) || err.statusCode !== 401) throw err;
-        for (const k of keys) limits.signInFailures.allow(k);
+        for (const k of keys) limits.signInFailures.allow(k); // records the failure
         return reply.code(401).send({ error: 'invalid_credentials' });
       }
     },
@@ -245,7 +250,7 @@ export async function accessRoutes(fastify: FastifyInstance, { auth, db, clock, 
     '/auth/password-resets',
     {
       preValidation: async (request, reply) => {
-        if (limited(limits.resetRequests)(request, reply)) return reply;
+        if (refuseOverLimit(limits.resetRequests)(request, reply)) return reply;
         if ((await sessionUser(auth, request, reply))?.isGuest) return reply.code(403).send({ error: 'guest' });
       },
       schema: {
@@ -269,7 +274,7 @@ export async function accessRoutes(fastify: FastifyInstance, { auth, db, clock, 
     '/auth/password-resets/complete',
     {
       preValidation: async (request, reply) => {
-        if (limited(limits.resetCompletions)(request, reply)) return reply;
+        if (refuseOverLimit(limits.resetCompletions)(request, reply)) return reply;
         if (await sessionUser(auth, request, reply)) return reply.code(403).send({ error: 'already_signed_in' });
       },
       schema: {

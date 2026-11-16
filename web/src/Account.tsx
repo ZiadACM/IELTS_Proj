@@ -314,7 +314,7 @@ export function AccountSection({
     const res = await createAccount(email.trim(), password);
     setBusy(false);
     // already_signed_in: this browser's guest hint was stale and the session is an account already.
-    if (res.ok || (!res.ok && res.failure === 'already_signed_in')) {
+    if (res.ok || res.failure === 'already_signed_in') {
       setUpgraded(res.ok);
       onUpgraded();
     } else setError(accountFailureMessage(t, res.failure));
@@ -325,7 +325,7 @@ export function AccountSection({
     setBusy(true);
     const res = await signOut();
     setBusy(false);
-    if (res.ok || (!res.ok && res.failure === 'unauthenticated')) onSignedOut();
+    if (res.ok || res.failure === 'unauthenticated') onSignedOut();
     else setError(accountFailureMessage(t, res.failure));
   };
 

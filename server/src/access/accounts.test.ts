@@ -475,3 +475,29 @@ describe('owner reset-links function', () => {
     assert.deepEqual(await resetLinks(stale), [], 'expired row deleted');
   });
 });
+
+describe('review fixes', () => {
+  test("a completed reset removes that account's links from the outbox; queuing a link clears expired ones", async () => {
+    const app = await apps.app();
+    const account = await signUp(app);
+    const stale = newEmail();
+    await apps.db.query(
+      `insert into password_reset_outbox (email, link, expires_at) values ($1, 'http://x/#reset-password=old', now() - interval '1 second')`,
+      [stale],
+    );
+    await requestReset(app, account.email);
+    assert.deepEqual(await resetLinks(stale), [], 'expired row cleared when a new link is queued');
+    const [link] = await resetLinks(account.email);
+    await completeReset(app, { token: tokenOf(link), newPassword: 'a-brand-new-password-2' });
+    assert.deepEqual(await resetLinks(account.email), [], 'used link removed');
+  });
+
+  test('a guest who signs in to an account loses its guest session on the server too', async () => {
+    const app = await apps.app();
+    const account = await signUp(app);
+    const guest = await startGuest(app);
+    const res = await signIn(app, { email: account.email, password: account.password }, { cookie: guest.cookie });
+    assert.equal(res.statusCode, 200, res.body);
+    assert.equal((await settingsWith(app, guest.cookie)).statusCode, 401);
+  });
+});

@@ -4,7 +4,7 @@
 
 **Blocked by:** 03 Walking skeleton
 
-**Status:** in-review (branch `agent/invite-guest-onboarding`)
+**Status:** done (merged to `main` in PR #9, 2026-11-17; CI green on the merge commit. The open box waits for the live suites: `POST /__test__/items` in ticket 06, `POST /attempts` in ticket 08)
 
 Spec: `../spec.md`
 

@@ -4,12 +4,14 @@ import {
   type Failure,
   getSettings,
   type InterfaceLanguage,
+  listStaffItems,
   type Settings,
   startGuestSession,
   TARGET_BANDS,
   type TargetBand,
   updateSettings,
 } from './api.ts';
+import { StaffItems } from './Staff.tsx';
 import { STRINGS, type Strings } from './strings.ts';
 
 type Screen =
@@ -22,7 +24,8 @@ type Screen =
   | 'reset-complete'
   | 'target-band'
   | 'home'
-  | 'settings';
+  | 'settings'
+  | 'staff';
 type SessionKind = 'guest' | 'account';
 
 // Per-browser hint of what the last session here was, so an ended session gets the right message (spec: Failure &
@@ -76,9 +79,11 @@ export function App() {
   const [resetToken, setResetToken] = useState<string | null>(null);
   const [signInNotice, setSignInNotice] = useState<string | null>(null);
   const [settingsError, setSettingsError] = useState<Failure | null>(null);
+  // Whether the server lets this account see the staff list. Only decides whether Home offers it.
+  const [isStaff, setIsStaff] = useState(false);
   const language = settings.interfaceLanguage;
   const t = STRINGS[language];
-  const signedIn = screen === 'target-band' || screen === 'home' || screen === 'settings';
+  const signedIn = screen === 'target-band' || screen === 'home' || screen === 'settings' || screen === 'staff';
 
   const startedSession = (kind: SessionKind) => {
     setSessionEnded(null);
@@ -93,6 +98,7 @@ export function App() {
     setSessionEnded(kind);
     setSessionKind(null);
     storeSessionKind(null);
+    setIsStaff(false);
     setScreen(kind === 'account' ? 'sign-in' : 'onboarding');
   }, []);
 
@@ -108,6 +114,8 @@ export function App() {
     if (res.ok) {
       setSettings(res.value);
       setScreen('home');
+      // Guests are never staff, so only an account asks. A refusal simply leaves the staff entry hidden.
+      setIsStaff(storedSessionKind() === 'account' && (await listStaffItems()).ok);
     } else if (res.failure === 'unauthenticated') sessionGone();
     else setScreen('load-failed');
   }, [sessionGone]);
@@ -220,8 +228,14 @@ export function App() {
             <button type="button" onClick={() => setScreen('settings')}>
               {t.settings}
             </button>
+            {isStaff && (
+              <button type="button" onClick={() => setScreen('staff')}>
+                {t.staffItems}
+              </button>
+            )}
           </section>
         )}
+        {screen === 'staff' && <StaffItems t={t} onBack={() => setScreen('home')} onSessionGone={sessionGone} />}
         {screen === 'settings' && (
           <SettingsScreen
             t={t}
@@ -235,6 +249,7 @@ export function App() {
                 isGuest={sessionKind !== 'account'}
                 onUpgraded={() => startedSession('account')}
                 onSignedOut={() => {
+                  setIsStaff(false);
                   setSessionKind(null);
                   storeSessionKind(null);
                   setSessionEnded(null);

@@ -7,6 +7,7 @@ import { accessRoutes } from './access/routes.ts';
 import type { Clock } from './clock.ts';
 import type { Config } from './config.ts';
 import { settingsRoutes } from './settings/routes.ts';
+import { staffRoutes } from './staff/routes.ts';
 import { testSupportRoutes } from './test-support/routes.ts';
 
 type AppOptions = {
@@ -66,6 +67,7 @@ export async function buildApp({ config, db, clock, webRoot, logger = false }: A
   };
   await app.register(accessRoutes, { auth, db, clock, limits });
   await app.register(settingsRoutes, { auth, db });
+  await app.register(staffRoutes, { auth, db, clock });
   if (config.testSupportToken) {
     await app.register(testSupportRoutes, {
       token: config.testSupportToken,

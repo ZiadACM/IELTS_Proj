@@ -13,5 +13,6 @@ Spec: `../spec.md`
 - [ ] Accessibility scan has no serious or critical findings
 - [ ] Every item in the spec's Done Checklist ticked or recorded as an approved gap
 - [ ] Owner's GitHub repository protections from the security baseline confirmed
+- [ ] Host chosen and Fastify `trustProxy` set to its proxy hop count (`server/src/app.ts`), with a test that two forwarded client addresses get separate rate limits; checked on staging with two testers on different networks (tickets 04, 05)
 
 ## Comments

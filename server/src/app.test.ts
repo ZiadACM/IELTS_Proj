@@ -152,14 +152,9 @@ describe('test-support routes', () => {
   });
 
   test('routes for features not built yet answer 501, never a fake success', async () => {
+    // Staff users and items were built in ticket 06 (tested in staff/items.test.ts).
     const notBuilt = [
-      [
-        'POST',
-        '/__test__/users',
-        { role: 'content_reviewer', email: 'staff@example.test', password: 'synthetic-password-9' },
-      ],
       ['GET', '/__test__/users/some-user', undefined],
-      ['POST', '/__test__/items', {}],
       ['POST', '/__test__/jobs/retention', {}],
     ] as const;
     for (const [method, url, payload] of notBuilt) {

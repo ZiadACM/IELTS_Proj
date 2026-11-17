@@ -8,6 +8,8 @@ import type { Auth } from '../access/auth.ts';
 import { createInviteCode } from '../access/invite-codes.ts';
 import type { RateLimit } from '../access/rate-limit.ts';
 import type { Clock } from '../clock.ts';
+import { seedItem } from '../staff/items.ts';
+import { grantStaffRole } from '../staff/roles.ts';
 
 type Options = { token: string; auth: Auth; db: Pool; clock: Clock; rateLimits: RateLimit[] };
 type NewUser = { role: 'learner' | 'content_author' | 'content_reviewer' | 'admin'; email: string; password: string };
@@ -52,12 +54,13 @@ export async function testSupportRoutes(fastify: FastifyInstance, { token, auth,
     return reply.code(201).send({ code });
   });
 
-  // shortcut: staff roles, items and retention do not exist yet; each is built in the named ticket. 501 makes the
-  // suites fail loudly instead of passing on a fake.
+  // shortcut: user details and retention do not exist yet; each is built in the named ticket. 501 makes the suites
+  // fail loudly instead of passing on a fake.
   const notBuilt = (ticket: string) => async (_request: FastifyRequest, reply: FastifyReply) =>
     reply.code(501).send({ error: 'not_implemented', ticket });
 
-  // An account with a known password, so the suites sign in through the real AUTH-02. Learners only until ticket 06.
+  // An account with a known password, so the suites sign in through the real AUTH-02. Staff get their role the way the
+  // owner script grants it. Staff practise as learners on their own data (D8), so every account gets settings.
   fastify.post<{ Body: NewUser }>(
     '/__test__/users',
     {
@@ -76,9 +79,9 @@ export async function testSupportRoutes(fastify: FastifyInstance, { token, auth,
     },
     async (request, reply) => {
       const { role, email, password } = request.body;
-      if (role !== 'learner') return notBuilt('06-staff-import-publish')(request, reply);
       const { user } = await auth.api.signUpEmail({ body: { email, password, name: '' }, headers: new Headers() });
       await db.query('insert into learner_settings (user_id) values ($1)', [user.id]);
+      if (role !== 'learner' && !(await grantStaffRole(db, email, role))) throw new Error(`could not grant ${role}`);
       return reply.code(201).send({ userId: user.id });
     },
   );
@@ -102,6 +105,25 @@ export async function testSupportRoutes(fastify: FastifyInstance, { token, auth,
       return { token };
     },
   );
-  fastify.post('/__test__/items', notBuilt('06-staff-import-publish'));
+  // An item stored directly with the given status; it must still pass the content validator.
+  fastify.post<{ Body: { item: Record<string, unknown> & { id: string }; status: 'draft' | 'published' } }>(
+    '/__test__/items',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['item', 'status'],
+          additionalProperties: false,
+          properties: { item: { type: 'object' }, status: { type: 'string', enum: ['draft', 'published'] } },
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await seedItem(db, request.body.item, request.body.status, clock.now());
+      if (result.kind === 'invalid') return reply.code(400).send({ error: 'item_invalid', problems: result.problems });
+      if (result.kind !== 'created') return reply.code(409).send({ error: 'item_exists' });
+      return reply.code(201).send({ itemId: result.itemId });
+    },
+  );
   fastify.post('/__test__/jobs/retention', notBuilt('17-data-rights-retention'));
 }

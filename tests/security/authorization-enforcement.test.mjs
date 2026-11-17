@@ -14,15 +14,20 @@ async function prepare(env, e, role, actor, allowed) {
   // one attempt per item (D10): the main request uses p1, the negative variants use p2 (submitted) or p3 (exam)
   // A role that may not drive an attempt itself (admin cannot save or submit, D7) is denied anyway; its deny check
   // then uses a learner's attempt. For an allowed cell a setup failure is a real failure.
-  const ownAttempt = async (itemKey, mode = 'guided', submitted = false) => {
+  // A denied cell retries once with a fresh learner; a second failure is a setup failure, not a reason to loop.
+  const ownAttempt = async (itemKey, mode = 'guided', submitted = false, retried = false) => {
     try {
       const at = await env.startAttempt(owner, itemKey, mode);
       if (submitted) { await env.saveWrongAnswers(owner, at.id); await env.submit(owner, at.id); }
       return at.id;
     } catch (err) {
       if (allowed) throw err;
+      if (retried) {
+        throw new Error(`${e.id} as ${role}: could not set up an attempt on ${itemKey} (${mode}${submitted ? ', submitted' : ''}) `
+          + `even with a fresh learner, so the deny check cannot run: ${err.message}`, { cause: err });
+      }
       owner = await env.user('learner', `owner-of-${e.id}`);
-      return ownAttempt(itemKey, mode, submitted);
+      return ownAttempt(itemKey, mode, submitted, true);
     }
   };
   const freshCreds = async () => { const email = env.email('signin'); const password = env.newPassword(); await env.supportOk('POST', '/users', { role: 'learner', email, password }); return { email, password }; };

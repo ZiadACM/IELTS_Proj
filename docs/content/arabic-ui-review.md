@@ -2,7 +2,7 @@
 
 For a fluent Arabic reader. For each row: is the Arabic correct, natural and clear for an adult IELTS learner, and does it mean the same as the English? Write a correction in the last column, or leave it blank if it is fine.
 
-The Arabic cells carry an invisible right-to-left mark so the full stop shows at the end (left) in this left-to-right table; the app itself shows Arabic right-to-left. Numbers may stay as Western digits (12) unless you think Arabic-Indic digits (١٢) read better: say so once at the top.
+Keep `{placeholders}` exactly as they are. The Arabic cells carry an invisible right-to-left mark so the full stop shows at the end (left) in this left-to-right table; the app itself shows Arabic right-to-left. Numbers may stay as Western digits (12) unless you think Arabic-Indic digits (١٢) read better: say so once at the top.
 
 | # | Key | English | Arabic | Correction / comment |
 |---|---|---|---|---|
@@ -75,3 +75,25 @@ The Arabic cells carry an invisible right-to-left mark so the full stop shows at
 | 67 | signedInWithAccount | You are signed in with your account. | ‏أنت مسجّل الدخول بحسابك.‏ | |
 | 68 | signOut | Sign out | ‏تسجيل الخروج‏ | |
 | 69 | signingOut | Signing out… | ‏جارٍ تسجيل الخروج…‏ | |
+| 70 | staffItems | Content items (staff) | ‏عناصر المحتوى (للموظفين)‏ | |
+| 71 | staffTitle | Content items | ‏عناصر المحتوى‏ | |
+| 72 | staffEmpty | No items yet. Import an item file to add the first draft. | ‏لا توجد عناصر بعد. استورد ملف عنصر لإضافة أول مسودة.‏ | |
+| 73 | importLabel | Import an item file (JSON) | ‏استيراد ملف عنصر (JSON)‏ | |
+| 74 | importHint | The file is checked with the content checker. It is stored as a draft; a draft with the same id is replaced. | ‏يُفحص الملف بمدقق المحتوى ويُحفظ كمسودة، وتُستبدل أي مسودة لها المعرّف نفسه.‏ | |
+| 75 | importing | Importing… | ‏جارٍ الاستيراد…‏ | |
+| 76 | imported | Imported as a draft. | ‏تم الاستيراد كمسودة.‏ | |
+| 77 | replaced | The draft was replaced with the new file. | ‏تم استبدال المسودة بالملف الجديد.‏ | |
+| 78 | fileNotJson | This file is not valid JSON. | ‏هذا الملف ليس بصيغة JSON صحيحة.‏ | |
+| 79 | fileTooLarge | This file is larger than 1 MB. | ‏حجم هذا الملف أكبر من 1 ميغابايت.‏ | |
+| 80 | importRejected | The item was not imported. The content checker found these problems: | ‏لم يُستورد العنصر. وجد مدقق المحتوى المشكلات التالية:‏ | |
+| 81 | publishRejected | The item was not published. The content checker found these problems: | ‏لم يُنشر العنصر. وجد مدقق المحتوى المشكلات التالية:‏ | |
+| 82 | alreadyPublished | This item is already published, so it cannot be changed. | ‏هذا العنصر منشور بالفعل، لذا لا يمكن تغييره.‏ | |
+| 83 | publish | Publish | ‏نشر‏ | |
+| 84 | publishing | Publishing… | ‏جارٍ النشر…‏ | |
+| 85 | publishedNotice | Published. | ‏تم النشر.‏ | |
+| 86 | onlyReviewerPublishes | Only a content reviewer can publish. | ‏النشر متاح لمراجع المحتوى فقط.‏ | |
+| 87 | statusDraft | Draft | ‏مسودة‏ | |
+| 88 | statusPublished | Published | ‏منشور‏ | |
+| 89 | itemTier | Difficulty tier | ‏فئة الصعوبة‏ | |
+| 90 | itemQuestions | Questions | ‏الأسئلة‏ | |
+| 91 | staffNotAllowed | Your account does not have a staff role. | ‏حسابك لا يملك دور موظف.‏ | |

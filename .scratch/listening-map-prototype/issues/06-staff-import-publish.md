@@ -14,3 +14,6 @@ Spec: `../spec.md`
 - [ ] Learners, guests and admin are denied all staff endpoints; security authorization cases pass
 
 ## Comments
+
+### 2026-11-17, owner (via agent `implement` session)
+Decisions: (1) staff roles are granted by an owner-run script (`npm run staff-roles -w server`), like invite codes; ADM-07 is not built. (2) Audio storage and the audio-file check at import and publish are deferred to ticket 07; import runs every other validator check. (3) Importing an id that already exists replaces it while it is a draft and is refused (409) once published. (4) The staff screens' Impeccable critique/audit and browser checks are deferred to ticket 07, as for 04 and 05.

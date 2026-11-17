@@ -53,9 +53,9 @@ liveTest('XSS-01: markup in item text fields is rejected at import, or served ba
   assert.deepEqual(problems, []);
 });
 
-liveTest('XSS-02: learner text (item report, settings) is stored as data and served back only as JSON', async (t, env) => {
-  const text = matrix.endpoints.filter((e) => has(e, 'acceptsUserText') && ['REP-01', 'ME-02'].includes(e.id));
-  assert.equal(text.length, 2, 'REP-01 and ME-02 must be flagged acceptsUserText');
+// Settings (ME-02) hold no free text since ticket 04 (interface language and target band only), so only reports remain.
+liveTest('XSS-02: learner text (item report) is stored as data and served back only as JSON', async (t, env) => {
+  assert.ok(has(byId['REP-01'], 'acceptsUserText'), 'REP-01 must be flagged acceptsUserText');
   const learner = await env.user('learner', 'learner-a');
   const author = await env.user('content_author', 'author-1');
   const problems = [];
@@ -68,11 +68,8 @@ liveTest('XSS-02: learner text (item report, settings) is stored as data and ser
       const view = matrix.endpoints.filter((e) => has(e, 'rendersUserText'));
       for (const e of view) servedAsData(await author.req(e.method, e.path), marked, `${e.id} report ${JSON.stringify(p)}`, problems);
     } else if (rep.status >= 500) problems.push(`REP-01 ${JSON.stringify(p)}: ${rep.status}`);
-    const set = await learner.req('PATCH', byId['ME-02'].path, { body: { displayName: p } });
-    if (ok2xx(set.status)) { accepted++; servedAsData(await learner.req('GET', byId['ME-01'].path), p, `ME-01 settings ${JSON.stringify(p)}`, problems); }
-    else if (set.status >= 500) problems.push(`ME-02 ${JSON.stringify(p)}: ${set.status}`);
   }
-  if (accepted) t.diagnostic(`NOT VERIFIED: ${accepted} payload(s) stored as data; browser rendering on the staff report and settings screens is not tested yet (no UI).`);
+  if (accepted) t.diagnostic(`NOT VERIFIED: ${accepted} payload(s) stored as data; browser rendering on the staff report screen is not tested yet (no UI).`);
   assert.deepEqual(problems, []);
 });
 

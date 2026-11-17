@@ -13,6 +13,7 @@ const SUPPORT_ROUTES = [
   ['POST', '/__test__/clock'],
   ['POST', '/__test__/rate-limits/reset'],
   ['POST', '/__test__/invite-codes'],
+  ['GET', '/__test__/password-resets/latest?email=a%40example.test'],
   ['POST', '/__test__/jobs/retention'],
 ] as const;
 
@@ -122,9 +123,47 @@ describe('test-support routes', () => {
     assert.match(res.json().code, /^[0-9A-HJKMNP-TV-Z]{5}-[0-9A-HJKMNP-TV-Z]{5}$/);
   });
 
+  test('POST /__test__/users creates a learner account that signs in through the real AUTH-02', async () => {
+    const email = `support-${process.pid}-${Date.now()}@example.test`;
+    const password = 'synthetic-password-9';
+    const res = await support('POST', '/__test__/users', { role: 'learner', email, password });
+    assert.equal(res.statusCode, 201, res.body);
+    const { userId } = res.json();
+    const signIn = await app.inject({ method: 'POST', url: '/auth/sessions', payload: { email, password } });
+    assert.equal(signIn.statusCode, 200, signIn.body);
+    assert.deepEqual(signIn.json(), { userId });
+  });
+
+  test('GET /__test__/password-resets/latest returns the newest reset token for an email, or 404', async () => {
+    const email = `reset-${process.pid}-${Date.now()}@example.test`;
+    await support('POST', '/__test__/users', { role: 'learner', email, password: 'synthetic-password-9' });
+    const none = await support('GET', `/__test__/password-resets/latest?email=${encodeURIComponent(email)}`);
+    assert.equal(none.statusCode, 404);
+    await app.inject({ method: 'POST', url: '/auth/password-resets', payload: { email } });
+    const res = await support('GET', `/__test__/password-resets/latest?email=${encodeURIComponent(email)}`);
+    assert.equal(res.statusCode, 200, res.body);
+    const { token } = res.json();
+    const done = await app.inject({
+      method: 'POST',
+      url: '/auth/password-resets/complete',
+      payload: { token, newPassword: 'synthetic-password-10' },
+    });
+    assert.equal(done.statusCode, 200, done.body);
+  });
+
   test('routes for features not built yet answer 501, never a fake success', async () => {
-    for (const [method, url] of SUPPORT_ROUTES.filter(([, u]) => /users|items|jobs/.test(u))) {
-      const res = await support(method, url, method === 'POST' ? {} : undefined);
+    const notBuilt = [
+      [
+        'POST',
+        '/__test__/users',
+        { role: 'content_reviewer', email: 'staff@example.test', password: 'synthetic-password-9' },
+      ],
+      ['GET', '/__test__/users/some-user', undefined],
+      ['POST', '/__test__/items', {}],
+      ['POST', '/__test__/jobs/retention', {}],
+    ] as const;
+    for (const [method, url, payload] of notBuilt) {
+      const res = await support(method, url, payload);
       assert.equal(res.statusCode, 501, `${method} ${url}`);
     }
   });

@@ -1,12 +1,14 @@
-// Sessions through Better Auth (ADR 0001). Its HTTP handler is not mounted: our own literal routes call its server API,
-// so every endpoint stays visible to the coverage gate. Ticket 05 maps the account routes.
+// Sessions and accounts through Better Auth (ADR 0001). Its HTTP handler is not mounted: our own literal routes (the
+// matrix AUTH-* rows) call its server API, so every endpoint stays visible to the coverage gate.
 import { betterAuth } from 'better-auth';
 import { anonymous } from 'better-auth/plugins';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { Pool } from 'pg';
 import type { Config } from '../config.ts';
+import { forgetResetLinks, queueResetLink, RESET_TOKEN_SECONDS } from './password-reset-outbox.ts';
 
 const DAY_SECONDS = 24 * 60 * 60;
+export const PASSWORD_LENGTH = { min: 12, max: 128 };
 
 export function createAuth(db: Pool, config: Pick<Config, 'authSecret' | 'publicOrigin' | 'production'>) {
   return betterAuth({
@@ -14,6 +16,20 @@ export function createAuth(db: Pool, config: Pick<Config, 'authSecret' | 'public
     secret: config.authSecret,
     baseURL: config.publicOrigin,
     plugins: [anonymous()],
+    emailAndPassword: {
+      enabled: true,
+      minPasswordLength: PASSWORD_LENGTH.min,
+      maxPasswordLength: PASSWORD_LENGTH.max,
+      resetPasswordTokenExpiresIn: RESET_TOKEN_SECONDS,
+      revokeSessionsOnPasswordReset: true,
+      onPasswordReset: ({ user }) => forgetResetLinks(db, user.email),
+      // No email provider (owner decision, ticket 05): the link waits in an outbox the owner reads with a script.
+      sendResetPassword: async ({ user, token }) => {
+        // A guest has a placeholder email and no password: no link for it.
+        if (!(user as { isAnonymous?: boolean }).isAnonymous)
+          await queueResetLink(db, config.publicOrigin, user.email, token);
+      },
+    },
     // A guest may come back any time within the D11 inactivity window; each visit extends the session.
     session: { expiresIn: 30 * DAY_SECONDS, updateAge: DAY_SECONDS },
     advanced: { useSecureCookies: config.production, ipAddress: { disableIpTracking: true } },

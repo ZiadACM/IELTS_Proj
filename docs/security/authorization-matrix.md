@@ -5,14 +5,14 @@ Status: **Proposed**. **No API exists yet.** The endpoints below are a logical, 
 - **Source of truth:** `docs/security/authorization-matrix.json`. This table must match it exactly.
 - **Test:** `node --test tests/security/*.test.mjs` runs `tests/security/authorization-matrix.test.mjs`. It fails the build when a cell is missing or unknown, when a cell breaks a security invariant (below), when this table drifts from the JSON, or when the app has a real endpoint with no row here.
 - **Coverage gate:** activates automatically once application code exists (`src/`, `app/`, `server/`, `api/`, ...). The stack is decided (`docs/adr/0001-stack.md`: Fastify API in `server/`), and `tests/security/adapters/discover-endpoints.mjs` scans its routes statically. It **fails closed** on any route it cannot read.
-- **Auth paths:** `AUTH-01` to `AUTH-05` are logical paths. When Better Auth is wired up, rename them to its real routes here and in the JSON; the coverage gate fails until they match.
+- **Auth paths:** mapped (ticket 05). Each AUTH-* row is the app's own literal Fastify route calling Better Auth's server API; Better Auth's HTTP handler is not mounted, so it serves no other route.
 - **Live tests:** `tests/security/*.test.mjs` iterate this matrix by its flags (contract: `docs/security/test-harness-contract.md`).
 
 ## Roles
 
 | Role | Meaning |
 |---|---|
-| `anonymous` | No session. May only start a guest session, create an account, sign in or request a password reset. |
+| `anonymous` | No session. May only start a guest session, create an account, sign in, request a password reset or complete one. |
 | `guest` | Server-issued guest session holding no personal data (decision D5). Practises on its own data exactly like a learner; can upgrade to an account and keep its data. |
 | `learner` | Signed-in learner. Own data only. |
 | `content_author` | Staff. Drafts and imports items; cannot publish. Practises as a learner on own data. |
@@ -36,13 +36,14 @@ Status: **Proposed**. **No API exists yet.** The endpoints below are a logical, 
 
 | ID | Method | Path | anonymous | guest | learner | content_author | content_reviewer | admin | Flags | Refs |
 |---|---|---|---|---|---|---|---|---|---|---|
-| AUTH-01 | POST | `/accounts` | `allow` | `allow` | `deny` | `deny` | `deny` | `deny` | acceptsUserText, enumerationSensitive | T2, CS2.5, CS2.6 |
+| AUTH-01 | POST | `/accounts` | `allow` | `allow` | `deny` | `deny` | `deny` | `deny` | acceptsUserText, enumerationSensitive, rateLimited | T2, CS2.5, CS2.6 |
 | AUTH-02 | POST | `/auth/sessions` | `allow` | `allow` | `allow` | `allow` | `allow` | `allow` | enumerationSensitive, rateLimited | T2 |
 | AUTH-03 | DELETE | `/auth/sessions/current` | `deny` | `own` | `own` | `own` | `own` | `own` | ownerScoped | T2 |
 | AUTH-04 | POST | `/auth/password-resets` | `allow` | `deny` | `allow` | `allow` | `allow` | `allow` | enumerationSensitive, rateLimited | T2 |
 | AUTH-05 | POST | `/auth/guest-sessions` | `allow` | `deny` | `deny` | `deny` | `deny` | `deny` | rateLimited, enumerationSensitive | T2, CS2.6 |
+| AUTH-06 | POST | `/auth/password-resets/complete` | `allow` | `deny` | `deny` | `deny` | `deny` | `deny` | enumerationSensitive, rateLimited | T2 |
 | ME-01 | GET | `/me/settings` | `deny` | `own` | `own` | `own` | `own` | `own` | ownerScoped | T3, CS2.1 |
-| ME-02 | PATCH | `/me/settings` | `deny` | `own` | `own` | `own` | `own` | `own` | ownerScoped, acceptsUserText, massAssignmentRisk | T3, CS2.1, CS2.5 |
+| ME-02 | PATCH | `/me/settings` | `deny` | `own` | `own` | `own` | `own` | `own` | ownerScoped, massAssignmentRisk | T3, CS2.1, CS2.5 |
 | ME-03 | DELETE | `/me` | `deny` | `own` | `own` | `own` | `own` | `own` | ownerScoped | T2, T3, CS2.6 |
 | ITEM-01 | GET | `/items` | `deny` | `published` | `published` | `published` | `published` | `published` | deliveryPayload | T1, T5, CS2.2, CS3.1 |
 | ITEM-02 | GET | `/items/{itemId}` | `deny` | `published` | `published` | `published` | `published` | `published` | deliveryPayload | T1, T5, CS2.2, CS3.1 |

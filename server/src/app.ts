@@ -55,12 +55,25 @@ export async function buildApp({ config, db, clock, webRoot, logger = false }: A
 
   await app.register(fastifyStatic, { root: webRoot });
   const auth = createAuth(db, config);
-  // Invite code redemption per client (spec: Security & Privacy). A tester with a few typos stays well inside it.
-  const redemptionLimit = createRateLimit({ limit: 10, windowSeconds: 15 * 60, clock });
-  await app.register(accessRoutes, { auth, db, clock, redemptionLimit });
+  // Per client (and per email for sign-in failures); spec: Security & Privacy. A tester with a few typos stays well
+  // inside each limit.
+  const tenPer15Min = { limit: 10, windowSeconds: 15 * 60, clock };
+  const limits = {
+    redemption: createRateLimit(tenPer15Min),
+    signInFailures: createRateLimit(tenPer15Min),
+    resetRequests: createRateLimit(tenPer15Min),
+    resetCompletions: createRateLimit(tenPer15Min),
+  };
+  await app.register(accessRoutes, { auth, db, clock, limits });
   await app.register(settingsRoutes, { auth, db });
   if (config.testSupportToken) {
-    await app.register(testSupportRoutes, { token: config.testSupportToken, db, clock, rateLimits: [redemptionLimit] });
+    await app.register(testSupportRoutes, {
+      token: config.testSupportToken,
+      auth,
+      db,
+      clock,
+      rateLimits: Object.values(limits),
+    });
   }
 
   return app;

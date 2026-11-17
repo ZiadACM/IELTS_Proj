@@ -125,6 +125,14 @@ async function createEnv() {
   // A fresh invite code with the 18+ confirmation: the body AUTH-05 requires (ticket 04).
   env.guestSessionBody = async () => ({ inviteCode: (await supportOk('POST', '/invite-codes')).code, ageConfirmed: true });
 
+  // The token of a reset link for an email, requested through the real AUTH-04 (ticket 05: the link waits in the
+  // app's outbox; test support hands the suites its token).
+  env.resetToken = async (email) => {
+    const r = await new Actor('reset-requester').req('POST', '/auth/password-resets', { body: { email } });
+    assert.ok(ok2xx(r.status), `password reset request failed: ${r.status} ${r.text.slice(0, 200)}`);
+    return (await supportOk('GET', `/password-resets/latest?email=${encodeURIComponent(email)}`)).token;
+  };
+
   // Actors. Staff and learners are created through test-support, then sign in through the REAL endpoint (AUTH-02).
   env.anonymous = (name = 'anonymous') => new Actor(name);
   env.guest = async (name = 'guest') => {

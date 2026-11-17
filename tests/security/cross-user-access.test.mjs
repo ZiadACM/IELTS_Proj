@@ -18,7 +18,7 @@ function ownerBody(env, e) {
     'AUTH-02': { email: env.email('nobody'), password: env.newPassword() },
     'AUTH-04': { email: env.email('nobody') },
     'AUTH-05': {},
-    'ME-02': { displayName: 'synthetic' },
+    'ME-02': { targetBand: '6.0' },
     'REP-01': { text: 'synthetic report' },
     'ATT-01': { itemId: env.items.p3, mode: 'guided' },
     'ATT-04': { answers: { [env.questionIds[0]]: 'D' } },
@@ -34,17 +34,24 @@ function ownerBody(env, e) {
   return recipes[e.id];
 }
 
+// Settings hold only list values (ticket 04), so each victim gets settings no other actor in the same test has, and
+// leaks are spotted by the victim's userId or by those settings coming back.
+const BANDS = ['5.5', '6.0', '6.5', '7.0+'];
+let victimCount = 0;
+const sameSettings = (json, s) => json?.interfaceLanguage === s.interfaceLanguage && json?.targetBand === s.targetBand;
+const leaksVictim = (r, victim) => r.text.includes(victim.actor.userId) || sameSettings(r.json, victim.settings);
+
 async function victimWithData(env, role, name) {
   const v = await env.actor(role, name);
-  const marker = env.uniq(`OWNER-${name}`);
-  const s = await v.req('PATCH', byId['ME-02'].path, { body: { displayName: marker } });
+  const settings = { interfaceLanguage: victimCount % 2 ? 'ar' : 'en', targetBand: BANDS[victimCount++ % BANDS.length] };
+  const s = await v.req('PATCH', byId['ME-02'].path, { body: settings });
   assert.ok(ok2xx(s.status), `${name} could not set settings: ${s.status}`);
   const open = await env.startAttempt(v, 'p1', 'guided');
   await env.saveWrongAnswers(v, open.id);
   const done = await env.startAttempt(v, 'p2', 'guided');
   await env.saveWrongAnswers(v, done.id);
   await env.submit(v, done.id);
-  return { actor: v, marker, open: open.id, submitted: done.id };
+  return { actor: v, settings, open: open.id, submitted: done.id };
 }
 const snapshot = async (env, v) => {
   const s = {};
@@ -65,7 +72,7 @@ liveTest('AUTHZ-03: another user\'s attempt ids are refused on every ownerScoped
       for (const attemptId of [victim.open, victim.submitted]) {
         const r = await attacker.req(e.method, fillPath(e.path, { attemptId }), { body: ownerBody(env, e) });
         if (!DENIED_WITH_SESSION.includes(r.status)) problems.push(`${label} ${e.id} ${r.method} ${r.path}: expected 404/403, got ${r.status}`);
-        if (env.canaryRe.test(r.text) || r.text.includes(victim.marker) || (ok2xx(r.status) && r.text.includes(attemptId))) problems.push(`${label} ${e.id}: victim data in the body`);
+        if (env.canaryRe.test(r.text) || leaksVictim(r, victim) || (ok2xx(r.status) && r.text.includes(attemptId))) problems.push(`${label} ${e.id}: victim data in the body`);
       }
     }
     if ((await snapshot(env, victim)) !== before) problems.push(`${label}: victim's attempts changed`);
@@ -90,15 +97,15 @@ liveTest('AUTHZ-04: /me endpoints ignore a userId override in the query, a heade
     for (const e of order) {
       for (const v of variants) {
         if (e.method === 'DELETE' && v.name !== 'query') continue; // the attacker deletes itself only once
-        const base = e.method === 'PATCH' ? { displayName: `HIJACK-${env.runId}` } : ownerBody(env, e);
+        const base = e.method === 'PATCH' ? { targetBand: null } : ownerBody(env, e); // victims always have a band
         const body = e.method === 'GET' || e.method === 'DELETE' ? undefined : { ...base, ...v.body };
         const r = await attacker.actor.req(e.method, v.path(e.path), { body, headers: v.headers });
-        if (r.text.includes(victim.marker) || r.text.includes(victim.open) || r.text.includes(victim.submitted)) problems.push(`${role} ${e.id} via ${v.name}: victim data returned`);
+        if (leaksVictim(r, victim) || r.text.includes(victim.open) || r.text.includes(victim.submitted)) problems.push(`${role} ${e.id} via ${v.name}: victim data returned`);
       }
     }
     const vs = await victim.actor.req('GET', byId['ME-01'].path);
     if (vs.status !== 200) problems.push(`${role}: victim lost access to own settings (${vs.status}): the override acted on the victim`);
-    else if (!vs.text.includes(victim.marker) || vs.text.includes(`HIJACK-${env.runId}`)) problems.push(`${role}: victim settings were changed through an override`);
+    else if (!sameSettings(vs.json, victim.settings)) problems.push(`${role}: victim settings were changed through an override`);
   }
   assert.deepEqual(problems, []);
 });
@@ -111,7 +118,7 @@ liveTest('AUTHZ-05: with no session every anonymous-denied endpoint returns 401 
     const attemptId = e.id === 'ATT-09' ? victim.submitted : victim.open;
     const r = await anon.req(e.method, fillPath(e.path, { attemptId, itemId: env.items.p1, userId: victim.actor.userId }), { body: ownerBody(env, e) });
     if (r.status !== 401) problems.push(`${e.id} ${r.method} ${r.path}: expected 401, got ${r.status}`);
-    if (env.canaryRe.test(r.text) || r.text.includes(victim.marker) || r.text.includes(attemptId)) problems.push(`${e.id}: data in the body`);
+    if (env.canaryRe.test(r.text) || leaksVictim(r, victim) || r.text.includes(attemptId)) problems.push(`${e.id}: data in the body`);
   }
   assert.deepEqual(problems, []);
 });
@@ -124,7 +131,7 @@ liveTest('AUTHZ-07: extra fields on massAssignmentRisk endpoints are ignored or 
   const checks = {
     'ME-02': async () => {
       const a = await env.user('learner', 'learner-a');
-      await a.req('PATCH', byId['ME-02'].path, { body: extras({ displayName: 'x' }) });
+      await a.req('PATCH', byId['ME-02'].path, { body: extras({ targetBand: '6.0' }) });
       const stored = await env.supportOk('GET', `/users/${encodeURIComponent(a.userId)}`);
       if (stored.role !== 'learner') problems.push(`ME-02: stored role changed to ${stored.role} through settings`);
       const adm = await a.req('GET', byId['ADM-01'].path);
@@ -170,7 +177,7 @@ liveTest('AUTHZ-07: extra fields on massAssignmentRisk endpoints are ignored or 
     await checks[e.id]();
   }
   const vs = await victim.actor.req('GET', byId['ME-01'].path);
-  if (!vs.text.includes(victim.marker)) problems.push('victim settings changed');
+  if (!sameSettings(vs.json, victim.settings)) problems.push('victim settings changed');
   assert.deepEqual(problems, []);
 });
 

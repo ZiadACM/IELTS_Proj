@@ -31,6 +31,9 @@ export const VULNERABILITIES = Object.freeze({
   'XSS-01': 'item import skips validation and staff preview is served as text/html',
   'XSS-02': 'staff report view renders learner text as raw HTML',
   'XSS-03': 'no nosniff header on API responses and no CSP on pages',
+  'SESS-02': 'sign-in and reset requests say when an email has no account',
+  'SESS-04': 'sign-out clears the cookie but keeps the server session',
+  'SESS-05': 'a password-reset token can be used again',
   'SESS-08': 'guest sessions are not rate-limited and idle guest data is never deleted',
   'SESS-09': 'guest upgrade adopts the guest session named in the body; the old session stays valid',
 });
@@ -54,6 +57,7 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
   const now = () => Date.now() + clockOffset;
   const users = new Map(); const sessions = new Map(); const items = new Map(); const attempts = new Map();
   const reports = []; const progressOverrides = new Map(); const guestRate = new Map(); const inviteCodes = new Set();
+  const resetTokens = new Map(); // token -> { userId, email }
   let seq = 1000;
   const newAttemptId = () => (vuln('LEAK-06') ? String(++seq) : randomUUID());
   const audioBytes = randomBytes(4096);
@@ -175,15 +179,17 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
     if (!vuln('SESS-08') && recent.length >= GUEST_LIMIT) return err(res, 429, 'too many guest sessions');
     recent.push(now()); guestRate.set(ip, recent);
     if (body?.ageConfirmed !== true || !inviteCodes.delete(body?.inviteCode)) return err(res, 400, 'invite_code_not_valid');
-    const u = { id: randomUUID(), role: 'guest', email: null, pw: null, settings: { displayName: '', language: 'ar', goalBand: null }, lastActiveAt: now() };
+    const u = { id: randomUUID(), role: 'guest', email: null, pw: null, settings: { interfaceLanguage: 'ar', targetBand: null }, lastActiveAt: now() };
     users.set(u.id, u); newSession(res, u.id);
     json(res, 201, { userId: u.id, role: 'guest' });
   });
   route('POST', '/accounts', async (req, res, body) => {
     const c = caller(req);
     if (c && c.user.role !== 'guest') return err(res, 403, 'already have an account');
-    const allowed = ['email', 'password'];
+    const allowed = c ? ['email', 'password'] : ['email', 'password', 'inviteCode', 'ageConfirmed'];
     if (!vuln('SESS-09') && !onlyKeys(body, allowed)) return err(res, 400, 'unexpected field');
+    // without a session an account needs a fresh invite code and the 18+ confirmation (ticket 05)
+    if (!c && (body.ageConfirmed !== true || !inviteCodes.delete(body.inviteCode))) return err(res, 400, 'invite_code_not_valid');
     if (typeof body.email !== 'string' || !/^[^@\s]+@[^@\s]+$/.test(body.email) || typeof body.password !== 'string' || body.password.length < 12) return err(res, 400, 'invalid email or password');
     if ([...users.values()].some((u) => u.email === body.email)) return err(res, 409, 'cannot create account');
     let u;
@@ -192,7 +198,7 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
       if (vuln('SESS-09') && typeof body.guestSessionId === 'string' && sessions.get(body.guestSessionId)) u = users.get(sessions.get(body.guestSessionId).userId);
       if (!vuln('SESS-09')) for (const [t, s] of sessions) if (s.userId === u.id) sessions.delete(t);
     } else {
-      u = { id: randomUUID(), settings: { displayName: '', language: 'ar', goalBand: null } };
+      u = { id: randomUUID(), settings: { interfaceLanguage: 'ar', targetBand: null } };
       users.set(u.id, u);
     }
     Object.assign(u, { role: 'learner', email: body.email, pw: hash(body.password), lastActiveAt: now() });
@@ -202,13 +208,14 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
   route('POST', '/auth/sessions', (req, res, body) => {
     if (!onlyKeys(body, ['email', 'password']) || typeof body.email !== 'string' || typeof body.password !== 'string') return err(res, 400, 'invalid request');
     const u = [...users.values()].find((x) => x.email === body.email);
+    if (!u && vuln('SESS-02')) return err(res, 404, 'no account with this email');
     if (!u || !checkPw(body.password, u.pw)) return err(res, 401, 'invalid credentials');
     newSession(res, u.id);
     json(res, 200, { userId: u.id, role: u.role });
   });
   route('DELETE', '/auth/sessions/current', (req, res) => {
     const c = requireUser(req, res); if (!c) return;
-    sessions.delete(c.token);
+    if (!vuln('SESS-04')) sessions.delete(c.token);
     res.setHeader('set-cookie', 'sid=; Max-Age=0; Path=/');
     json(res, 204);
   });
@@ -216,7 +223,20 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
     const c = caller(req);
     if (c?.user.role === 'guest') return err(res, 403, 'forbidden');
     if (!onlyKeys(body, ['email']) || typeof body.email !== 'string') return err(res, 400, 'invalid request');
+    const u = [...users.values()].find((x) => x.email === body.email);
+    if (!u && vuln('SESS-02')) return err(res, 404, 'no account with this email');
+    if (u) resetTokens.set(randomBytes(18).toString('base64url'), { userId: u.id, email: u.email });
     json(res, 202, { status: 'if the account exists, a reset email was sent' });
+  });
+  route('POST', '/auth/password-resets/complete', (req, res, body) => {
+    if (caller(req)) return err(res, 403, 'already signed in');
+    if (!onlyKeys(body, ['token', 'newPassword']) || typeof body.token !== 'string' || typeof body.newPassword !== 'string' || body.newPassword.length < 12) return err(res, 400, 'invalid request');
+    const t = resetTokens.get(body.token);
+    if (!t) return err(res, 400, 'reset_token_not_valid');
+    if (!vuln('SESS-05')) resetTokens.delete(body.token);
+    users.get(t.userId).pw = hash(body.newPassword);
+    for (const [k, s] of sessions) if (s.userId === t.userId) sessions.delete(k);
+    json(res, 200, { passwordReset: true });
   });
 
   // ME
@@ -228,19 +248,18 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
   route('GET', '/me/settings', (req, res, body, url) => {
     const c = requireUser(req, res); if (!c) return;
     const u = meTarget(req, c, body, url);
-    json(res, 200, { userId: u.id, settings: u.settings });
+    json(res, 200, u.settings);
   });
   route('PATCH', '/me/settings', (req, res, body, url) => {
     const c = requireUser(req, res); if (!c) return;
     const u = meTarget(req, c, body, url);
-    if (vuln('AUTHZ-07')) { const { settings, ...rest } = body; Object.assign(u, rest); Object.assign(u.settings, body); return json(res, 200, { userId: u.id, settings: u.settings }); }
-    const allowed = vuln('AUTHZ-04') ? ['displayName', 'language', 'goalBand', 'userId'] : ['displayName', 'language', 'goalBand'];
+    if (vuln('AUTHZ-07')) { const { settings, ...rest } = body; Object.assign(u, rest); Object.assign(u.settings, body); return json(res, 200, u.settings); }
+    const allowed = vuln('AUTHZ-04') ? ['interfaceLanguage', 'targetBand', 'userId'] : ['interfaceLanguage', 'targetBand'];
     if (!onlyKeys(body, allowed)) return err(res, 400, 'unexpected field');
-    if (body.displayName !== undefined && (typeof body.displayName !== 'string' || body.displayName.length > 80)) return err(res, 400, 'invalid displayName');
-    if (body.language !== undefined && !['ar', 'en'].includes(body.language)) return err(res, 400, 'invalid language');
-    if (body.goalBand !== undefined && body.goalBand !== null && !(typeof body.goalBand === 'number' && body.goalBand >= 4 && body.goalBand <= 9)) return err(res, 400, 'invalid goalBand');
-    for (const k of ['displayName', 'language', 'goalBand']) if (body[k] !== undefined) u.settings[k] = body[k];
-    json(res, 200, { userId: u.id, settings: u.settings });
+    if (body.interfaceLanguage !== undefined && !['ar', 'en'].includes(body.interfaceLanguage)) return err(res, 400, 'invalid interfaceLanguage');
+    if (body.targetBand !== undefined && body.targetBand !== null && !['5.5', '6.0', '6.5', '7.0+'].includes(body.targetBand)) return err(res, 400, 'invalid targetBand');
+    for (const k of ['interfaceLanguage', 'targetBand']) if (body[k] !== undefined) u.settings[k] = body[k];
+    json(res, 200, u.settings);
   });
   route('DELETE', '/me', (req, res) => {
     const c = requireUser(req, res); if (!c) return;
@@ -483,7 +502,7 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
   route('GET', '/__test__/health', (req, res) => json(res, 200, { ok: true, synthetic: true }));
   route('POST', '/__test__/users', (req, res, body) => {
     if (!['learner', ...ROLES_STAFF].includes(body.role)) return err(res, 400, 'invalid role');
-    const u = { id: randomUUID(), role: body.role, email: body.email, pw: hash(body.password), settings: { displayName: '', language: 'ar', goalBand: null }, lastActiveAt: now() };
+    const u = { id: randomUUID(), role: body.role, email: body.email, pw: hash(body.password), settings: { interfaceLanguage: 'ar', targetBand: null }, lastActiveAt: now() };
     users.set(u.id, u); json(res, 201, { userId: u.id });
   });
   route('GET', '/__test__/users/{userId}', (req, res, body, url, p) => {
@@ -497,6 +516,11 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
   route('POST', '/__test__/clock', (req, res, body) => { clockOffset += (Number(body.advanceSeconds) || 0) * 1000; json(res, 200, { now: new Date(now()).toISOString() }); });
   route('POST', '/__test__/rate-limits/reset', (req, res) => { guestRate.clear(); json(res, 204); });
   route('POST', '/__test__/invite-codes', (req, res) => { const code = randomUUID(); inviteCodes.add(code); json(res, 201, { code }); });
+  route('GET', '/__test__/password-resets/latest', (req, res, body, url) => {
+    const latest = [...resetTokens].filter(([, t]) => t.email === url.searchParams.get('email')).at(-1);
+    if (!latest) return err(res, 404, 'not found');
+    json(res, 200, { token: latest[0] });
+  });
   route('POST', '/__test__/jobs/retention', (req, res) => {
     let deleted = 0;
     if (!vuln('SESS-08')) for (const u of [...users.values()]) {

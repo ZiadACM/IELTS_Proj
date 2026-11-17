@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** in-review (branch `agent/walking-skeleton`)
+**Status:** done (merged to `main` in PR #7, 2026-11-16; the CI box stays open until CI is seen green on GitHub)
 
 Spec: `../spec.md`
 

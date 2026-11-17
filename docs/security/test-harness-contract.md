@@ -20,19 +20,21 @@ These routes live only under `server/**/test-support/`. The endpoint adapter ign
 | Request | Response |
 |---|---|
 | `GET /__test__/health` | 200 |
-| `POST /__test__/users {role, email, password}` (role: learner or staff) | 201 `{userId}`. The test then signs in through the real `AUTH-02`. |
+| `POST /__test__/users {role, email, password}` (role: learner or staff) | 201 `{userId}`. The test then signs in through the real `AUTH-02`. (App: learners since ticket 05; staff roles answer 501 until ticket 06.) |
 | `GET /__test__/users/{userId}` | 200 `{userId, role, attempts}` or 404 |
 | `POST /__test__/items {item, status}` (status `published` or `draft`) | 201 `{itemId}` |
 | `POST /__test__/clock {advanceSeconds}` | 200 `{now}` (ISO). Moves the server clock used for deadlines, audio grants and retention. |
 | `POST /__test__/rate-limits/reset` | 2xx |
 | `POST /__test__/invite-codes` | 201 `{code}`: a fresh, unused invite code (ticket 04). |
+| `GET /__test__/password-resets/latest?email=<email>` | 200 `{token}`: the token of the newest reset link for that email (ticket 05; the app has no email provider, links wait in an outbox), or 404. |
 | `POST /__test__/jobs/retention` | 2xx. Runs the D11 retention job once. |
 
 ## API shapes the suites rely on
 
 These are working assumptions until the first feature spec. If the spec changes them, change the suites in the same task, with owner approval (protected path).
 
-- **Sessions** are cookies. `POST /auth/guest-sessions {inviteCode, ageConfirmed: true}` and `POST /accounts` return `{userId}`. Unknown, used and withdrawn codes all get the same 400 `{error: "invite_code_not_valid"}`. A guest upgrade (`POST /accounts` called with a guest session) keeps the guest's data, issues a new session and invalidates the old one.
+- **Sessions** are cookies. `POST /auth/guest-sessions {inviteCode, ageConfirmed: true}` and `POST /accounts` return `{userId}`. Unknown, used and withdrawn codes all get the same 400 `{error: "invite_code_not_valid"}`. Without a session, `POST /accounts {email, password, inviteCode, ageConfirmed: true}` needs a fresh code. A guest upgrade (`POST /accounts {email, password}` called with a guest session) keeps the guest's data, issues a new session and invalidates the old one.
+- **Sign-in** `POST /auth/sessions {email, password}`; **sign-out** `DELETE /auth/sessions/current`. **Password reset**: `POST /auth/password-resets {email}` (same answer for any email), then `POST /auth/password-resets/complete {token, newPassword}`; a token works once.
 - **`POST /attempts {itemId, mode: "guided" | "exam"}`** returns the attempt. Attempt ids are UUIDv4 or an opaque random string of at least 21 characters.
 - **Attempt state** (`GET /attempts/{id}`) is `{id, itemId, mode, status: "open" | "submitted", answers, supportUsage: {replayCount, hintCount}, deadline (ISO, exam only), seenBefore, countsTowardIndependentReadiness, late, score (after submit)}`.
 - **`PUT /attempts/{id}/answers {answers: {<questionId>: <targetLabel>}}`.** Submitting is `POST .../submit {}`; the server computes the score.

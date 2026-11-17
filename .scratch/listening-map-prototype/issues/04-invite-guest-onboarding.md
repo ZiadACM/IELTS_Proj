@@ -26,9 +26,11 @@ Built on `agent/invite-guest-onboarding`. Better Auth 1.7.15 (anonymous plugin) 
 **Results:** `npm test` 45/45; offline security and tools tests 115 pass, 0 fail, 24 skipped (live); lint, type check and build pass. Live suites against a local instance: 37 pass, 24 fail, all at shared setup (`POST /__test__/items` 501, ticket 06). **The SESS-08 suite case itself therefore still fails (NOT VERIFIED).** Its rate-limit steps, replayed with the suite's own `Actor` client against the live instance, gave 201 for tries 1 to 10 and 429 for tries 11 to 30. The retention half needs 17.
 
 **Open for the owner:**
-- The security suites send `{displayName}` to `PATCH /me/settings` (enforcement:39; cross-user-access:21,40,93,127; xss:71). The spec's settings have no name field, so the app rejects it with 400. When 06 unblocks setup, those ME-02 cells will fail. Decide: change the suites to use `targetBand`/`interfaceLanguage` (a protected change), and/or drop `acceptsUserText` from ME-02.
 - shortcut: the rate limit is in memory and keyed on `request.ip`. Behind a reverse proxy, every tester shares one limit (10 tries per 15 min) until Fastify `trustProxy` is set for the host.
 - shortcut: if redemption fails after Better Auth creates the guest, an orphan guest user stays until retention (17).
 - Guest session lifetime is 30 days, extended daily on use (to match D11); confirm with 17.
 - New glossary candidates: guest, invite code, target band, interface language.
 - Arabic strings need a fluent reader (CS 3.5). Impeccable critique/audit and browser checks are deferred to 07 (NOT VERIFIED).
+
+### 2026-11-16, owner (via agent `implement` session)
+Told the agent to resolve the `displayName` conflict itself ("do it yourself"). Done on this branch: ME-02 drops `acceptsUserText` (settings hold no free text); the suites send `targetBand` instead of `displayName`; cross-user checks detect leaks by the victim's userId or their distinct settings instead of a text marker; XSS-02 covers reports only; the synthetic fixture uses `{interfaceLanguage, targetBand}`; the test plan's XSS-02 row is updated. Fixture-proof still shows each vulnerability caught by its own case.

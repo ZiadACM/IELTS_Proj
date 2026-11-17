@@ -3,7 +3,10 @@
 // Revisit before running more than one instance.
 import type { Clock } from '../clock.ts';
 
-export type RateLimit = { allow(key: string): boolean; reset(): void };
+// allow() counts a try and says whether it is within the limit. exceeded() only looks: for limits that count
+// failures, the caller checks exceeded() first and counts with allow() only when the try fails.
+export type RateLimit = { allow(key: string): boolean; exceeded(key: string): boolean; reset(): void };
+// For failure-counting limits, allow(key) is how a failure is recorded.
 
 export function createRateLimit({
   limit,
@@ -30,6 +33,10 @@ export function createRateLimit({
       }
       current.count++;
       return current.count <= limit;
+    },
+    exceeded(key: string) {
+      const current = windows.get(key);
+      return !!current && clock.now().getTime() - current.start < windowMs && current.count >= limit;
     },
     reset() {
       windows.clear();

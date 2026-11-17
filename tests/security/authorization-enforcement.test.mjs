@@ -31,12 +31,22 @@ async function prepare(env, e, role, actor, allowed) {
   // admin may start attempts (ATT-01 allow) but not read them (D7); anonymous uses a learner's attempt
   const attemptId = needsAttempt ? await ownAttempt('p1', 'guided', e.id === 'ATT-09') : undefined;
   const recipes = {
-    'AUTH-01': () => ({ body: { email: env.email('signup'), password: env.newPassword() } }),
+    // Without a session an account needs a fresh invite code and the 18+ confirmation (ticket 05); a guest upgrades.
+    'AUTH-01': async () => {
+      await env.supportOk('POST', '/rate-limits/reset');
+      const redemption = role === 'anonymous' ? await env.guestSessionBody() : {};
+      return { body: { email: env.email('signup'), password: env.newPassword(), ...redemption } };
+    },
     'AUTH-02': async () => ({ body: await freshCreds() }),
     'AUTH-03': () => ({}),
     'AUTH-04': () => ({ body: { email: actor.email ?? env.email('nobody') } }),
     'AUTH-05': async () => { await env.supportOk('POST', '/rate-limits/reset'); return { body: await env.guestSessionBody() }; },
-    'ME-01': () => ({}), 'ME-02': () => ({ body: { displayName: 'synthetic' } }), 'ME-03': () => ({}),
+    'AUTH-06': async () => {
+      await env.supportOk('POST', '/rate-limits/reset');
+      const { email } = await freshCreds();
+      return { body: { token: await env.resetToken(email), newPassword: env.newPassword() } };
+    },
+    'ME-01': () => ({}), 'ME-02': () => ({ body: { targetBand: '6.0' } }), 'ME-03': () => ({}),
     'ITEM-01': () => ({ negative: { kind: 'list-excludes-draft' } }),
     'ITEM-02': () => ({ params: { itemId: env.items.p1 }, negative: { params: { itemId: env.items.draft }, expect: [404] } }),
     'REP-01': () => ({ params: { itemId: env.items.p1 }, body: { text: 'synthetic report' }, negative: { params: { itemId: env.items.draft }, expect: [404] } }),

@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** done (merged to `main` in PR #7, 2026-11-16; the CI box stays open until CI is seen green on GitHub)
+**Status:** done (merged to `main` in PR #7, 2026-11-16; CI seen green on GitHub 2026-11-17)
 
 Spec: `../spec.md`
 
@@ -13,7 +13,7 @@ Spec: `../spec.md`
 - [x] Test-support routes require the token, return 404 without it, and the app refuses to start in production with a token set
 - [x] Security suites run against the instance; results recorded (failures expected for unbuilt features are listed as NOT VERIFIED or failing, not hidden)
 - [x] Coverage gate: every registered endpoint has a matrix row
-- [ ] CI lint, type check and build pass
+- [x] CI lint, type check and build pass
 
 ## Comments
 

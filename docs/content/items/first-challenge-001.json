@@ -1,0 +1,432 @@
+{
+  "id": "first-challenge-001",
+  "type": "listening.map-labelling",
+  "version": 1,
+  "skills": [
+    "spatial-language",
+    "landmark-vs-answer",
+    "corrections-distractors"
+  ],
+  "tier": 2,
+  "purpose": "first-challenge",
+  "difficulty": {
+    "landmarks": 7,
+    "routeSteps": 11,
+    "distractors": 0,
+    "selfCorrections": 1,
+    "audioPace": "natural"
+  },
+  "supportPolicy": {
+    "learning": {
+      "replay": true,
+      "hints": true
+    },
+    "exam": {
+      "replay": false,
+      "hints": false
+    }
+  },
+  "audio": {
+    "file": "audio/first-challenge-001.mp3",
+    "durationSec": 90,
+    "source": "synthetic"
+  },
+  "map": {
+    "width": 1000,
+    "height": 700,
+    "landmarks": [
+      {
+        "id": "main-entrance",
+        "label": "Main entrance",
+        "x": 500,
+        "y": 660
+      },
+      {
+        "id": "reception",
+        "label": "Reception",
+        "x": 580,
+        "y": 610
+      },
+      {
+        "id": "toilets",
+        "label": "Toilets",
+        "x": 420,
+        "y": 610
+      },
+      {
+        "id": "noticeboard",
+        "label": "Noticeboard",
+        "x": 500,
+        "y": 480
+      },
+      {
+        "id": "meeting-room",
+        "label": "Meeting room",
+        "x": 630,
+        "y": 540
+      },
+      {
+        "id": "staff-office",
+        "label": "Staff office",
+        "x": 230,
+        "y": 380
+      },
+      {
+        "id": "corridor-junction",
+        "label": "Corridor junction",
+        "x": 300,
+        "y": 160
+      }
+    ],
+    "targets": [
+      {
+        "label": "A",
+        "x": 650,
+        "y": 420
+      },
+      {
+        "label": "B",
+        "x": 350,
+        "y": 560
+      },
+      {
+        "label": "C",
+        "x": 820,
+        "y": 540
+      },
+      {
+        "label": "D",
+        "x": 720,
+        "y": 540
+      },
+      {
+        "label": "E",
+        "x": 370,
+        "y": 380
+      },
+      {
+        "label": "F",
+        "x": 230,
+        "y": 280
+      },
+      {
+        "label": "G",
+        "x": 200,
+        "y": 100
+      },
+      {
+        "label": "H",
+        "x": 400,
+        "y": 100
+      }
+    ]
+  },
+  "transcript": {
+    "cues": [
+      {
+        "id": "c1",
+        "start": 0.0,
+        "end": 3.5,
+        "text": "Hello, everyone, and welcome to our Open Day."
+      },
+      {
+        "id": "c2",
+        "start": 3.5,
+        "end": 14.0,
+        "text": "I'm one of the volunteers here at Riverside Community Centre, and I'm going to show you where a few of our activity rooms are."
+      },
+      {
+        "id": "c3",
+        "start": 14.0,
+        "end": 21.0,
+        "text": "OK, so right now we're standing at the main entrance, right at the bottom of the map."
+      },
+      {
+        "id": "c4",
+        "start": 21.0,
+        "end": 26.5,
+        "text": "If you look just to your right as you come in, that's reception."
+      },
+      {
+        "id": "c5",
+        "start": 26.5,
+        "end": 30.5,
+        "text": "And the toilets are opposite reception, on your left."
+      },
+      {
+        "id": "c6",
+        "start": 30.5,
+        "end": 38.0,
+        "text": "Now, straight ahead of you, down the main hall, there's a big noticeboard. That's where the hall splits."
+      },
+      {
+        "id": "c7",
+        "start": 38.0,
+        "end": 42.5,
+        "text": "Turn right at the noticeboard, and keep going along that corridor."
+      },
+      {
+        "id": "c8",
+        "start": 42.5,
+        "end": 47.0,
+        "text": "You'll pass the meeting room on your right, but don't stop there."
+      },
+      {
+        "id": "c9",
+        "start": 47.0,
+        "end": 54.5,
+        "text": "The Quiet Lounge is at the far end of that corridor, on your right, past the meeting room."
+      },
+      {
+        "id": "c10",
+        "start": 54.5,
+        "end": 57.5,
+        "text": "OK, let's go back to the noticeboard."
+      },
+      {
+        "id": "c11",
+        "start": 57.5,
+        "end": 62.0,
+        "text": "This time, turn left, walk to the end of that corridor, and then turn right, so you're heading north."
+      },
+      {
+        "id": "c12",
+        "start": 62.0,
+        "end": 68.5,
+        "text": "You'll see the staff office on your left. Just past it is the Craft Room."
+      },
+      {
+        "id": "c13",
+        "start": 68.5,
+        "end": 71.5,
+        "text": "Keep going north, past the corridor junction."
+      },
+      {
+        "id": "c14",
+        "start": 71.5,
+        "end": 81.0,
+        "text": "The table tennis room is on the west side... oh, sorry, I mean the east side, I always mix those two up."
+      },
+      {
+        "id": "c15",
+        "start": 81.0,
+        "end": 89.5,
+        "text": "So that's three rooms: the Quiet Lounge, the Craft Room and the table tennis room. Enjoy the Open Day!"
+      }
+    ]
+  },
+  "events": [
+    {
+      "id": "e1",
+      "cueId": "c3",
+      "kind": "move",
+      "at": {
+        "x": 500,
+        "y": 660
+      }
+    },
+    {
+      "id": "e2",
+      "cueId": "c4",
+      "kind": "landmark",
+      "landmarkId": "reception",
+      "at": {
+        "x": 580,
+        "y": 610
+      }
+    },
+    {
+      "id": "e3",
+      "cueId": "c5",
+      "kind": "landmark",
+      "landmarkId": "toilets",
+      "at": {
+        "x": 420,
+        "y": 610
+      }
+    },
+    {
+      "id": "e4",
+      "cueId": "c6",
+      "kind": "landmark",
+      "landmarkId": "noticeboard",
+      "at": {
+        "x": 500,
+        "y": 480
+      }
+    },
+    {
+      "id": "e5",
+      "cueId": "c7",
+      "kind": "turn",
+      "landmarkId": "noticeboard",
+      "at": {
+        "x": 500,
+        "y": 480
+      }
+    },
+    {
+      "id": "e6",
+      "cueId": "c8",
+      "kind": "landmark",
+      "landmarkId": "meeting-room",
+      "at": {
+        "x": 630,
+        "y": 540
+      }
+    },
+    {
+      "id": "e7",
+      "cueId": "c9",
+      "kind": "destination",
+      "at": {
+        "x": 820,
+        "y": 540
+      }
+    },
+    {
+      "id": "e8",
+      "cueId": "c10",
+      "kind": "move",
+      "at": {
+        "x": 500,
+        "y": 480
+      }
+    },
+    {
+      "id": "e9",
+      "cueId": "c11",
+      "kind": "turn",
+      "landmarkId": "noticeboard",
+      "at": {
+        "x": 500,
+        "y": 480
+      }
+    },
+    {
+      "id": "e10",
+      "cueId": "c11",
+      "kind": "move",
+      "at": {
+        "x": 300,
+        "y": 480
+      }
+    },
+    {
+      "id": "e11",
+      "cueId": "c12",
+      "kind": "landmark",
+      "landmarkId": "staff-office",
+      "at": {
+        "x": 230,
+        "y": 380
+      }
+    },
+    {
+      "id": "e12",
+      "cueId": "c12",
+      "kind": "destination",
+      "at": {
+        "x": 230,
+        "y": 280
+      }
+    },
+    {
+      "id": "e13",
+      "cueId": "c13",
+      "kind": "landmark",
+      "landmarkId": "corridor-junction",
+      "at": {
+        "x": 300,
+        "y": 160
+      }
+    },
+    {
+      "id": "e14",
+      "cueId": "c14",
+      "kind": "correction",
+      "at": {
+        "x": 300,
+        "y": 100
+      },
+      "note": "The guide first says the table tennis room is on the west side, then immediately corrects herself to the east side."
+    },
+    {
+      "id": "e15",
+      "cueId": "c14",
+      "kind": "destination",
+      "at": {
+        "x": 400,
+        "y": 100
+      }
+    }
+  ],
+  "questions": [
+    {
+      "id": "q1",
+      "prompt": "Quiet Lounge",
+      "answerLabel": "C",
+      "eventId": "e7",
+      "microSkill": "spatial-language",
+      "hints": [
+        {
+          "level": 1,
+          "landmarkId": "meeting-room"
+        },
+        {
+          "level": 2,
+          "cueId": "c9"
+        }
+      ],
+      "explanation": {
+        "en": "The guide says the Quiet Lounge is 'at the far end of that corridor, on your right, past the meeting room'. D is also past the meeting room on the right, but it is not at the far end. A is on the same corridor, but on the left. Only C is at the far end, on the right.",
+        "ar": "تقول المرشدة إن غرفة الهدوء (Quiet Lounge) تقع «at the far end» من الممر، «on your right»، «past the meeting room». الحرف D يقع أيضاً بعد غرفة الاجتماعات وعلى اليمين، لكنه ليس في نهاية الممر. والحرف A في الممر نفسه لكنه على اليسار. الحرف C وحده في نهاية الممر وعلى اليمين."
+      }
+    },
+    {
+      "id": "q2",
+      "prompt": "Craft Room",
+      "answerLabel": "F",
+      "eventId": "e12",
+      "microSkill": "landmark-vs-answer",
+      "hints": [
+        {
+          "level": 1,
+          "landmarkId": "staff-office"
+        },
+        {
+          "level": 2,
+          "cueId": "c12"
+        }
+      ],
+      "explanation": {
+        "en": "The guide says the Craft Room is 'just past' the staff office, which is on your left. The staff office is only named to orient you; it is not the answer. E is opposite the staff office, not past it, so a listener who stops at the first room named picks the wrong letter. F is the room just past it.",
+        "ar": "تقول المرشدة إن غرفة الحرف اليدوية (Craft Room) تقع «just past» مكتب الموظفين، أي بعده مباشرة لا عنده. مكتب الموظفين (على يسارك) مذكور فقط لتوجيهك، وليس هو الإجابة. الحرف E يقع مقابل مكتب الموظفين لا بعده، فمن يتوقف عند أول غرفة يسمع اسمها يختار الحرف الخطأ. الحرف F هو الغرفة التي تلي المكتب مباشرة."
+      }
+    },
+    {
+      "id": "q3",
+      "prompt": "Table tennis room",
+      "answerLabel": "H",
+      "eventId": "e15",
+      "microSkill": "corrections-distractors",
+      "hints": [
+        {
+          "level": 1,
+          "landmarkId": "corridor-junction"
+        },
+        {
+          "level": 2,
+          "cueId": "c14"
+        }
+      ],
+      "explanation": {
+        "en": "The guide says 'the west side... oh, sorry, I mean the east side'. Always trust the correction, the last thing said — the west side (letter G) is only what she said by mistake before correcting herself.",
+        "ar": "تقول المرشدة «west side» ثم تستدرك فوراً وتقول «oh, sorry, I mean the east side». يجب أن تثق دائماً بالتصحيح الأخير، فالجانب الغربي (الحرف G) هو فقط ما قالته بالخطأ قبل أن تصحّح نفسها."
+      }
+    }
+  ],
+  "validation": {
+    "status": "draft"
+  }
+}

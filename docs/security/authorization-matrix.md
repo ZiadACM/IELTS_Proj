@@ -17,7 +17,7 @@ Status: **Proposed**. **No API exists yet.** The endpoints below are a logical, 
 | `learner` | Signed-in learner. Own data only. |
 | `content_author` | Staff. Drafts and imports items; cannot publish. Practises as a learner on own data. |
 | `content_reviewer` | Staff, a human. Reviews and publishes items (`CODING_STANDARDS.md` 3.1). Practises as a learner on own data. |
-| `admin` | Operator. Manages staff roles only. **No access to learners' or guests' attempts or progress** (decision D7). |
+| `admin` | Operator. Has no admin endpoint: staff roles are granted outside the API by the owner script (`npm run staff-roles -w server`, ticket 06 decision). **No access to learners' or guests' attempts or progress** (decision D7). |
 
 ## Decisions (cell values)
 
@@ -30,7 +30,6 @@ Status: **Proposed**. **No API exists yet.** The endpoints below are a logical, 
 | `own-open-guided` | As `own-open`, and only in guided practice. Refused in exam simulation and independent check (2.3). |
 | `own-submitted` | As `own`, and only after the attempt is submitted (2.2). |
 | `published` | Only published items. Draft or reviewed items: 404. |
-| `draft-only` | Only items that are not yet published. |
 
 ## Matrix
 
@@ -61,11 +60,9 @@ Status: **Proposed**. **No API exists yet.** The endpoints below are a logical, 
 | PROG-02 | GET | `/me/recommendations` | `deny` | `own` | `own` | `own` | `own` | `own` | ownerScoped | T3, CS2.1 |
 | ADM-01 | GET | `/admin/items` | `deny` | `deny` | `deny` | `allow` | `allow` | `deny` | staffOnly | T5 |
 | ADM-02 | POST | `/admin/items` | `deny` | `deny` | `deny` | `allow` | `allow` | `deny` | staffOnly, acceptsUserText | T5, CS2.5, CS3.2 |
-| ADM-03 | PUT | `/admin/items/{itemId}` | `deny` | `deny` | `deny` | `draft-only` | `draft-only` | `deny` | staffOnly, acceptsUserText | T5, CS2.5 |
 | ADM-04 | GET | `/admin/items/{itemId}/preview` | `deny` | `deny` | `deny` | `allow` | `allow` | `deny` | staffOnly, returnsAnswerData | T1, T5 |
 | ADM-05 | POST | `/admin/items/{itemId}/publish` | `deny` | `deny` | `deny` | `deny` | `allow` | `deny` | staffOnly, publishAction | T5, CS3.1 |
 | ADM-06 | GET | `/admin/reports` | `deny` | `deny` | `deny` | `allow` | `allow` | `deny` | staffOnly, rendersUserText | T5, CS2.5, CS2.6 |
-| ADM-07 | PUT | `/admin/users/{userId}/roles` | `deny` | `deny` | `deny` | `deny` | `deny` | `allow` | staffOnly, massAssignmentRisk | T2, CS2.1 |
 
 Flags drive the invariants and, later, the stack-specific tests: `ownerScoped` (cross-user tests), `deliveryPayload` (answer-key leakage scan), `returnsAnswerData`, `examForbidden` / `examSingleUse` (exam-mode tests), `acceptsUserText` / `rendersUserText` (XSS tests), `massAssignmentRisk` (extra-field tests), `enumerationSensitive` / `rateLimited` (auth tests), `staffOnly`, `publishAction`.
 
@@ -90,4 +87,5 @@ Flags drive the invariants and, later, the stack-specific tests: `ownerScoped` (
 - **D7 Admin:** no access to learners' or guests' attempts or progress.
 - **D8 Roles:** authors cannot publish. Publishing is a human action by a `content_reviewer`, and one person may hold both roles. Staff practise as learners on their own data.
 - **D9 / D10 Exam audio and attempts:** `ATT-06` serves exam audio once, forward only. A user has at most one open attempt per item.
+- **No item editor, no role endpoint (owner, 2026-11-17):** `ADM-03` (`PUT /admin/items/{itemId}`) and `ADM-07` (`PUT /admin/users/{userId}/roles`) were removed. The spec has no item editor: a draft is changed by importing it again (`ADM-02`), which is refused once the item is published. Staff roles come from the owner script (ticket 06). The `draft-only` decision went with `ADM-03`, its only user.
 - **AI tutor endpoints:** not listed (feature deferred). They must be added here before they are built.

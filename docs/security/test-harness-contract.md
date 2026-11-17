@@ -20,9 +20,9 @@ These routes live only under `server/**/test-support/`. The endpoint adapter ign
 | Request | Response |
 |---|---|
 | `GET /__test__/health` | 200 |
-| `POST /__test__/users {role, email, password}` (role: learner or staff) | 201 `{userId}`. The test then signs in through the real `AUTH-02`. (App: learners since ticket 05; staff roles answer 501 until ticket 06.) |
+| `POST /__test__/users {role, email, password}` (role: learner or staff) | 201 `{userId}`. The test then signs in through the real `AUTH-02`. (App: learners since ticket 05; staff since ticket 06, with the role granted as the owner script grants it.) |
 | `GET /__test__/users/{userId}` | 200 `{userId, role, attempts}` or 404 |
-| `POST /__test__/items {item, status}` (status `published` or `draft`) | 201 `{itemId}` |
+| `POST /__test__/items {item, status}` (status `published` or `draft`) | 201 `{itemId}`. The item must pass the content validator (400 otherwise). (App: since ticket 06.) |
 | `POST /__test__/clock {advanceSeconds}` | 200 `{now}` (ISO). Moves the server clock used for deadlines, audio grants and retention. |
 | `POST /__test__/rate-limits/reset` | 2xx |
 | `POST /__test__/invite-codes` | 201 `{code}`: a fresh, unused invite code (ticket 04). |

@@ -15,9 +15,15 @@ export type Failure =
   | 'email_taken'
   | 'reset_not_valid'
   | 'already_signed_in'
+  | 'forbidden'
+  | 'item_invalid'
+  | 'item_published'
+  | 'not_found'
   | 'offline'
   | 'error';
-export type Result<T> = { ok: true; value: T } | { ok: false; failure: Failure };
+// A content-checker finding (code and English message from tools/validate-content.mjs), shown to staff as is.
+export type ItemProblem = { code: string; msg: string };
+export type Result<T> = { ok: true; value: T } | { ok: false; failure: Failure; problems?: ItemProblem[] };
 
 async function call<T>(method: string, url: string, body?: object): Promise<Result<T>> {
   let res: Response;
@@ -41,6 +47,10 @@ async function call<T>(method: string, url: string, body?: object): Promise<Resu
   if (json?.error === 'email_taken') return { ok: false, failure: 'email_taken' };
   if (json?.error === 'reset_token_not_valid') return { ok: false, failure: 'reset_not_valid' };
   if (json?.error === 'already_signed_in') return { ok: false, failure: 'already_signed_in' };
+  if (json?.error === 'item_invalid') return { ok: false, failure: 'item_invalid', problems: json.problems ?? [] };
+  if (json?.error === 'item_published') return { ok: false, failure: 'item_published' };
+  if (res.status === 403) return { ok: false, failure: 'forbidden' };
+  if (res.status === 404) return { ok: false, failure: 'not_found' };
   return { ok: false, failure: 'error' };
 }
 
@@ -65,3 +75,22 @@ export const signOut = () => call<object>('DELETE', '/auth/sessions/current');
 export const requestPasswordReset = (email: string) => call<object>('POST', '/auth/password-resets', { email });
 export const completePasswordReset = (token: string, newPassword: string) =>
   call<object>('POST', '/auth/password-resets/complete', { token, newPassword });
+
+// Staff (ticket 06). The server decides who may do what; canPublish only decides whether the button is offered.
+export type ItemStatus = 'draft' | 'published';
+export type StaffItem = {
+  itemId: string;
+  contentId: string;
+  purpose: string;
+  tier: number;
+  questionCount: number;
+  status: ItemStatus;
+  importedAt: string;
+  publishedAt: string | null;
+};
+export const ITEM_FILE_MAX_BYTES = 1_000_000; // the server's request body limit (Fastify default, 1 MiB)
+export const listStaffItems = () => call<{ canPublish: boolean; items: StaffItem[] }>('GET', '/admin/items');
+export const importItem = (item: object) =>
+  call<{ itemId: string; status: ItemStatus }>('POST', '/admin/items', { item });
+export const publishItem = (itemId: string) =>
+  call<{ itemId: string; status: ItemStatus }>('POST', `/admin/items/${encodeURIComponent(itemId)}/publish`, {});

@@ -89,13 +89,22 @@ export async function listItems(db: Pool): Promise<ItemSummary[]> {
 }
 
 // Test support only (docs/security/test-harness-contract.md): stores a valid item with the given status directly.
-export async function seedItem(db: Pool, item: Item, status: ItemStatus, now: Date): Promise<ImportResult> {
+// The file's own status must agree, so a published item still passes the published rules (human audio, reviewer).
+export async function seedItem(
+  db: Pool,
+  item: Item,
+  status: ItemStatus,
+  now: Date,
+): Promise<{ kind: 'invalid'; problems: Problem[] } | { kind: 'exists' } | { kind: 'created'; itemId: string }> {
   const problems = problemsOf(item);
+  const fileStatus = (item.validation as { status?: unknown } | undefined)?.status;
+  if (fileStatus !== status)
+    problems.push({ code: 'validation', msg: `the file says ${JSON.stringify(fileStatus)}, not "${status}"` });
   if (problems.length) return { kind: 'invalid', problems };
   const { rows } = await db.query<{ id: string }>(
     `insert into items (content_id, status, content, imported_at, published_at) values ($1, $2, $3, $4, $5)
-     returning id`,
+     on conflict (content_id) do nothing returning id`,
     [item.id, status, item, now, status === 'published' ? now : null],
   );
-  return { kind: 'created', itemId: rows[0].id };
+  return rows[0] ? { kind: 'created', itemId: rows[0].id } : { kind: 'exists' };
 }

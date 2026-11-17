@@ -81,7 +81,7 @@ export async function testSupportRoutes(fastify: FastifyInstance, { token, auth,
       const { role, email, password } = request.body;
       const { user } = await auth.api.signUpEmail({ body: { email, password, name: '' }, headers: new Headers() });
       await db.query('insert into learner_settings (user_id) values ($1)', [user.id]);
-      if (role !== 'learner') await grantStaffRole(db, email, role);
+      if (role !== 'learner' && !(await grantStaffRole(db, email, role))) throw new Error(`could not grant ${role}`);
       return reply.code(201).send({ userId: user.id });
     },
   );
@@ -120,7 +120,8 @@ export async function testSupportRoutes(fastify: FastifyInstance, { token, auth,
     },
     async (request, reply) => {
       const result = await seedItem(db, request.body.item, request.body.status, clock.now());
-      if (result.kind !== 'created') return reply.code(400).send({ error: 'item_invalid', result });
+      if (result.kind === 'invalid') return reply.code(400).send({ error: 'item_invalid', problems: result.problems });
+      if (result.kind !== 'created') return reply.code(409).send({ error: 'item_exists' });
       return reply.code(201).send({ itemId: result.itemId });
     },
   );

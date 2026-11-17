@@ -101,7 +101,7 @@ const en = {
   onlyReviewerPublishes: 'Only a content reviewer can publish.',
   statusDraft: 'Draft',
   statusPublished: 'Published',
-  itemTier: 'Tier',
+  itemTier: 'Difficulty tier',
   itemQuestions: 'Questions',
   staffNotAllowed: 'Your account does not have a staff role.',
 };
@@ -202,7 +202,7 @@ const ar: typeof en = {
   onlyReviewerPublishes: 'النشر متاح لمراجع المحتوى فقط.',
   statusDraft: 'مسودة',
   statusPublished: 'منشور',
-  itemTier: 'المستوى',
+  itemTier: 'فئة الصعوبة',
   itemQuestions: 'الأسئلة',
   staffNotAllowed: 'حسابك لا يملك دور موظف.',
 };

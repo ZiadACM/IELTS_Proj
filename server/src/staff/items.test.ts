@@ -298,11 +298,29 @@ describe('test support (docs/security/test-harness-contract.md)', () => {
     }
   });
 
+  test('POST /__test__/items refuses a status the file contradicts, and a repeated id, with the import error shapes', async () => {
+    const app = await apps.app();
+    const draftFile = newItem(humanAudio); // the fixture says "draft"
+    const mismatch = await support(app, '/__test__/items', { item: draftFile, status: 'published' });
+    assert.equal(mismatch.statusCode, 400, mismatch.body);
+    assert.equal(mismatch.json().error, 'item_invalid');
+    assert.ok(Array.isArray(mismatch.json().problems), mismatch.body);
+    assert.equal(await storedContent(draftFile.id), undefined);
+
+    const item = newItem(humanAudio);
+    assert.equal((await support(app, '/__test__/items', { item, status: 'draft' })).statusCode, 201);
+    const again = await support(app, '/__test__/items', { item, status: 'draft' });
+    assert.equal(again.statusCode, 409, again.body);
+  });
+
   test('POST /__test__/items stores an item with the given status', async () => {
     const app = await apps.app();
     const author = await signedIn(app, 'content_author');
     for (const status of ['draft', 'published'] as const) {
-      const item = newItem(humanAudio);
+      const item = newItem((i) => {
+        humanAudio(i);
+        if (status === 'published') i.validation = { status, reviewer: 'synthetic-reviewer', reviewedOn: '2026-11-17' };
+      });
       const res = await support(app, '/__test__/items', { item, status });
       assert.equal(res.statusCode, 201, res.body);
       assert.equal((await listed(app, author, item.id))?.itemId, res.json().itemId);

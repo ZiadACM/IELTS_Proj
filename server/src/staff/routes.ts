@@ -13,11 +13,11 @@ export async function staffRoutes(
   fastify: FastifyInstance,
   { auth, db, clock }: { auth: Auth; db: Pool; clock: Clock },
 ) {
-  const staff = requireStaffRole(auth, db, ['content_author', 'content_reviewer']);
-  const reviewer = requireStaffRole(auth, db, ['content_reviewer']);
+  const contentStaffOnly = requireStaffRole(auth, db, ['content_author', 'content_reviewer']);
+  const reviewerOnly = requireStaffRole(auth, db, ['content_reviewer']);
 
   // ADM-01: every item with its status; canPublish tells the screen whether to offer publishing.
-  fastify.get('/admin/items', { preValidation: staff }, async (request) => ({
+  fastify.get('/admin/items', { preValidation: contentStaffOnly }, async (request) => ({
     canPublish: request.staffRoles?.includes('content_reviewer') === true,
     items: await listItems(db),
   }));
@@ -26,7 +26,7 @@ export async function staffRoutes(
   fastify.post<{ Body: { item: Record<string, unknown> & { id: string } } }>(
     '/admin/items',
     {
-      preValidation: staff,
+      preValidation: contentStaffOnly,
       schema: {
         body: {
           type: 'object',
@@ -48,7 +48,7 @@ export async function staffRoutes(
   fastify.post<{ Params: { itemId: string } }>(
     '/admin/items/:itemId/publish',
     {
-      preValidation: reviewer,
+      preValidation: reviewerOnly,
       schema: { body: { type: 'object', additionalProperties: false, properties: {} } },
     },
     async (request, reply) => {

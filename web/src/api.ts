@@ -88,7 +88,8 @@ export type StaffItem = {
   importedAt: string;
   publishedAt: string | null;
 };
-export const ITEM_FILE_MAX_BYTES = 1_000_000; // the server's request body limit (Fastify default, 1 MiB)
+// A little under the server's request body limit (Fastify default, 1 MiB), leaving room for the request around the item.
+export const ITEM_FILE_MAX_BYTES = 1_000_000;
 export const listStaffItems = () => call<{ canPublish: boolean; items: StaffItem[] }>('GET', '/admin/items');
 export const importItem = (item: object) =>
   call<{ itemId: string; status: ItemStatus }>('POST', '/admin/items', { item });

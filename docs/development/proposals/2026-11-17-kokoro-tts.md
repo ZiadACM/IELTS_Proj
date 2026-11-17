@@ -50,3 +50,14 @@ The pins are exact versions. The install records pip's SHA-256 for every package
 1. Install the pieces above.
 2. Render c1, c9 and c14 of `first-challenge-001` in four voices: `bf_emma`, `bf_isabella`, `af_heart` and `af_bella`. The files are named only A to D for a blind listening test.
 3. The owner picks a voice. I re-make the audio, re-time the cues with the same measured-and-checked method, and record the voice in `docs/content/prompts/draft-map-item.md`.
+
+## Decision and install record
+
+- **2026-11-17, owner:** approved as proposed. The blind test uses 2 British and 2 American voices.
+- **Installed:** Homebrew `python@3.12` (3.12.16). Virtual environment `~/.local/share/ielts-tts/venv`: `kokoro` 0.9.4, `misaki` 0.9.4, `torch` 2.15.0, and `soundfile` (BSD-3-Clause, to write WAV files; **not listed above, added at install**). That is 94 packages, 1.1 GB. pip's report, with a SHA-256 for every package, is saved at `~/.local/share/ielts-tts/install-report.json`.
+- **First render** fetched the model and four voices from huggingface.co (628 MB, snapshot `f3ff3571791e39611d31c381e3a41a3af07b4987`). misaki pip-installed `en-core-web-sm` 3.8.0 (spaCy English model) into the virtual environment.
+- **Checksums:**
+  - `kokoro-v1_0.pth` SHA-256 matches the model card (`496dba11…ad1e4`).
+  - Voice `af_heart` matches its VOICES.md prefix `0ab5709b`.
+  - The other voices (`af_bella` `8cb64e02`, `bf_emma` `d0a423de`, `bf_isabella` `cdd4c370`) were not compared: NOT VERIFIED.
+- **Telemetry:** none observed, but network traffic was not monitored (NOT VERIFIED).

@@ -10,6 +10,7 @@ Scope: the whole repo and deployed staging. Install the skill first: `bash scrip
 4. Attack the two things this product depends on, against staging, with a second account: (a) fetch answer keys / routes / transcripts before submitting, and in exam mode; (b) perform exam-forbidden actions (replay, hint, timer) directly against the API; then try another user's attempt and progress ids.
 5. Evaluate Trail of Bits `supply-chain-risk-auditor`, `insecure-defaults` and (if agents run in CI) `agentic-actions-auditor` after reading their scripts.
 6. A qualified human reviews the HIGH findings and the auth design. Agent review is an aid, not a sign-off.
+7. Re-decide the risks accepted for the pilot: D17 (sign-up reveals that an email has an account), and the in-memory rate limits keyed on `request.ip` (tickets 04 and 05).
 Gate: no public launch with open CRITICAL/HIGH findings.
 
 ## Tier 1: small pre-pilot check (before any real testers) - recommended, you may decline

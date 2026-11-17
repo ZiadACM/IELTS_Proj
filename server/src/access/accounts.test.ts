@@ -161,6 +161,15 @@ describe('AUTH-01 POST /accounts without a guest session', () => {
     }
   });
 
+  test('the password minimum is 12 characters (owner decision 2026-11-17, matches the security fixture)', async () => {
+    const app = await apps.app();
+    const base = { inviteCode: await newCode(), ageConfirmed: true };
+    const eleven = await call(app, 'POST', '/accounts', { ...base, email: newEmail(), password: 'abcdefghijk' });
+    assert.equal(eleven.statusCode, 400, eleven.body);
+    const twelve = await call(app, 'POST', '/accounts', { ...base, email: newEmail(), password: 'abcdefghijkl' });
+    assert.equal(twelve.statusCode, 201, twelve.body);
+  });
+
   test('an account holder who is signed in is refused (matrix: learner deny)', async () => {
     const app = await apps.app();
     const { cookie } = await signUp(app);

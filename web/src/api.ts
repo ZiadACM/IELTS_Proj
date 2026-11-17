@@ -51,7 +51,7 @@ export const startGuestSession = (inviteCode: string) =>
 
 // Accounts (ticket 05). Without a session, creating an account needs an invite code; with a guest session it upgrades
 // that guest and keeps its data.
-export const PASSWORD_MIN = 8;
+export const PASSWORD_MIN = 12;
 export const PASSWORD_MAX = 128;
 export const createAccount = (email: string, password: string, inviteCode?: string) =>
   call<{ userId: string }>(

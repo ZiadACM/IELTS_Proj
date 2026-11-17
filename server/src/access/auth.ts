@@ -8,7 +8,7 @@ import type { Config } from '../config.ts';
 import { forgetResetLinks, queueResetLink, RESET_TOKEN_SECONDS } from './password-reset-outbox.ts';
 
 const DAY_SECONDS = 24 * 60 * 60;
-export const PASSWORD_LENGTH = { min: 8, max: 128 };
+export const PASSWORD_LENGTH = { min: 12, max: 128 };
 
 export function createAuth(db: Pool, config: Pick<Config, 'authSecret' | 'publicOrigin' | 'production'>) {
   return betterAuth({

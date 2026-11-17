@@ -32,3 +32,10 @@ Built on `agent/invite-guest-onboarding` (stacked on ticket 04). Routes: `POST /
 - shortcut: limits are in memory and keyed on `request.ip` (as in ticket 04; set `trustProxy` at deployment).
 - Better Auth's reset expiry and session expiry use the real clock, not the test clock, so SESS-05's 1-hour part stays STACK.
 - The PR needs the `protected-change-approved` label for the CI protected-files check.
+
+### 2026-11-17, owner (via agent session)
+Decisions on the open items: (1) `email_taken` on AUTH-01 is **accepted for the pilot** (D17), to be re-decided at the pre-launch review. (2) The Impeccable critique/audit and browser checks of this ticket's screens (sign-in, sign-up with code, forgot/reset password, Settings account section) are **deferred to ticket 07**, as for ticket 04. (3) The `env.resetToken` helper in `tests/security/lib/live.mjs` is **approved**. (4) The password minimum is raised to **12** in the app to match the fixture (D18).
+
+### 2026-11-17, agent
+Password minimum raised to 12 (`server/src/access/auth.ts`, `web/src/api.ts`, English and Arabic hint/error strings). New test written first and seen failing: 11 characters gives 400, 12 gives 201. **Results:** `npm test` 77/77; offline security and tools 107 pass, 0 fail, 27 skipped (live), plus `scripts/lib` 8/8 (115 pass in all, as before); fixture proof 13/13; lint, type check, build pass. The Arabic strings changed to "12 حرفًا" and need a fluent reader (CS 3.5). **NOT VERIFIED:** the new hint in a browser (deferred to 07 with the rest of the UI checks).
+

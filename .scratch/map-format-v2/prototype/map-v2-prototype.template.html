@@ -100,7 +100,7 @@
     <h1>Content format v2: first-challenge-001 redrawn</h1>
     <p class="note">Prototype for the map format ticket. A to C keep the original recording; D is the anchored redraft (every question starts at the main entrance, D23).
       Open this on your phone and flip variants with the bar at the bottom.</p>
-    <p class="note"><strong>New (version 9): Answer Replay (D).</strong> The line jumps to each point as soon as the guide has said it, and the place she names lights up until she names the next one. At the self-correction the line goes the wrong way, pauses, then pulls back. At the end all three answers light up together. D still has the old recording and talk; the wrong path is a demo until the redraft.</p>
+    <p class="note"><strong>New (version 10): the redrafted talk in D.</strong> D now has the new formal talk, voiced with bf_isabella at 0.75 (D26). Answer Replay: The line jumps to each point as soon as the guide has said it, and the place she names lights up until she names the next one. At the self-correction the line goes the wrong way, pauses, then pulls back. At the end all three answers light up together.</p>
   </div>
 
   <section aria-labelledby="map-title">
@@ -491,7 +491,7 @@ function renderPanel() {
     ['Map drawn at', `${Math.round(view.widthPx)} px wide, ${(view.unit).toFixed(2)} map units per px`],
     ['Lettered places', `${map.targets.length} for ${item.questions.length} questions`],
     ['Route', `${item.events.length} events in ${plans.length} legs (one per question)`],
-    ['Correction', corrections.length ? corrections.map((e) => e.wrongPath ? `${e.id}: wrong path, pulls back${e.demoWrongPath ? ' (demo path added for the prototype)' : ''}` : `${e.id}: frame only (no wrongPath)`).join('; ') : 'none'],
+    ['Correction', corrections.length ? corrections.map((e) => e.wrongPath ? `${e.id}: wrong path, pulls back` : `${e.id}: frame only (no wrongPath)`).join('; ') : 'none'],
     ['Motion', state.reduced ? 'reduced: wrong path stays dashed, no summary animation' : 'line jumps to each point when it is said; the place named is highlighted'],
     ['Labels inside rooms', map.format === 2 ? (unfit.length ? `<span class="bad">${report.length - unfit.length}/${report.length} fit; too big: ${unfit.map((r) => r.text).join(', ')}</span>` : `${report.length}/${report.length} fit at ${LABEL_PX} px`) : 'v1 has no rooms'],
     ['Marked letters', [...state.picked].sort().join(' ') || 'none'],

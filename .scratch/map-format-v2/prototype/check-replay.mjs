@@ -63,7 +63,7 @@ for (const plan of plans) for (const m of plan.marks) {
 }
 ok(hlBad.length === 0, `highlight: each of ${hlChecked} named places (and answers) lit from its time until the next, one at a time` + (hlBad.length ? ': ' + hlBad.join('; ') : ''));
 
-// Correction e18 (demo wrong path)
+// The correction's wrong path
 const c = item.events.find((e) => e.kind === 'correction'), wp = plans.flatMap((p) => p.wrong)[0];
 const w0 = await snap(wp.t - 0.05), w1 = await snap(wp.t + 0.2), w2 = await snap(wp.back0 + 0.2), w3 = await snap(wp.back1 + 0.05);
 ok(w0.wrong.length === 0 && w1.wrong.length === 1 && same(w1.wrong[0].at(-1), c.at), 'correction: wrong path appears in full at its time, not before');

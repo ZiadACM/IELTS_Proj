@@ -23,6 +23,7 @@
     --map-grass: #eef2ea;
     --map-faint: #6b7a85;
     --on-night: #f4f6f8;
+    --wrong: #a3271c;
     --font-ui: system-ui, "Segoe UI", "Noto Sans Arabic", sans-serif;
     color-scheme: light;
   }
@@ -78,6 +79,11 @@
   .m-box.picked text { fill: var(--on-night); }
   .m-route { fill: none; stroke: var(--saffron); stroke-linecap: round; stroke-linejoin: round; opacity: 0.9; }
   .m-dest { fill: var(--done); }
+  .m-wrong { fill: none; stroke: var(--wrong); stroke-linecap: round; stroke-linejoin: round; opacity: 0.85; }
+  /* End-of-replay summary: the answer frames pop in one after another, once. */
+  .m-sum { transform-box: fill-box; transform-origin: center; animation: sum-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  @keyframes sum-in { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+  .reduced .m-sum { animation: none; }
   .m-fix { fill: #a3271c; }
   .m-ink { fill: var(--map-ink); stroke: var(--map-ink); }
   .m-stroke { fill: none; stroke: var(--map-ink); }
@@ -92,6 +98,7 @@
     <h1>Content format v2: first-challenge-001 redrawn</h1>
     <p class="note">Prototype for the map format ticket. A to C keep the original recording; D is the anchored redraft (every question starts at the main entrance, D23).
       Open this on your phone and flip variants with the bar at the bottom.</p>
+    <p class="note"><strong>New: smooth Answer Replay (D).</strong> The line grows along the corridors and reaches each point as the guide finishes saying it. At the self-correction it goes the wrong way, pauses, pulls back, then carries on. At the end all three answers light up together. "Reduced motion" shows the version without animation. D still has the old recording and talk; the wrong path is a demo until the redraft.</p>
   </div>
 
   <section aria-labelledby="map-title">
@@ -103,6 +110,7 @@
     <button type="button" id="play" class="primary">Play recording</button>
     <button type="button" id="route" aria-pressed="false">Show whole route</button>
     <button type="button" id="answers" aria-pressed="false">Show answers</button>
+    <button type="button" id="motion" aria-pressed="false">Reduced motion</button>
   </div>
   <audio id="audio" src="first-challenge-001.mp4" preload="metadata"></audio>
   <p class="cue" id="cue" aria-live="polite">Press Play: the route draws in step with the recording (Answer Replay preview).</p>
@@ -136,7 +144,7 @@ const VARIANTS = [
 const MARGIN = 40, LABEL_PX = 11, BOX_PX = 26, LETTER_PX = 15;
 const NS = 'http://www.w3.org/2000/svg';
 const $ = (id) => document.getElementById(id);
-const state = { variant: 0, picked: new Set(), showRoute: false, showAnswers: false, time: -1 };
+const state = { variant: 0, picked: new Set(), showRoute: false, showAnswers: false, time: -1, reduced: false };
 
 function el(name, attrs = {}, parent) {
   const node = document.createElementNS(NS, name);
@@ -264,49 +272,157 @@ function legsOf(events) {
   return legs;
 }
 
-// One leg per question: the line starts over at an entrance for each question (D23) and walks the corridors.
-function drawLeg(svg, leg, label, unit, opacity) {
-  const g = el('g', { opacity }, svg);
-  const start = leg[0];
-  // A correction marks the place named by mistake (framed below); the walk does not go there.
-  const walk = leg.filter((e) => e.kind !== 'correction');
-  if (walk.length > 1) {
-    el('polyline', { class: 'm-route', points: walk.map((e) => `${e.at.x},${e.at.y}`).join(' '), 'stroke-width': 4 * unit }, g);
-  }
-  for (const e of leg) {
-    if (e.kind === 'destination') el('circle', { class: 'm-dest', cx: e.at.x, cy: e.at.y, r: 4 * unit }, g);
-    // The place the speaker named by mistake: a dashed red frame around it, drawn larger than the letter box.
-    if (e.kind === 'correction') { const h = (BOX_PX / 2 + 6) * unit; el('rect', { x: e.at.x - h, y: e.at.y - h, width: 2 * h, height: 2 * h, fill: 'none', stroke: '#a3271c', 'stroke-width': 2.5 * unit, 'stroke-dasharray': `${5 * unit} ${4 * unit}` }, g); }
-  }
-  el('circle', { cx: start.at.x, cy: start.at.y, r: 8 * unit, fill: 'var(--map-paper)', stroke: 'var(--saffron)', 'stroke-width': 2.5 * unit }, g);
-  const t = el('text', { x: start.at.x, y: start.at.y, dy: '0.36em', 'font-size': 10 * unit, 'font-weight': 700, 'text-anchor': 'middle', fill: 'var(--map-ink)' }, g);
-  t.textContent = label;
-}
-
-// When an event may be drawn: once the speaker has said it (D23). atSec is the end of its words;
+// When an event's point is reached: once the speaker has said it (D23). atSec is the end of its words;
 // without one, the end of its cue. Never the cue's start, which draws the line before the words.
 function shownAt(item, e) {
   return e.atSec ?? item.transcript.cues.find((c) => c.id === e.cueId).end;
 }
 
-function currentLeg(item) {
-  const legs = legsOf(item.events);
-  let index = -1;
-  legs.forEach((leg, i) => { if (shownAt(item, leg[0]) <= state.time) index = i; });
-  return { legs, index };
+// ---- Smooth Answer Replay (ticket 06; owner decisions D23a and D25) ----
+// Each piece of line grows toward its point while its words are spoken and arrives exactly at the point's atSec,
+// never before (D23a). Growth is eased so it never looks stepped. A correction with a wrongPath draws the wrong
+// way, holds it, pulls it back, and only then does the walk carry on (D25). Traps without a correction do not
+// change the route. Reduced motion: every piece appears whole at its time; a wrong path appears dashed and stays.
+const UNITS_PER_SEC = 260, GROW_MIN = 0.35, GROW_MAX = 1.6; // how long a piece takes to grow, by its length
+const HOLD = 0.5, PULL = 0.55;                                // correction: hold the wrong path, then pull back
+const SUMMARY_AFTER = 0.8;                                    // seconds after the last answer is reached
+// Sine ease-in-out: smooth start and stop, with a short settling tail, so the line is visibly still moving
+// until its word time instead of creeping the last pixel for a tenth of a second (cubic did; D23a never early).
+const ease = (f) => (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, f)))) / 2;
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const pathLen = (pts) => pts.slice(1).reduce((s, p, i) => s + dist(pts[i], p), 0);
+const growTime = (len) => Math.min(GROW_MAX, Math.max(GROW_MIN, len / UNITS_PER_SEC));
+
+// The first fraction f (0 to 1) of a polyline, measured along its length.
+function partial(pts, f) {
+  if (f >= 1) return pts.slice();
+  const out = [pts[0]];
+  let left = Math.max(0, f) * pathLen(pts);
+  for (let i = 1; i < pts.length; i++) {
+    const d = dist(pts[i - 1], pts[i]);
+    if (left >= d) { out.push(pts[i]); left -= d; continue; }
+    const k = d ? left / d : 0;
+    out.push({ x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * k, y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * k });
+    break;
+  }
+  return out;
 }
 
-function drawRoute(svg, item, unit) {
-  const { legs, index } = currentLeg(item);
-  if (state.showRoute) legs.forEach((leg, i) => drawLeg(svg, leg, i + 1, unit, 1));
-  else if (index >= 0) {
-    // Earlier legs fade; the current leg draws as far as the recording has got.
-    legs.slice(0, index).forEach((leg, i) => drawLeg(svg, leg, i + 1, unit, 0.25));
-    const part = legs[index].filter((e) => shownAt(item, e) <= state.time);
-    drawLeg(svg, part, index + 1, unit, 1);
-    const last = part.filter((e) => e.kind !== 'correction').pop();
-    el('circle', { cx: last.at.x, cy: last.at.y, r: 7 * unit, fill: 'var(--saffron)', stroke: 'var(--map-ink)', 'stroke-width': 1.5 * unit }, svg);
+// One leg as a timeline: walk pieces (one per event) and wrong paths, each with its growth window [g0, g1].
+function legPlan(item, leg) {
+  const plan = { start: leg[0], t0: shownAt(item, leg[0]), walk: [], wrong: [], frames: [], dests: [] };
+  let at = leg[0].at, free = plan.t0; // where the line is now, and from when it may move on
+  for (const e of leg.slice(1)) {
+    const T = shownAt(item, e);
+    if (e.kind === 'correction') {
+      plan.frames.push({ e, T });
+      if (!e.wrongPath?.length) continue; // old format: the place named by mistake is only framed
+      const pts = [at, ...e.wrongPath];
+      const g0 = Math.min(T, Math.max(free, T - growTime(pathLen(pts))));
+      plan.wrong.push({ pts, g0, g1: T, back0: T + HOLD, back1: T + HOLD + PULL });
+      free = Math.max(free, T + HOLD + PULL);
+      continue;
+    }
+    const g0 = Math.min(T, Math.max(free, T - growTime(dist(at, e.at))));
+    plan.walk.push({ from: at, to: e.at, g0, g1: T });
+    if (e.kind === 'destination') plan.dests.push({ at: e.at, T });
+    at = e.at; free = Math.max(free, T);
   }
+  return plan;
+}
+
+// The letter box a correction points at: the target in the room whose door the wrong path ends at, else the nearest.
+function wrongTarget(map, e) {
+  const room = map.areas?.find((a) => a.door && a.kind === 'room' && (() => { const r = rectOf(a); const [x1, y1, x2, y2] = doorSegment(r, a.door, 0); return Math.hypot(x1 - e.at.x, y1 - e.at.y) < 2; })());
+  const inRoom = room && map.targets.find((t) => t.area === room.id);
+  if (inRoom) return inRoom;
+  const near = map.targets.map((t) => [dist(t, e.at), t]).sort((a, b) => a[0] - b[0])[0];
+  return near && near[0] < 160 ? near[1] : e.at;
+}
+
+// Draws one leg as it stands at time t (Infinity: the whole leg). `study` draws wrong paths dashed, for the full route.
+function drawLeg(svg, item, plan, label, unit, opacity, t, study) {
+  const g = el('g', { opacity }, svg);
+  const pts = [plan.start.at];
+  for (const p of plan.walk) {
+    if (t >= p.g1) { pts.push(p.to); continue; }
+    if (!state.reduced && t > p.g0) { const f = ease((t - p.g0) / (p.g1 - p.g0)); pts.push({ x: p.from.x + (p.to.x - p.from.x) * f, y: p.from.y + (p.to.y - p.from.y) * f }); }
+    break;
+  }
+  let head = pts[pts.length - 1];
+  // The walked line first, so a wrong path that runs back along it stays visible on top.
+  if (pts.length > 1) el('polyline', { class: 'm-route', points: pts.map((p) => `${p.x},${p.y}`).join(' '), 'stroke-width': 4 * unit }, g);
+  for (const w of plan.wrong) {
+    let f = 0, dashed = false;
+    if (study || state.reduced) { f = t >= w.g1 ? 1 : 0; dashed = true; }
+    else if (t > w.g0 && t < w.g1) f = ease((t - w.g0) / (w.g1 - w.g0));
+    else if (t >= w.g1 && t < w.back0) f = 1;
+    else if (t >= w.back0 && t < w.back1) f = 1 - ease((t - w.back0) / (w.back1 - w.back0));
+    if (f <= 0) continue;
+    const part = partial(w.pts, f);
+    el('polyline', { class: 'm-wrong', points: part.map((p) => `${p.x},${p.y}`).join(' '), 'stroke-width': 4 * unit, ...(dashed ? { 'stroke-dasharray': `${7 * unit} ${6 * unit}` } : {}) }, g);
+    if (!dashed) head = part[part.length - 1];
+  }
+  for (const d of plan.dests) if (t >= d.T) el('circle', { class: 'm-dest', cx: d.at.x, cy: d.at.y, r: 4 * unit }, g);
+  // The place named by mistake: a dashed red frame around its letter, from the moment it is said.
+  for (const { e, T } of plan.frames) if (t >= T) {
+    const c = wrongTarget(item.map, e), h = (BOX_PX / 2 + 6) * unit;
+    el('rect', { x: c.x - h, y: c.y - h, width: 2 * h, height: 2 * h, fill: 'none', stroke: 'var(--wrong)', 'stroke-width': 2.5 * unit, 'stroke-dasharray': `${5 * unit} ${4 * unit}` }, g);
+  }
+  el('circle', { cx: plan.start.at.x, cy: plan.start.at.y, r: 8 * unit, fill: 'var(--map-paper)', stroke: 'var(--saffron)', 'stroke-width': 2.5 * unit }, g);
+  const txt = el('text', { x: plan.start.at.x, y: plan.start.at.y, dy: '0.36em', 'font-size': 10 * unit, 'font-weight': 700, 'text-anchor': 'middle', fill: 'var(--map-ink)' }, g);
+  txt.textContent = label;
+  return head;
+}
+
+function plansOf(item) { return legsOf(item.events).map((leg) => legPlan(item, leg)); }
+function currentLeg(item) {
+  const plans = plansOf(item);
+  let index = -1;
+  plans.forEach((p, i) => { if (p.t0 <= state.time) index = i; });
+  return { plans, index };
+}
+function summaryTime(item) {
+  const dests = item.events.filter((e) => e.kind === 'destination').map((e) => shownAt(item, e));
+  return Math.max(...dests) + SUMMARY_AFTER;
+}
+
+// Route layer only; called every animation frame while the recording plays.
+let view = null; // { svg, routeLayer, summaryLayer, unit, item }
+function tick() {
+  if (!view) return;
+  const { item, unit, routeLayer } = view;
+  routeLayer.textContent = '';
+  const { plans, index } = currentLeg(item);
+  const summary = !state.showRoute && state.time >= summaryTime(item);
+  if (state.showRoute) plans.forEach((p, i) => drawLeg(routeLayer, item, p, i + 1, unit, 1, Infinity, true));
+  else if (summary) plans.forEach((p, i) => drawLeg(routeLayer, item, p, i + 1, unit, 0.3, Infinity, false));
+  else if (index >= 0) {
+    // Earlier legs fade; the current leg grows with the recording.
+    plans.slice(0, index).forEach((p, i) => drawLeg(routeLayer, item, p, i + 1, unit, 0.25, Infinity, false));
+    const head = drawLeg(routeLayer, item, plans[index], index + 1, unit, 1, state.time, false);
+    el('circle', { cx: head.x, cy: head.y, r: 7 * unit, fill: 'var(--saffron)', stroke: 'var(--map-ink)', 'stroke-width': 1.5 * unit }, routeLayer);
+  }
+  drawSummary(summary);
+}
+
+// End of the replay: all answers highlighted together, numbered by question (owner interview).
+// Built once when the summary starts, so its entrance animation plays once.
+function drawSummary(on) {
+  const layer = view.summaryLayer;
+  if (!on) { if (layer.firstChild) layer.textContent = ''; return; }
+  if (layer.firstChild) return;
+  const { item, unit } = view;
+  item.questions.forEach((q, i) => {
+    const t = item.map.targets.find((x) => x.label === q.answerLabel);
+    const g = el('g', { class: 'm-sum', style: `animation-delay:${i * 140}ms` }, layer);
+    const h = (BOX_PX / 2 + 5) * unit;
+    el('rect', { x: t.x - h, y: t.y - h, width: 2 * h, height: 2 * h, rx: 4 * unit, fill: 'none', stroke: 'var(--done)', 'stroke-width': 3.5 * unit }, g);
+    const bx = t.x + h, by = t.y - h, r = 9 * unit;
+    el('circle', { cx: bx, cy: by, r, fill: 'var(--done)' }, g);
+    const n = el('text', { x: bx, y: by, dy: '0.36em', 'font-size': 11 * unit, 'font-weight': 700, 'text-anchor': 'middle', fill: '#fff' }, g);
+    n.textContent = i + 1;
+  });
 }
 
 function render() {
@@ -314,7 +430,7 @@ function render() {
   $('variant-name').textContent = v.name;
   $('map-title').textContent = map.title ?? '(v1 has no map title)';
   const frame = $('frame');
-  frame.className = 'frame' + (v.zoom > 1 ? ' zoom' : '');
+  frame.className = 'frame' + (v.zoom > 1 ? ' zoom' : '') + (state.reduced ? ' reduced' : '');
   const keepScroll = [frame.scrollLeft, frame.scrollTop];
   frame.textContent = '';
   const svg = el('svg', { class: 'map', viewBox: `${-MARGIN} ${-MARGIN} ${map.width + 2 * MARGIN} ${map.height + 2 * MARGIN}`, role: 'img', 'aria-label': 'Map of the community centre', lang: 'en', direction: 'ltr' }, frame);
@@ -322,31 +438,43 @@ function render() {
   const unit = (map.width + 2 * MARGIN) / widthPx;
   const report = [];
   if (map.format === 2) drawV2(svg, item, unit, report); else drawV1(svg, item, unit);
-  drawRoute(svg, item, unit);
+  const routeLayer = el('g', {}, svg);
   drawTargets(svg, item, unit, map.format !== 2);
+  const summaryLayer = el('g', {}, svg);
+  view = { svg, routeLayer, summaryLayer, unit, item, report, widthPx };
+  tick();
   [frame.scrollLeft, frame.scrollTop] = keepScroll;
+  renderPanel();
+}
 
+// Question list and prototype state; cheap, so it runs on timeupdate (about 4 times a second), not every frame.
+function renderPanel() {
+  const v = VARIANTS[state.variant], item = v.item, map = item.map;
   $('qs').innerHTML = '';
-  const { legs, index } = currentLeg(item);
+  const { plans, index } = currentLeg(item);
+  const legs = legsOf(item.events);
   item.questions.forEach((q, i) => {
     const legIndex = legs.findIndex((leg) => leg.some((e) => e.id === q.eventId));
     const li = document.createElement('li');
     if (legIndex === index && state.time >= 0) li.className = 'now';
     li.innerHTML = `<span class="num">${i + 1}</span><span></span><span class="ans"></span><button type="button" class="go">▶</button>`;
     li.children[1].textContent = q.prompt;
-    li.children[2].textContent = state.showAnswers ? q.answerLabel : '';
+    li.children[2].textContent = state.showAnswers || (state.time >= summaryTime(item) && !state.showRoute) ? q.answerLabel : '';
     const go = li.children[3];
     go.setAttribute('aria-label', `Play question ${i + 1} from the start of its leg`);
-    go.onclick = () => { const cue = item.transcript.cues.find((c) => c.id === legs[legIndex][0].cueId); audio.currentTime = cue.start; state.time = cue.start; audio.play().catch(() => {}); render(); };
+    go.onclick = () => { const cue = item.transcript.cues.find((c) => c.id === legs[legIndex][0].cueId); audio.currentTime = cue.start; state.time = cue.start; audio.play().catch(() => {}); tick(); renderPanel(); };
     $('qs').appendChild(li);
   });
 
-  const unfit = report.filter((r) => !r.fits);
+  const report = view.report, unfit = report.filter((r) => !r.fits);
+  const corrections = item.events.filter((e) => e.kind === 'correction');
   const rows = [
     ['Variant', v.name],
-    ['Map drawn at', `${Math.round(widthPx)} px wide, ${(unit).toFixed(2)} map units per px`],
+    ['Map drawn at', `${Math.round(view.widthPx)} px wide, ${(view.unit).toFixed(2)} map units per px`],
     ['Lettered places', `${map.targets.length} for ${item.questions.length} questions`],
-    ['Route', `${item.events.length} events in ${legsOf(item.events).length} legs (one per question)`],
+    ['Route', `${item.events.length} events in ${plans.length} legs (one per question)`],
+    ['Correction', corrections.length ? corrections.map((e) => e.wrongPath ? `${e.id}: wrong path, pulls back${e.demoWrongPath ? ' (demo path added for the prototype)' : ''}` : `${e.id}: frame only (no wrongPath)`).join('; ') : 'none'],
+    ['Motion', state.reduced ? 'reduced: pieces appear at their word times' : 'smooth: eased, arrives at each word time'],
     ['Labels inside rooms', map.format === 2 ? (unfit.length ? `<span class="bad">${report.length - unfit.length}/${report.length} fit; too big: ${unfit.map((r) => r.text).join(', ')}</span>` : `${report.length}/${report.length} fit at ${LABEL_PX} px`) : 'v1 has no rooms'],
     ['Marked letters', [...state.picked].sort().join(' ') || 'none'],
     ['Audio position', state.time < 0 ? 'not started' : `${state.time.toFixed(1)} s`],
@@ -381,15 +509,31 @@ $('play').onclick = () => {
   if (audio.paused) { audio.play().catch(() => { $('cue').textContent = 'The recording could not start here. Tap Play again.'; }); }
   else audio.pause();
 };
-audio.addEventListener('play', () => { $('play').textContent = 'Pause'; });
+// The line follows the audio clock every frame; timeupdate fires only about 4 times a second, which looks stepped.
+function frameLoop() {
+  if (audio.paused) return;
+  state.time = audio.currentTime;
+  tick();
+  requestAnimationFrame(frameLoop);
+}
+audio.addEventListener('play', () => { $('play').textContent = 'Pause'; requestAnimationFrame(frameLoop); });
 audio.addEventListener('pause', () => { $('play').textContent = 'Play recording'; });
+for (const ev of ['seeked', 'pause', 'ended']) audio.addEventListener(ev, () => { state.time = audio.currentTime; tick(); renderPanel(); });
 audio.addEventListener('timeupdate', () => {
   state.time = audio.currentTime;
   const cue = VARIANTS[state.variant].item.transcript.cues.filter((c) => c.start <= state.time).pop();
   if (cue) $('cue').innerHTML = `<time>${cue.start.toFixed(1)} s</time>`, $('cue').append(cue.text);
-  render();
+  renderPanel();
 });
 $('route').onclick = () => { state.showRoute = !state.showRoute; $('route').setAttribute('aria-pressed', state.showRoute); render(); };
 $('answers').onclick = () => { state.showAnswers = !state.showAnswers; $('answers').setAttribute('aria-pressed', state.showAnswers); render(); };
+// Reduced motion follows the device setting; the button lets the owner preview either version.
+const motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
+state.reduced = motionQuery.matches;
+$('motion').setAttribute('aria-pressed', state.reduced);
+$('motion').onclick = () => { state.reduced = !state.reduced; $('motion').setAttribute('aria-pressed', state.reduced); render(); };
+motionQuery.addEventListener?.('change', (e) => { state.reduced = e.matches; $('motion').setAttribute('aria-pressed', state.reduced); render(); });
+// For checks: seek the replay to a time without playing (used by the headless check script).
+window.__seek = (t) => { state.time = t; tick(); renderPanel(); };
 setVariantFromHash();
 </script>

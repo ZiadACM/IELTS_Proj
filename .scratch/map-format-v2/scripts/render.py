@@ -4,15 +4,15 @@
 # Cue times and `atSec` come from Kokoro's per-token start_ts/end_ts, mapped through the outer trim and any
 # inserted correction pause.
 #
-#   render.py <item.json> <out.wav> <times.json> [voice] [speed]      (defaults: bf_emma 0.70, D22)
+#   render.py <item.json> <out.wav> <times.json> [voice] [speed]      (defaults: bf_isabella 0.75, D26)
 #
 # Paragraphs: a new one starts at the cue of each leg's first event, and after the last event's cue. For a
 # 3-question item that is: intro, question 1, question 2, question 3, closing.
 import json, sys, numpy as np, soundfile as sf
 from kokoro import KPipeline
 item_path, wav_out, times_out = sys.argv[1:4]
-VOICE = sys.argv[4] if len(sys.argv) > 4 else 'bf_emma'
-SPEED = float(sys.argv[5]) if len(sys.argv) > 5 else 0.70
+VOICE = sys.argv[4] if len(sys.argv) > 4 else 'bf_isabella'
+SPEED = float(sys.argv[5]) if len(sys.argv) > 5 else 0.75
 item = json.load(open(item_path))
 SR, WIN = 24000, 240  # 10 ms windows
 LEAD, PARA_GAP, TAIL = 0.3, 1.0, 0.5

@@ -165,16 +165,16 @@ A mobile and desktop web app, with an Arabic right-to-left interface by default 
 - ATT-07 (replays) accepts an optional question id for one question's segment.
 
 ### Content model additions (validator is protected; owner approval in the ticket that does it)
-Each item adds: difficulty tier (1, 2 or 3) alongside the existing difficulty dimensions; a micro-skill per question from the five prototype micro-skills; two hint levels per question (the level 1 landmark must be a landmark on the route before that question's answer place; the level 2 hint must reference an existing transcript cue); an English explanation and an Arabic explanation per question; authored distractor and correction events on the route with cue references; a flag for featured first challenge, focused skill challenge (with its micro-skill) and pilot transfer item; audio source (synthetic draft or human recording).
+Each item adds: difficulty tier (1, 2 or 3) alongside the existing difficulty dimensions; a micro-skill per question from the five prototype micro-skills; two hint levels per question (the level 1 landmark must be a landmark on the route before that question's answer place; the level 2 hint must reference an existing transcript cue); an English explanation and an Arabic explanation per question; authored distractor and correction events on the route with cue references; a flag for featured first challenge, focused skill challenge (with its micro-skill) and pilot transfer item; audio source (synthetic or human recording; a published synthetic item carries the D24 record: engine licence, owner listened, timing check passed).
 
 The five micro-skills: spatial language; following a sequence; landmark vs answer place; corrections and distractors; orientation.
 
 ### Content set (produced in Phase B, not by this spec's code tickets)
-- 10 guided tour items: tier 1 (3 items: small map, 3 questions, slow clear speech, few distractors); tier 2 (4 items: about 8 lettered places, 4 to 5 questions, natural pace, one distractor or correction); tier 3 (3 items: 9 or more places, 5 to 6 questions, several distractors and corrections, mixed accents).
+- 10 map items (amended 2026-11-18, D21: tier 1 items are **guided tour items**; tier 2 and tier 3 items are **anchored items**): tier 1 (3 items: small map, 3 questions, slow clear speech, few distractors); tier 2 (4 items: about 8 lettered places, 4 to 5 questions, natural pace, one distractor or correction); tier 3 (3 items: 9 or more places, 5 to 6 questions, several distractors and corrections, mixed accents).
 - 6 focused skill challenges: 2 each for spatial language, landmark vs answer place, and corrections and distractors.
-- 1 featured first challenge: a dedicated tier 2 item with 3 questions.
+- 1 featured first challenge: a dedicated tier 2 item with 3 questions (an anchored item from D21; first-challenge-001 is still a guided tour and needs a rewrite).
 - 2 pilot transfer items: equivalent tier 2 items.
-- Audio drafted with synthetic voices; published pilot items use human recordings.
+- Audio drafted with synthetic voices. Published items may keep synthetic audio under owner decision D24 (amended 2026-11-18): the engine's licence allows app use, the owner has listened, and the timing checks pass, recorded in `audio.synthetic`.
 
 ### Screens
 Onboarding (invite code + 18+ confirmation, optional target band), item player (reading time, map, question list, audio, hints and replays in guided practice), review with Answer Replay, Home, Browse, Progress, Settings (language, target band, account, download data, delete data), sign-in and account creation, staff item list, staff preview, staff reports. Layout is planned with `impeccable shape` before UI code; the Impeccable hook is enabled at the first UI ticket after owner approval (D1).

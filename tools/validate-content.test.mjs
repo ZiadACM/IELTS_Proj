@@ -74,6 +74,27 @@ test('audio.file may not escape the assets directory', () => {
 });
 test('--require-published rejects drafts', () => assert.ok(codes(base(), { requirePublished: true }).includes('not-published')));
 test('published with reviewer and human audio passes', () => { const i = base(); i.audio.source = 'human'; i.validation = { status: 'published', reviewer: 'A. Reviewer', reviewedOn: '2026-11-12' }; assert.deepEqual(codes(i, { requirePublished: true }), []); });
+
+// Owner decision D24 (2026-11-18): a published item may use synthetic audio when the engine's licence allows use in
+// the app, the owner has listened to it, and it passed the timing checks; audio.synthetic records all three.
+const publishedSynthetic = () => {
+  const i = base();
+  i.validation = { status: 'published', reviewer: 'A. Reviewer', reviewedOn: '2026-11-18' };
+  i.audio.synthetic = { engine: 'Kokoro-82M', voice: 'bf_isabella', speed: 0.75, licence: 'Apache-2.0', listenedBy: 'owner', listenedOn: '2026-11-18', timingCheck: 'pass' };
+  return i;
+};
+test('D24: published synthetic audio with licence, listening and timing record passes', () => assert.deepEqual(codes(publishedSynthetic(), { requirePublished: true }), []));
+for (const [name, mutate] of [
+  ['no synthetic record', (i) => { delete i.audio.synthetic; }],
+  ['no engine', (i) => { delete i.audio.synthetic.engine; }],
+  ['a non-commercial licence', (i) => { i.audio.synthetic.licence = 'CC-BY-NC-4.0'; }],
+  ['no licence', (i) => { delete i.audio.synthetic.licence; }],
+  ['not listened to', (i) => { delete i.audio.synthetic.listenedBy; }],
+  ['no listening date', (i) => { i.audio.synthetic.listenedOn = ' '; }],
+  ['a failed timing check', (i) => { i.audio.synthetic.timingCheck = 'fail'; }],
+  ['no timing check', (i) => { delete i.audio.synthetic.timingCheck; }],
+]) test(`D24: published synthetic audio is refused with ${name}`, () => { const i = publishedSynthetic(); mutate(i); assert.ok(codes(i).includes('audio-source'), `expected audio-source, got ${codes(i).join(',') || 'nothing'}`); });
+test('D24: a draft with synthetic audio needs no record', () => { const i = base(); delete i.audio.synthetic; assert.deepEqual(codes(i), []); });
 test('non-object input does not throw', () => { assert.ok(codes(null).length > 0); assert.ok(codes([]).length > 0); });
 
 // Plain-text rule (owner decision 2026-11-12): markup in any text field is rejected.

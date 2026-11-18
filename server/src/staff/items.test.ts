@@ -266,7 +266,7 @@ describe('ADM-05 POST /admin/items/{itemId}/publish (D8: content_reviewer only)'
     assert.equal((await apps.db.query('select status from items where id = $1', [itemId])).rows[0].status, 'draft');
   });
 
-  test('a draft with synthetic audio is refused with the validator code (published items use human recordings)', async () => {
+  test('a draft with synthetic audio and no D24 record is refused with the validator code', async () => {
     const app = await apps.app();
     const author = await signedIn(app, 'content_author');
     const reviewer = await signedIn(app, 'content_reviewer');

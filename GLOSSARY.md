@@ -83,8 +83,16 @@ One prompt inside an item that the learner answers, such as choosing the map let
 _Avoid_: item, task
 
 **Guided tour item**:
-A Listening map item in which the speaker leads along one route from a start point, passing each answer place in order.
+A Listening map item in which the speaker leads along one route from a start point, passing each answer place in order; used for difficulty tier 1 only (D21).
 _Avoid_: directions task, route item
+
+**Anchored item**:
+A Listening map item, as in the real exam, in which each question starts again at an entrance (the start point, or another gate) and the speaker walks to the answer place, pinning it down with the rooms passed and compass words; used for difficulty tiers 2 and 3 (D21, D23).
+_Avoid_: real-exam item, description item
+
+**Leg**:
+The part of an authored route for one question: a walk along paths and corridors from an entrance (its anchor) to its answer place, never through a wall or a room; Answer Replay draws each leg as a new line, each part only after the speaker has said it (D23).
+_Avoid_: segment, section
 
 **First listen**:
 The initial play of an item's audio, straight through without pausing or seeking.

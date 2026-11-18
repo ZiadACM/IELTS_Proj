@@ -4,7 +4,7 @@ Give everything below the line to the drafting AI. It is written for the feature
 
 The draft comes back to the coding agent, which makes the synthetic audio, re-times the cues against it, runs `tools/validate-content.mjs`, and does the `validate-ielts-content` checks. The drafting AI never marks anything reviewed or published.
 
-**Draft audio (coding agent, not the drafting AI):** Kokoro (setup and install record: `docs/development/proposals/2026-11-17-kokoro-tts.md`), default voice **`bf_emma`** (British female; the owner's pick in the 2026-11-17 blind test: bf_emma 3.5/5, bf_isabella 3, af_bella 2, af_heart 2). Use a male or other voice only if the speaker must be. Render each cue separately; speed 0.75 (Kokoro's default speed is about 230 words per minute, far above tier 2); pauses inside a cue at most 0.25 s (0.35 s where a hesitation is part of the task, such as a self-correction); 0.35 s between cues, 0.3 s lead-in, 0.5 s tail. The owner accepted these settings on 2026-11-18 after finding the earlier 0.6 s pauses too long. Encode AAC 64 kbit/s as `.m4a`. Then re-time the cues against the decoded file and check them as ticket 02 describes. Synthetic audio is for drafts only; a published item needs a human recording.
+**Draft audio (coding agent, not the drafting AI):** Kokoro `bf_isabella` at speed 0.75 (D26, the owner's blind pick on 2026-11-18), voiced with `.scratch/map-format-v2/scripts/render.py`: whole paragraphs, the voice's own pauses kept, at least 1.2 s before a self-correction (ticket 04). Encode AAC 64 kbit/s as `.m4a`, then time and check as `.scratch/map-format-v2/scripts/README.md` describes. A published item may use this synthetic audio only if the owner has listened to it and it passes the timing checks (D24). Talk rules: `docs/content/talk-writing-guide.md`.
 
 ---
 
@@ -13,7 +13,7 @@ You are drafting ONE original practice item for an IELTS preparation app for adu
 ## This item
 
 - Purpose: `first-challenge`. It is the first task every new learner sees. It must feel like a real IELTS map task, be fair, and give a sense of success: clear, not easy.
-- Tier 2: natural speaking pace (about 140 to 160 words per minute), about 8 lettered places on the map (A to H), **exactly 3 questions**, exactly **one** distractor OR one self-correction by the speaker.
+- Tier 2: natural speaking pace (about 140 to 160 words per minute, calm and measured), about 8 lettered places on the map (A to H), **exactly 3 questions**, **one or two traps** (a decoy room, a preposition trap, a left/right self-correction with a pause; each type at most once, at most one self-correction; D25).
 - Micro-skills to train (one per question, use each once): `spatial-language`, `landmark-vs-answer`, `corrections-distractors`.
 - Audio will be made with a synthetic voice from your transcript, so write for the ear: one speaker, short sentences, natural spoken phrasing ("OK, so...", "if you look at the map..."), no stage directions inside the spoken text.
 
@@ -71,7 +71,7 @@ Design in this order so the answer key is correct by construction.
 - Every `landmarkId` exists in `map.landmarks`.
 - `supportPolicy.exam.replay` is false.
 - `validation.status` is `"draft"`. Do not add a reviewer.
-- `audio.source` is `"synthetic"`, `audio.file` is `"audio/<id>.m4a"`.
+- `audio.source` is `"synthetic"`, `audio.file` is `"audio/<id>.m4a"`. Leave out `audio.synthetic`: the coding agent adds it (engine, voice, speed, licence) and the owner's listening and the timing check are recorded there before publishing (D24).
 
 ## Quality bar (a human will check each of these)
 

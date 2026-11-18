@@ -4,7 +4,7 @@ Status: **Proposed** (2026-11-17), waiting for the owner. Process: `docs/develop
 
 ## Need (approved)
 
-The owner found the macOS `say` voice too robotic for draft audio and chose Kokoro (free, runs locally) over cloud services. Scope: **synthetic draft audio only**. A published item still needs a human recording (validator rule `audio-source`).
+The owner found the macOS `say` voice too robotic for draft audio and chose Kokoro (free, runs locally) over cloud services. Scope: **synthetic draft audio only**. A published item still needs a human recording (validator rule `audio-source`). *Superseded 2026-11-18 by D24: published items may use Kokoro audio with an `audio.synthetic` record.*
 
 ## What would be installed
 

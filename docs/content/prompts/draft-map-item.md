@@ -71,7 +71,7 @@ Design in this order so the answer key is correct by construction.
 - Every `landmarkId` exists in `map.landmarks`.
 - `supportPolicy.exam.replay` is false.
 - `validation.status` is `"draft"`. Do not add a reviewer.
-- `audio.source` is `"synthetic"`, `audio.file` is `"audio/<id>.m4a"`.
+- `audio.source` is `"synthetic"`, `audio.file` is `"audio/<id>.m4a"`. Leave out `audio.synthetic`: the coding agent adds it (engine, voice, speed, licence) and the owner's listening and the timing check are recorded there before publishing (D24).
 
 ## Quality bar (a human will check each of these)
 

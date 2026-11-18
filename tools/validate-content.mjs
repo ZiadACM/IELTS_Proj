@@ -17,6 +17,9 @@ export const minTargetDistance = (mapWidth) => (MIN_DISC_GAP_PX * (mapWidth + 2 
 export const MICRO_SKILLS = Object.freeze(['spatial-language', 'following-sequence', 'landmark-vs-answer', 'corrections-distractors', 'orientation']);
 const PURPOSES = new Set(['standard', 'first-challenge', 'skill-challenge', 'pilot-transfer']);
 const ARABIC = /[\u0600-\u06FF]/;
+// Licences of speech engines (code and model) that allow use in the app, commercial use included (D24).
+// Non-commercial licences (for example CC-BY-NC) are left out on purpose.
+export const APP_LICENCES = new Set(['Apache-2.0', 'MIT', 'BSD-2-Clause', 'BSD-3-Clause', 'CC0-1.0', 'CC-BY-4.0']);
 
 export function validateItem(item, { assetsDir = null, requirePublished = false } = {}) {
   const errors = [];
@@ -146,7 +149,19 @@ export function validateItem(item, { assetsDir = null, requirePublished = false 
   if (!o(v) || !['draft', 'reviewed', 'published'].includes(v.status)) err('validation', 'validation.status must be draft|reviewed|published');
   else if (v.status !== 'draft' && (!isStr(v.reviewer) || !isStr(v.reviewedOn))) err('validation', `status "${v.status}" requires validation.reviewer and validation.reviewedOn`);
   if (requirePublished && o(v) && v.status !== 'published') err('not-published', `item is "${v?.status}", not "published"`);
-  if (o(v) && v.status === 'published' && item.audio?.source !== 'human') err('audio-source', 'a published item must use a human recording (audio.source "human")');
+  // Owner decision D24 (2026-11-18): a published item uses a human recording, or synthetic audio whose record
+  // (audio.synthetic) shows the engine's licence allows use in the app, the owner listened to it, and the timing
+  // checks passed. The listening and the timing check are human steps; this only checks they were recorded.
+  if (o(v) && v.status === 'published' && item.audio?.source !== 'human') {
+    const s = item.audio?.synthetic;
+    if (item.audio?.source !== 'synthetic' || !o(s)) err('audio-source', 'a published item needs a human recording, or synthetic audio with an audio.synthetic record (D24)');
+    else {
+      if (!isStr(s.engine)) err('audio-source', 'audio.synthetic.engine is required (D24)');
+      if (!APP_LICENCES.has(s.licence)) err('audio-source', `audio.synthetic.licence must be one that allows use in the app: ${[...APP_LICENCES].join(', ')} (D24)`);
+      if (!isStr(s.listenedBy) || !isStr(s.listenedOn)) err('audio-source', 'audio.synthetic.listenedBy and listenedOn are required: the owner listens before publishing (D24)');
+      if (s.timingCheck !== 'pass') err('audio-source', 'audio.synthetic.timingCheck must be "pass" (D24)');
+    }
+  }
 
   // --- text is plain text (CODING_STANDARDS 2.5; owner decision 2026-11-12) -------------------------
   // Defence in depth only: rendering must still escape. Rejects HTML-like tags, javascript: URLs,

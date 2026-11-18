@@ -4,6 +4,8 @@ Give everything below the line to the drafting AI. It is written for the feature
 
 The draft comes back to the coding agent, which makes the synthetic audio, re-times the cues against it, runs `tools/validate-content.mjs`, and does the `validate-ielts-content` checks. The drafting AI never marks anything reviewed or published.
 
+**Draft audio (coding agent, not the drafting AI):** Kokoro (setup and install record: `docs/development/proposals/2026-11-17-kokoro-tts.md`), default voice **`bf_emma`** (British female; the owner's pick in the 2026-11-17 blind test: bf_emma 3.5/5, bf_isabella 3, af_bella 2, af_heart 2). Use a male or other voice only if the speaker must be. Render each cue separately; speed 0.75 (Kokoro's default speed is about 230 words per minute, far above tier 2); pauses inside a cue at most 0.25 s (0.35 s where a hesitation is part of the task, such as a self-correction); 0.35 s between cues, 0.3 s lead-in, 0.5 s tail. The owner accepted these settings on 2026-11-18 after finding the earlier 0.6 s pauses too long. Encode AAC 64 kbit/s as `.m4a`. Then re-time the cues against the decoded file and check them as ticket 02 describes. Synthetic audio is for drafts only; a published item needs a human recording.
+
 ---
 
 You are drafting ONE original practice item for an IELTS preparation app for adult Arabic-speaking learners. The item type is **Listening, Map Labelling** (as in IELTS Listening Part 2: one speaker describes a place; the learner matches places to letters on a map). Your output will be checked by a strict validator and then by a human reviewer, so precision matters more than length.
@@ -54,7 +56,11 @@ Design in this order so the answer key is correct by construction.
 - `hints`: exactly two, in this order:
   - level 1: `{"level": 1, "landmarkId": "..."}`, a landmark the route has ALREADY passed as a `landmark` or `turn` event before this destination (never a distractor). The app shows it as "listen for when the speaker passes X".
   - level 2: `{"level": 2, "cueId": "..."}`, a cue at or before the destination cue, the moment worth replaying.
-- `explanation`: `en` and `ar`. 1 to 3 short sentences explaining WHY this letter is right, quoting the key words the speaker used, and naming the trap if there is one. Arabic is Modern Standard Arabic, plain and friendly, for an adult learner; keep English place names and key spoken words in English inside the Arabic (e.g. «opposite»), because the learner hears them in English. Do not translate word for word: write how an Arabic-speaking teacher would explain it.
+- `explanation`: `en` and `ar`. 1 to 3 short sentences explaining WHY this letter is right, quoting the key words the speaker used, and naming the trap if there is one. Arabic is Modern Standard Arabic, plain and friendly, for an adult learner. Do not translate word for word: write how an Arabic-speaking teacher would explain it. **Mixing English into the Arabic is hard to read, so:**
+  - Use English only for the exact words the speaker says, in «guillemets», and at most one or two short quotes per explanation.
+  - Never put an English quote at the start or end of a sentence or clause: keep Arabic words on both sides of it. Example: تقع «at the far end» من الممر، أي في آخره.
+  - Place names are in Arabic only: no English room names, and no English in brackets (not: غرفة الهدوء (Quiet Lounge)). Map letters (A to H) are fine; keep them inside the sentence too.
+  - Alternative: write the explanation fully in Arabic and add one line «العبارة المفتاحية: …» with the quote.
 
 ## Hard rules (the validator rejects the item otherwise)
 
@@ -65,7 +71,7 @@ Design in this order so the answer key is correct by construction.
 - Every `landmarkId` exists in `map.landmarks`.
 - `supportPolicy.exam.replay` is false.
 - `validation.status` is `"draft"`. Do not add a reviewer.
-- `audio.source` is `"synthetic"`, `audio.file` is `"audio/<id>.mp3"`.
+- `audio.source` is `"synthetic"`, `audio.file` is `"audio/<id>.m4a"`.
 
 ## Quality bar (a human will check each of these)
 
@@ -94,7 +100,7 @@ One fenced `json` block, valid JSON, in exactly this shape (values are examples)
   "purpose": "first-challenge",
   "difficulty": { "landmarks": 6, "routeSteps": 5, "distractors": 1, "selfCorrections": 0, "audioPace": "natural" },
   "supportPolicy": { "learning": { "replay": true, "hints": true }, "exam": { "replay": false, "hints": false } },
-  "audio": { "file": "audio/first-challenge-001.mp3", "durationSec": 80, "source": "synthetic" },
+  "audio": { "file": "audio/first-challenge-001.m4a", "durationSec": 80, "source": "synthetic" },
   "map": {
     "width": 1000, "height": 700,
     "landmarks": [ { "id": "main-entrance", "label": "Main entrance", "x": 500, "y": 660 } ],
@@ -122,6 +128,6 @@ A table with one row per question: question, answer letter, the exact words in t
 
 ### 4. Notes for the reviewer
 - A plain-English description of the map (what is where), so a person can sketch it and check it against the talk.
-- Suggested voice: accent (British, Australian or North American), gender, and pace.
+- Suggested voice: accent (British, Australian or North American), gender, and pace. The default draft voice is British female; say so if the speaker must be male.
 - Anything you were unsure about.
 - The URLs you used in step 1.

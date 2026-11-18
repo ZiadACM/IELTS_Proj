@@ -28,7 +28,7 @@
   },
   "audio": {
     "file": "audio/first-challenge-001.m4a",
-    "durationSec": 90.82,
+    "durationSec": 82.81,
     "source": "synthetic"
   },
   "map": {
@@ -125,92 +125,92 @@
     "cues": [
       {
         "id": "c1",
-        "start": 0.4,
-        "end": 4.07,
+        "start": 0.3,
+        "end": 3.93,
         "text": "Hello, everyone, and welcome to our Open Day."
       },
       {
         "id": "c2",
-        "start": 4.67,
-        "end": 13.07,
+        "start": 4.28,
+        "end": 12.37,
         "text": "I'm one of the volunteers here at Riverside Community Centre, and I'm going to show you where a few of our activity rooms are."
       },
       {
         "id": "c3",
-        "start": 13.67,
-        "end": 19.52,
+        "start": 12.72,
+        "end": 18.19,
         "text": "OK, so right now we're standing at the main entrance, right at the bottom of the map."
       },
       {
         "id": "c4",
-        "start": 20.12,
-        "end": 24.29,
+        "start": 18.54,
+        "end": 22.71,
         "text": "If you look just to your right as you come in, that's reception."
       },
       {
         "id": "c5",
-        "start": 24.89,
-        "end": 28.61,
+        "start": 23.06,
+        "end": 26.63,
         "text": "And the toilets are opposite reception, on your left."
       },
       {
         "id": "c6",
-        "start": 29.21,
-        "end": 36.62,
+        "start": 26.98,
+        "end": 33.24,
         "text": "Now, straight ahead of you, down the main hall, there's a big noticeboard. That's where the hall splits."
       },
       {
         "id": "c7",
-        "start": 37.22,
-        "end": 41.59,
+        "start": 33.59,
+        "end": 38.02,
         "text": "Turn right at the noticeboard, and keep going along that corridor."
       },
       {
         "id": "c8",
-        "start": 42.19,
-        "end": 46.06,
+        "start": 38.37,
+        "end": 42.12,
         "text": "You'll pass the meeting room on your right, but don't stop there."
       },
       {
         "id": "c9",
-        "start": 46.66,
-        "end": 52.55,
+        "start": 42.47,
+        "end": 48.34,
         "text": "The Quiet Lounge is at the far end of that corridor, on your right, past the meeting room."
       },
       {
         "id": "c10",
-        "start": 53.15,
-        "end": 56.24,
+        "start": 48.69,
+        "end": 51.65,
         "text": "OK, let's go back to the noticeboard."
       },
       {
         "id": "c11",
-        "start": 56.84,
-        "end": 63.62,
+        "start": 52.0,
+        "end": 58.5,
         "text": "This time, turn left, walk to the end of that corridor, and then turn right, so you're heading north."
       },
       {
         "id": "c12",
-        "start": 64.22,
-        "end": 69.29,
+        "start": 58.85,
+        "end": 63.81,
         "text": "You'll see the staff office on your left. Just past it is the Craft Room."
       },
       {
         "id": "c13",
-        "start": 69.89,
-        "end": 73.2,
+        "start": 64.16,
+        "end": 67.49,
         "text": "Keep going north, past the corridor junction."
       },
       {
         "id": "c14",
-        "start": 73.8,
-        "end": 81.51,
+        "start": 67.84,
+        "end": 74.77,
         "text": "The table tennis room is on the west side... oh, sorry, I mean the east side, I always mix those two up."
       },
       {
         "id": "c15",
-        "start": 82.11,
-        "end": 90.22,
+        "start": 75.12,
+        "end": 82.31,
         "text": "So that's three rooms: the Quiet Lounge, the Craft Room and the table tennis room. Enjoy the Open Day!"
       }
     ]
@@ -380,7 +380,7 @@
       ],
       "explanation": {
         "en": "The guide says the Quiet Lounge is 'at the far end of that corridor, on your right, past the meeting room'. D is also past the meeting room on the right, but it is not at the far end. A is on the same corridor, but on the left. Only C is at the far end, on the right.",
-        "ar": "تقول المرشدة إن غرفة الهدوء (Quiet Lounge) تقع «at the far end» من الممر، «on your right»، «past the meeting room». الحرف D يقع أيضاً بعد غرفة الاجتماعات وعلى اليمين، لكنه ليس في نهاية الممر. والحرف A في الممر نفسه لكنه على اليسار. الحرف C وحده في نهاية الممر وعلى اليمين."
+        "ar": "تقول المرشدة إن غرفة الهدوء تقع «at the far end» من الممر، أي في آخره تماماً، على يمينك بعد غرفة الاجتماعات. الحرف D يقع أيضاً بعد غرفة الاجتماعات وعلى اليمين، لكنه ليس في آخر الممر. والحرف A في الممر نفسه، لكنه على اليسار. لذلك فالحرف C وحده هو الذي يقع في آخر الممر وعلى اليمين."
       }
     },
     {
@@ -401,7 +401,7 @@
       ],
       "explanation": {
         "en": "The guide says the Craft Room is 'just past' the staff office, which is on your left. The staff office is only named to orient you; it is not the answer. E is opposite the staff office, not past it, so a listener who stops at the first room named picks the wrong letter. F is the room just past it.",
-        "ar": "تقول المرشدة إن غرفة الحرف اليدوية (Craft Room) تقع «just past» مكتب الموظفين، أي بعده مباشرة لا عنده. مكتب الموظفين (على يسارك) مذكور فقط لتوجيهك، وليس هو الإجابة. الحرف E يقع مقابل مكتب الموظفين لا بعده، فمن يتوقف عند أول غرفة يسمع اسمها يختار الحرف الخطأ. الحرف F هو الغرفة التي تلي المكتب مباشرة."
+        "ar": "تقول المرشدة إن غرفة الأشغال اليدوية تقع «just past» مكتب الموظفين، أي بعده مباشرة وليس عنده. ومكتب الموظفين، الذي على يسارك، مذكور فقط لتوجيهك، وليس هو الإجابة. أما الحرف E فيقع مقابل المكتب لا بعده، ولذلك فمن يتوقف عند أول مكان يسمع اسمه يختار حرفاً خاطئاً. الإجابة الصحيحة هي الحرف F لأنه المكان الذي يلي المكتب مباشرة."
       }
     },
     {
@@ -422,7 +422,7 @@
       ],
       "explanation": {
         "en": "The guide says 'the west side... oh, sorry, I mean the east side'. Always trust the correction, the last thing said — the west side (letter G) is only what she said by mistake before correcting herself.",
-        "ar": "تقول المرشدة «west side» ثم تستدرك فوراً وتقول «oh, sorry, I mean the east side». يجب أن تثق دائماً بالتصحيح الأخير، فالجانب الغربي (الحرف G) هو فقط ما قالته بالخطأ قبل أن تصحّح نفسها."
+        "ar": "تقول المرشدة أولاً إن غرفة تنس الطاولة في الجانب الغربي، ثم تستدرك بعبارة «oh, sorry, I mean» وتقول إنها في الجانب الشرقي. عندما يصحّح المتحدث نفسه، اعتمد دائماً على التصحيح الأخير. فالحرف G في الجانب الغربي هو ما قالته خطأً قبل أن تصحّح، والإجابة الصحيحة هي الحرف H في الجانب الشرقي."
       }
     }
   ],

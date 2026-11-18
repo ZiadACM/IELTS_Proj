@@ -1,0 +1,557 @@
+<title>Map Format v2 Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<!--
+  PROTOTYPE, throwaway (ticket .scratch/map-format-v2/issues/01-map-format-v2.md). Not production code: no tests.
+  Question it answers: does the content format v2 drawing of first-challenge-001 read well on a 360 px phone?
+  Three variants switch with the bottom bar or the hash: #a fit width, #b zoom and pan, #c today's v1 drawing.
+  Built from map-v2-prototype.template.html by build-prototype.mjs, which inlines both item files.
+-->
+<style>
+  /* Layout: one column, the map card first, controls under it, a floating variant bar at the bottom.
+     Tokens follow the app's Boarding Pass palette (web/src/app.css); the map itself is black on white like the exam. */
+  :root {
+    --night: #0e2a3b;
+    --stock: #f4f6f8;
+    --panel: #ffffff;
+    --ink: #0e2a3b;
+    --ink-muted: #41596a;
+    --hairline: #d5dde3;
+    --saffron: #e8a33d;
+    --done: #1f6f5c;
+    --map-ink: #111111;
+    --map-paper: #ffffff;
+    --map-grass: #eef2ea;
+    --map-faint: #6b7a85;
+    --on-night: #f4f6f8;
+    --wrong: #a3271c;
+    --font-ui: system-ui, "Segoe UI", "Noto Sans Arabic", sans-serif;
+    color-scheme: light;
+  }
+  body { background: var(--stock); color: var(--ink); font-family: var(--font-ui); }
+  .page { max-width: 760px; margin-inline: auto; padding-block: 16px 96px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    display: grid; gap: 14px; }
+  h1 { font-size: 1.15rem; margin: 0; text-wrap: balance; }
+  .note { margin: 0; color: var(--ink-muted); font-size: 0.85rem; line-height: 1.45; }
+  .tag { display: inline-block; font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase;
+    border: 1px solid var(--hairline); border-radius: 4px; padding: 1px 6px; color: var(--ink-muted); background: var(--panel); }
+  .card { background: var(--panel); border: 1px solid var(--hairline); border-radius: 8px; padding: 10px; min-width: 0; }
+  .map-title { font-weight: 700; font-size: 0.95rem; margin: 2px 0 8px; }
+  /* Same as the app's .map-frame: 1 px border, no padding, so the map width matches what learners see. */
+  .frame { overflow: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--hairline); border-radius: 8px; background: var(--panel); }
+  .frame.zoom { max-height: 70vh; }
+  svg.map { display: block; width: 100%; height: auto; background: var(--map-paper); touch-action: pan-x pan-y; }
+  .frame.zoom svg.map { width: 180%; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; }
+  button { font: inherit; font-size: 0.9rem; min-height: 44px; padding-inline: 14px; border-radius: 8px;
+    border: 1px solid var(--night); background: var(--panel); color: var(--ink); cursor: pointer; }
+  button[aria-pressed="true"], button.primary { background: var(--night); color: var(--on-night); }
+  button:focus-visible { outline: 3px solid #0b5cad; outline-offset: 2px; }
+  .cue { min-height: 3em; font-size: 0.95rem; line-height: 1.45; margin: 0; }
+  .cue time { font-variant-numeric: tabular-nums; color: var(--ink-muted); margin-inline-end: 6px; }
+  .qs { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+  .qs li { display: flex; gap: 10px; align-items: center; font-size: 0.95rem; }
+  .qs .num { display: inline-grid; place-items: center; width: 26px; height: 26px; border: 1.5px solid var(--map-ink); font-weight: 700; }
+  .qs .ans { margin-inline-start: auto; font-weight: 700; color: var(--done); }
+  .qs li.now { font-weight: 700; }
+  .qs .go { min-height: 36px; min-width: 44px; padding-inline: 8px; font-size: 0.8rem; }
+  dl.state { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; font-size: 0.82rem; }
+  dl.state dt { color: var(--ink-muted); }
+  dl.state dd { margin: 0; font-variant-numeric: tabular-nums; min-width: 0; overflow-wrap: anywhere; }
+  .bad { color: #a3271c; font-weight: 600; }
+  .switcher { position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 4px;
+    background: #1b1b1b; color: #fff; border-radius: 999px; padding: 4px; box-shadow: 0 4px 16px rgb(0 0 0 / 0.3); z-index: 5; }
+  .switcher button { background: transparent; color: #fff; border: 0; min-width: 44px; font-size: 1.1rem; }
+  .switcher span { font-size: 0.85rem; padding-inline: 6px; white-space: nowrap; }
+  /* map drawing */
+  .m-room { fill: var(--map-paper); stroke: var(--map-ink); }
+  .m-building { fill: var(--map-paper); stroke: var(--map-ink); }
+  .m-grass { fill: var(--map-grass); stroke: none; }
+  .m-door { stroke: var(--map-paper); stroke-linecap: butt; }
+  .m-label { fill: var(--map-ink); font-family: system-ui, "Segoe UI", sans-serif; text-anchor: middle; }
+  .m-halo { stroke: var(--map-paper); paint-order: stroke; stroke-linejoin: round; }
+  .m-path-label { fill: var(--map-faint); font-style: italic; text-anchor: middle; font-family: system-ui, sans-serif; }
+  .m-box rect { fill: var(--map-paper); stroke: var(--map-ink); }
+  .m-box text { fill: var(--map-ink); font-weight: 700; text-anchor: middle; font-family: system-ui, sans-serif; }
+  .m-box { cursor: pointer; }
+  .m-box.picked rect { fill: var(--night); }
+  .m-box.picked text { fill: var(--on-night); }
+  .m-route { fill: none; stroke: var(--saffron); stroke-linecap: round; stroke-linejoin: round; opacity: 0.9; }
+  .m-dest { fill: var(--done); }
+  /* The place the speaker has just named. */
+  .m-hl { fill: rgb(232 163 61 / 0.22); stroke: var(--saffron); }
+  .m-wrong { fill: none; stroke: var(--wrong); stroke-linecap: round; stroke-linejoin: round; opacity: 0.85; }
+  /* End-of-replay summary: the answer frames pop in one after another, once. */
+  .m-sum { transform-box: fill-box; transform-origin: center; animation: sum-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  @keyframes sum-in { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+  .reduced .m-sum { animation: none; }
+  .m-fix { fill: #a3271c; }
+  .m-ink { fill: var(--map-ink); stroke: var(--map-ink); }
+  .m-stroke { fill: none; stroke: var(--map-ink); }
+  .m-tree { fill: var(--map-paper); stroke: var(--map-ink); }
+  .v1-disc circle { fill: var(--map-paper); stroke: var(--map-ink); }
+  .v1-mark { fill: var(--map-faint); }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+
+<div class="page">
+  <div>
+    <h1>Content format v2: first-challenge-001 redrawn</h1>
+    <p class="note">Prototype for the map format ticket. A to C keep the original recording; D is the anchored redraft (every question starts at the main entrance, D23).
+      Open this on your phone and flip variants with the bar at the bottom.</p>
+    <p class="note"><strong>New (version 10): the redrafted talk in D.</strong> D now has the new formal talk, voiced with bf_isabella at 0.75 (D26). Answer Replay: The line jumps to each point as soon as the guide has said it, and the place she names lights up until she names the next one. At the self-correction the line goes the wrong way, pauses, then pulls back. At the end all three answers light up together.</p>
+  </div>
+
+  <section aria-labelledby="map-title">
+    <p class="map-title" id="map-title"></p>
+    <div class="frame" id="frame"></div>
+  </section>
+
+  <div class="controls">
+    <button type="button" id="play" class="primary">Play recording</button>
+    <button type="button" id="route" aria-pressed="false">Show whole route</button>
+    <button type="button" id="answers" aria-pressed="false">Show answers</button>
+    <button type="button" id="motion" aria-pressed="false">Reduced motion</button>
+  </div>
+  <audio id="audio" src="first-challenge-001.mp4" preload="metadata"></audio>
+  <p class="cue" id="cue" aria-live="polite">Press Play: the route draws in step with the recording (Answer Replay preview).</p>
+
+  <section class="card">
+    <ol class="qs" id="qs"></ol>
+    <p class="note" style="margin-top:8px">Tap a letter on the map to mark it. Tap ▶ to replay one question's leg.</p>
+  </section>
+
+  <section class="card" aria-label="Prototype state">
+    <dl class="state" id="state"></dl>
+  </section>
+</div>
+
+<nav class="switcher" aria-label="Prototype variant">
+  <button type="button" id="prev" aria-label="Previous variant">←</button>
+  <span id="variant-name"></span>
+  <button type="button" id="next" aria-label="Next variant">→</button>
+</nav>
+
+<script>
+const V2 = /*V2_JSON*/null;
+const V1 = /*V1_JSON*/null;
+const ANCHORED = /*ANCHORED_JSON*/null;
+const VARIANTS = [
+  { key: 'a', name: 'A · v2, fit width', item: V2, zoom: 1 },
+  { key: 'b', name: 'B · v2, zoom and pan', item: V2, zoom: 1.8 },
+  { key: 'c', name: 'C · v1 today', item: V1, zoom: 1 },
+  { key: 'd', name: 'D · anchored rewrite', item: ANCHORED, zoom: 1, audio: 'first-challenge-001-anchored.mp4' },
+];
+const MARGIN = 40, LABEL_PX = 11, BOX_PX = 26, LETTER_PX = 15;
+const NS = 'http://www.w3.org/2000/svg';
+const $ = (id) => document.getElementById(id);
+const state = { variant: 0, picked: new Set(), showRoute: false, showAnswers: false, time: -1, reduced: false };
+
+function el(name, attrs = {}, parent) {
+  const node = document.createElementNS(NS, name);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  if (parent) parent.appendChild(node);
+  return node;
+}
+let measureCtx;
+function textPx(text, px) {
+  measureCtx ??= document.createElement('canvas').getContext('2d');
+  measureCtx.font = `${px}px system-ui, "Segoe UI", sans-serif`;
+  return measureCtx.measureText(text).width;
+}
+const rectOf = (a) => ({ x: a.rect[0], y: a.rect[1], w: a.rect[2], h: a.rect[3] });
+
+// Label inside an area: one line if it fits, else two lines split at the middle word. Returns whether it fits.
+function areaLabel(g, text, r, unit) {
+  const pad = 4 * unit, maxW = r.w - 2 * pad, lineH = LABEL_PX * 1.2 * unit;
+  const words = text.split(' ');
+  let lines = [text];
+  if (textPx(text, LABEL_PX) * unit > maxW && words.length > 1) {
+    const mid = Math.ceil(words.length / 2);
+    lines = [words.slice(0, mid).join(' '), words.slice(mid).join(' ')];
+  }
+  const width = Math.max(...lines.map((l) => textPx(l, LABEL_PX))) * unit;
+  const fits = width <= maxW && lines.length * lineH + 2 * pad <= r.h;
+  const cx = r.x + r.w / 2, top = r.y + r.h / 2 - (lines.length * lineH) / 2 + LABEL_PX * unit * 0.95;
+  lines.forEach((line, i) => {
+    const t = el('text', { class: 'm-label', x: cx, y: top + i * lineH, 'font-size': LABEL_PX * unit }, g);
+    t.textContent = line;
+  });
+  return { text, fits, widthPx: Math.round(width / unit) };
+}
+
+function drawCompass(g, c, unit) {
+  // A plain north arrow (one of the real exam forms); a full N-E-S-W cross does not fit beside a phone-width map.
+  const s = 14 * unit;
+  el('line', { class: 'm-stroke', x1: c.x, y1: c.y + s, x2: c.x, y2: c.y - s, 'stroke-width': 2 * unit }, g);
+  el('path', { class: 'm-ink', d: `M${c.x} ${c.y - s - 3 * unit} l${-5 * unit} ${9 * unit} h${10 * unit}z` }, g);
+  const t = el('text', { class: 'm-label', x: c.x, y: c.y - s - 7 * unit, 'font-size': 11 * unit, 'font-weight': 700 }, g);
+  t.textContent = 'N';
+}
+function drawTree(g, x, y, unit) {
+  el('line', { class: 'm-stroke', x1: x, y1: y + 2 * unit, x2: x, y2: y + 9 * unit, 'stroke-width': 1.5 * unit }, g);
+  el('circle', { class: 'm-tree', cx: x, cy: y - 2 * unit, r: 6 * unit, 'stroke-width': 1.2 * unit }, g);
+}
+function doorSegment(r, door, half) {
+  const at = door.at;
+  if (door.side === 'n' || door.side === 's') {
+    const x = at ?? r.x + r.w / 2, y = door.side === 'n' ? r.y : r.y + r.h;
+    return [x - half, y, x + half, y];
+  }
+  const y = at ?? r.y + r.h / 2, x = door.side === 'w' ? r.x : r.x + r.w;
+  return [x, y - half, x, y + half];
+}
+
+function drawV2(svg, item, unit, report) {
+  const map = item.map;
+  const g = el('g', {}, svg);
+  for (const a of map.areas.filter((a) => a.kind === 'grass')) { const r = rectOf(a); el('rect', { class: 'm-grass', x: r.x, y: r.y, width: r.w, height: r.h }, g); }
+  for (const a of map.areas.filter((a) => a.kind === 'building')) { const r = rectOf(a); el('rect', { class: 'm-building', x: r.x, y: r.y, width: r.w, height: r.h, 'stroke-width': 3 * unit }, g); }
+  const rooms = map.areas.filter((a) => a.kind === 'room');
+  for (const a of rooms) { const r = rectOf(a); el('rect', { class: 'm-room', x: r.x, y: r.y, width: r.w, height: r.h, 'stroke-width': 1.5 * unit }, g); }
+  for (const a of rooms) if (a.door) { const [x1, y1, x2, y2] = doorSegment(rectOf(a), a.door, 6 * unit); el('line', { class: 'm-door', x1, y1, x2, y2, 'stroke-width': 3 * unit }, g); }
+  for (const e of map.entrances) {
+    el('line', { class: 'm-door', x1: e.x - 12 * unit, y1: e.y, x2: e.x + 12 * unit, y2: e.y, 'stroke-width': 5 * unit }, g);
+    if (e.youAreHere) {
+      el('line', { class: 'm-stroke', x1: e.x, y1: e.y + 26 * unit, x2: e.x, y2: e.y + 6 * unit, 'stroke-width': 2 * unit }, g);
+      el('path', { class: 'm-ink', d: `M${e.x} ${e.y + 3 * unit} l${-5 * unit} ${8 * unit} h${10 * unit}z` }, g);
+      el('rect', { class: 'm-ink', x: e.x - 4 * unit, y: e.y + 22 * unit, width: 8 * unit, height: 8 * unit }, g);
+      const t = el('text', { class: 'm-label', x: e.x - 10 * unit, y: e.y + 30 * unit, 'font-size': LABEL_PX * unit, style: 'text-anchor:end' }, g);
+      t.textContent = 'You are here';
+    }
+  }
+  for (const p of map.paths) if (p.label) {
+    const [[x1, y1], [x2, y2]] = p.points, mx = (x1 + x2) / 2, my = (y1 + y2) / 2 + 40;
+    const vertical = x1 === x2;
+    const t = el('text', { class: 'm-path-label', x: mx, y: my, 'font-size': 10 * unit, transform: vertical ? `rotate(-90 ${mx} ${my})` : '', dy: '0.35em' }, g);
+    t.textContent = p.label;
+  }
+  for (const s of map.symbols) {
+    if (s.kind === 'tree') drawTree(g, s.x, s.y, unit);
+    if (s.kind === 'noticeboard') el('rect', { class: 'm-ink', x: s.x - 9 * unit, y: s.y - 2 * unit, width: 18 * unit, height: 4 * unit }, g);
+  }
+  // labels: named rooms and landmarks
+  const byId = new Map(map.areas.map((a) => [a.id, a]));
+  for (const a of map.areas) if (a.label) report.push(areaLabel(g, a.label, rectOf(a), unit));
+  for (const l of map.landmarks) {
+    if (l.area) report.push(areaLabel(g, l.label, rectOf(byId.get(l.area)), unit));
+    else if (l.symbol) { const t = el('text', { class: 'm-label m-halo', 'stroke-width': 3 * unit, x: l.x, y: l.y + 13 * unit, 'font-size': LABEL_PX * unit }, g); t.textContent = l.label; }
+    else if (l.entrance) { const e = map.entrances.find((x) => x.id === l.entrance); const t = el('text', { class: 'm-label', x: e.x + 12 * unit, y: e.y + 30 * unit, 'font-size': LABEL_PX * unit, style: 'text-anchor:start' }, g); t.textContent = l.label; }
+  }
+  if (map.compass) drawCompass(g, map.compass, unit);
+}
+
+function drawV1(svg, item, unit) {
+  const map = item.map, g = el('g', {}, svg);
+  for (const l of map.landmarks) {
+    el('rect', { class: 'v1-mark', x: l.x - 4 * unit, y: l.y - 4 * unit, width: 8 * unit, height: 8 * unit }, g);
+    const t = el('text', { class: 'm-label', x: l.x, y: l.y + 18 * unit, 'font-size': 12 * unit }, g);
+    t.textContent = l.label;
+  }
+}
+
+function drawTargets(svg, item, unit, round) {
+  const answers = new Set(item.questions.map((q) => q.answerLabel));
+  for (const t of item.map.targets) {
+    const g = el('g', { class: 'm-box' + (state.picked.has(t.label) ? ' picked' : ''), role: 'button', tabindex: 0, 'aria-label': `Letter ${t.label}` }, svg);
+    if (round) el('circle', { cx: t.x, cy: t.y, r: 15 * unit, 'stroke-width': 2 * unit, class: '' }, g).classList.add('v1c');
+    else el('rect', { x: t.x - BOX_PX * unit / 2, y: t.y - BOX_PX * unit / 2, width: BOX_PX * unit, height: BOX_PX * unit, 'stroke-width': 1.5 * unit }, g);
+    if (round) g.classList.add('v1-disc');
+    const txt = el('text', { x: t.x, y: t.y, dy: '0.36em', 'font-size': LETTER_PX * unit }, g);
+    txt.textContent = t.label;
+    if (state.showAnswers && answers.has(t.label)) el('rect', { x: t.x - BOX_PX * unit / 2 - 4 * unit, y: t.y - BOX_PX * unit / 2 - 4 * unit, width: (BOX_PX + 8) * unit, height: (BOX_PX + 8) * unit, fill: 'none', stroke: 'var(--done)', 'stroke-width': 3 * unit }, g);
+    const toggle = () => { state.picked.has(t.label) ? state.picked.delete(t.label) : state.picked.add(t.label); render(); };
+    g.addEventListener('click', toggle);
+    g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+  }
+}
+
+// Splits the authored route into legs: a new leg starts at the first event and at every event with startsLeg.
+function legsOf(events) {
+  const legs = [];
+  for (const e of events) { if (!legs.length || e.startsLeg) legs.push([]); legs[legs.length - 1].push(e); }
+  return legs;
+}
+
+// When an event's point is reached: once the speaker has said it (D23). atSec is the end of its words;
+// without one, the end of its cue. Never the cue's start, which draws the line before the words.
+function shownAt(item, e) {
+  return e.atSec ?? item.transcript.cues.find((c) => c.id === e.cueId).end;
+}
+
+// ---- Answer Replay (ticket 06, owner review of version 8) ----
+// The line jumps to each point the moment the speaker has said it (its atSec; D23 rule 3), no gliding.
+// The place she has just named is highlighted (a named room, the noticeboard, or the answer letter) until she
+// names the next one; only one place is lit at a time. A correction with a wrongPath shows the wrong way at its
+// time, holds it, then pulls it back (D25). Reduced motion: the wrong path stays dashed instead of pulling back,
+// and the end summary does not animate.
+const HOLD = 0.8, PULL = 0.45;   // correction: hold the wrong path, then pull it back
+const SUMMARY_AFTER = 0.8;       // seconds after the last answer is reached
+const ease = (f) => (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, f)))) / 2; // the pull-back only
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const pathLen = (pts) => pts.slice(1).reduce((s, p, i) => s + dist(pts[i], p), 0);
+
+// The first fraction f (0 to 1) of a polyline, measured along its length.
+function partial(pts, f) {
+  if (f >= 1) return pts.slice();
+  const out = [pts[0]];
+  let left = Math.max(0, f) * pathLen(pts);
+  for (let i = 1; i < pts.length; i++) {
+    const d = dist(pts[i - 1], pts[i]);
+    if (left >= d) { out.push(pts[i]); left -= d; continue; }
+    const k = d ? left / d : 0;
+    out.push({ x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * k, y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * k });
+    break;
+  }
+  return out;
+}
+
+// One leg as a timeline: walk points, wrong paths, frames and highlights, each with the time it appears.
+function legPlan(item, leg) {
+  const plan = { start: leg[0], t0: shownAt(item, leg[0]), walk: [], wrong: [], frames: [], dests: [], marks: [] };
+  plan.marks.push({ T: plan.t0, none: true }); // a new leg starts with nothing lit
+  let at = leg[0].at, free = plan.t0;        // where the line is, and from when it may move on
+  for (const e of leg.slice(1)) {
+    const T = Math.max(shownAt(item, e), free);
+    if (e.kind === 'correction') {
+      plan.frames.push({ e, T });
+      plan.marks.push({ T, none: true }); // the dashed red frame marks the place named by mistake
+      if (!e.wrongPath?.length) continue;   // old format: framed only
+      plan.wrong.push({ pts: [at, ...e.wrongPath], t: T, back0: T + HOLD, back1: T + HOLD + PULL });
+      free = T + HOLD + PULL;               // the walk waits until the wrong path is pulled back
+      continue;
+    }
+    plan.walk.push({ to: e.at, T });
+    if (e.kind === 'destination') { plan.dests.push({ at: e.at, T }); plan.marks.push({ T, letter: e.at }); }
+    else if (e.landmarkId) plan.marks.push({ T, landmarkId: e.landmarkId });
+    at = e.at; free = T;
+  }
+  return plan;
+}
+
+// The highlight on the place just named: the room's outline and a light fill, a box around a symbol and its
+// label (the noticeboard), or a ring around the answer letter.
+function drawMark(layer, item, m, unit) {
+  if (!m || m.none) return;
+  if (m.letter) {
+    const h = (BOX_PX / 2 + 6) * unit;
+    el('rect', { class: 'm-hl', x: m.letter.x - h, y: m.letter.y - h, width: 2 * h, height: 2 * h, rx: 5 * unit, 'stroke-width': 3 * unit }, layer);
+    return;
+  }
+  const map = item.map, l = map.landmarks.find((x) => x.id === m.landmarkId);
+  if (!l) return;
+  const a = l.area && map.areas?.find((x) => x.id === l.area);
+  if (a?.rect) {
+    const r = rectOf(a), i = 3 * unit;
+    el('rect', { class: 'm-hl', x: r.x + i, y: r.y + i, width: r.w - 2 * i, height: r.h - 2 * i, 'stroke-width': 3 * unit }, layer);
+    return;
+  }
+  if (l.entrance) return; // the leg's start ring already marks the entrance
+  // Tight around the symbol and its label (label baseline is 13 px below the point).
+  const w = (textPx(l.label, LABEL_PX) + 10) * unit, h = 23 * unit;
+  el('rect', { class: 'm-hl', x: l.x - w / 2, y: l.y - 6 * unit, width: w, height: h, rx: 5 * unit, 'stroke-width': 2 * unit }, layer);
+}
+
+// The letter box a correction points at: the target in the room whose door the wrong path ends at, else the nearest.
+function wrongTarget(map, e) {
+  const room = map.areas?.find((a) => a.door && a.kind === 'room' && (() => { const r = rectOf(a); const [x1, y1, x2, y2] = doorSegment(r, a.door, 0); return Math.hypot(x1 - e.at.x, y1 - e.at.y) < 2; })());
+  const inRoom = room && map.targets.find((t) => t.area === room.id);
+  if (inRoom) return inRoom;
+  const near = map.targets.map((t) => [dist(t, e.at), t]).sort((a, b) => a[0] - b[0])[0];
+  return near && near[0] < 160 ? near[1] : e.at;
+}
+
+// Draws one leg as it stands at time t (Infinity: the whole leg). `study` draws wrong paths dashed, for the full route.
+function drawLeg(svg, item, plan, label, unit, opacity, t, study) {
+  const g = el('g', { opacity }, svg);
+  const pts = [plan.start.at];
+  for (const p of plan.walk) { if (t >= p.T) pts.push(p.to); else break; }
+  let head = pts[pts.length - 1];
+  // The walked line first, so a wrong path that runs back along it stays visible on top.
+  if (pts.length > 1) el('polyline', { class: 'm-route', points: pts.map((p) => `${p.x},${p.y}`).join(' '), 'stroke-width': 4 * unit }, g);
+  for (const w of plan.wrong) {
+    let f = 0, dashed = false;
+    if (study || state.reduced) { f = t >= w.t ? 1 : 0; dashed = true; }
+    else if (t >= w.t && t < w.back0) f = 1;
+    else if (t >= w.back0 && t < w.back1) f = 1 - ease((t - w.back0) / (w.back1 - w.back0));
+    if (f <= 0) continue;
+    const part = partial(w.pts, f);
+    el('polyline', { class: 'm-wrong', points: part.map((p) => `${p.x},${p.y}`).join(' '), 'stroke-width': 4 * unit, ...(dashed ? { 'stroke-dasharray': `${7 * unit} ${6 * unit}` } : {}) }, g);
+    if (!dashed) head = part[part.length - 1];
+  }
+  for (const d of plan.dests) if (t >= d.T) el('circle', { class: 'm-dest', cx: d.at.x, cy: d.at.y, r: 4 * unit }, g);
+  // The place named by mistake: a dashed red frame around its letter, from the moment it is said.
+  for (const { e, T } of plan.frames) if (t >= T) {
+    const c = wrongTarget(item.map, e), h = (BOX_PX / 2 + 6) * unit;
+    el('rect', { x: c.x - h, y: c.y - h, width: 2 * h, height: 2 * h, fill: 'none', stroke: 'var(--wrong)', 'stroke-width': 2.5 * unit, 'stroke-dasharray': `${5 * unit} ${4 * unit}` }, g);
+  }
+  el('circle', { cx: plan.start.at.x, cy: plan.start.at.y, r: 8 * unit, fill: 'var(--map-paper)', stroke: 'var(--saffron)', 'stroke-width': 2.5 * unit }, g);
+  const txt = el('text', { x: plan.start.at.x, y: plan.start.at.y, dy: '0.36em', 'font-size': 10 * unit, 'font-weight': 700, 'text-anchor': 'middle', fill: 'var(--map-ink)' }, g);
+  txt.textContent = label;
+  return head;
+}
+
+function plansOf(item) { return legsOf(item.events).map((leg) => legPlan(item, leg)); }
+function currentLeg(item) {
+  const plans = plansOf(item);
+  let index = -1;
+  plans.forEach((p, i) => { if (p.t0 <= state.time) index = i; });
+  return { plans, index };
+}
+function summaryTime(item) {
+  const dests = item.events.filter((e) => e.kind === 'destination').map((e) => shownAt(item, e));
+  return Math.max(...dests) + SUMMARY_AFTER;
+}
+
+// Route layer only; called every animation frame while the recording plays.
+let view = null; // { svg, routeLayer, summaryLayer, unit, item }
+function tick() {
+  if (!view) return;
+  const { item, unit, routeLayer } = view;
+  routeLayer.textContent = '';
+  const { plans, index } = currentLeg(item);
+  const summary = !state.showRoute && state.time >= summaryTime(item);
+  if (state.showRoute) plans.forEach((p, i) => drawLeg(routeLayer, item, p, i + 1, unit, 1, Infinity, true));
+  else if (summary) plans.forEach((p, i) => drawLeg(routeLayer, item, p, i + 1, unit, 0.3, Infinity, false));
+  else if (index >= 0) {
+    // Earlier legs fade; the current leg is drawn as far as the speaker has got.
+    plans.slice(0, index).forEach((p, i) => drawLeg(routeLayer, item, p, i + 1, unit, 0.25, Infinity, false));
+    drawMark(routeLayer, item, plans[index].marks.filter((m) => m.T <= state.time).pop(), unit);
+    const head = drawLeg(routeLayer, item, plans[index], index + 1, unit, 1, state.time, false);
+    el('circle', { cx: head.x, cy: head.y, r: 7 * unit, fill: 'var(--saffron)', stroke: 'var(--map-ink)', 'stroke-width': 1.5 * unit }, routeLayer);
+  }
+  drawSummary(summary);
+}
+
+// End of the replay: all answers highlighted together, numbered by question (owner interview).
+// Built once when the summary starts, so its entrance animation plays once.
+function drawSummary(on) {
+  const layer = view.summaryLayer;
+  if (!on) { if (layer.firstChild) layer.textContent = ''; return; }
+  if (layer.firstChild) return;
+  const { item, unit } = view;
+  item.questions.forEach((q, i) => {
+    const t = item.map.targets.find((x) => x.label === q.answerLabel);
+    const g = el('g', { class: 'm-sum', style: `animation-delay:${i * 140}ms` }, layer);
+    const h = (BOX_PX / 2 + 5) * unit;
+    el('rect', { x: t.x - h, y: t.y - h, width: 2 * h, height: 2 * h, rx: 4 * unit, fill: 'none', stroke: 'var(--done)', 'stroke-width': 3.5 * unit }, g);
+    const bx = t.x + h, by = t.y - h, r = 9 * unit;
+    el('circle', { cx: bx, cy: by, r, fill: 'var(--done)' }, g);
+    const n = el('text', { x: bx, y: by, dy: '0.36em', 'font-size': 11 * unit, 'font-weight': 700, 'text-anchor': 'middle', fill: '#fff' }, g);
+    n.textContent = i + 1;
+  });
+}
+
+function render() {
+  const v = VARIANTS[state.variant], item = v.item, map = item.map;
+  $('variant-name').textContent = v.name;
+  $('map-title').textContent = map.title ?? '(v1 has no map title)';
+  const frame = $('frame');
+  frame.className = 'frame' + (v.zoom > 1 ? ' zoom' : '') + (state.reduced ? ' reduced' : '');
+  const keepScroll = [frame.scrollLeft, frame.scrollTop];
+  frame.textContent = '';
+  const svg = el('svg', { class: 'map', viewBox: `${-MARGIN} ${-MARGIN} ${map.width + 2 * MARGIN} ${map.height + 2 * MARGIN}`, role: 'img', 'aria-label': 'Map of the community centre', lang: 'en', direction: 'ltr' }, frame);
+  const widthPx = (frame.clientWidth || 326) * v.zoom;
+  const unit = (map.width + 2 * MARGIN) / widthPx;
+  const report = [];
+  if (map.format === 2) drawV2(svg, item, unit, report); else drawV1(svg, item, unit);
+  const routeLayer = el('g', {}, svg);
+  drawTargets(svg, item, unit, map.format !== 2);
+  const summaryLayer = el('g', {}, svg);
+  view = { svg, routeLayer, summaryLayer, unit, item, report, widthPx };
+  tick();
+  [frame.scrollLeft, frame.scrollTop] = keepScroll;
+  renderPanel();
+}
+
+// Question list and prototype state; cheap, so it runs on timeupdate (about 4 times a second), not every frame.
+function renderPanel() {
+  const v = VARIANTS[state.variant], item = v.item, map = item.map;
+  $('qs').innerHTML = '';
+  const { plans, index } = currentLeg(item);
+  const legs = legsOf(item.events);
+  item.questions.forEach((q, i) => {
+    const legIndex = legs.findIndex((leg) => leg.some((e) => e.id === q.eventId));
+    const li = document.createElement('li');
+    if (legIndex === index && state.time >= 0) li.className = 'now';
+    li.innerHTML = `<span class="num">${i + 1}</span><span></span><span class="ans"></span><button type="button" class="go">▶</button>`;
+    li.children[1].textContent = q.prompt;
+    li.children[2].textContent = state.showAnswers || (state.time >= summaryTime(item) && !state.showRoute) ? q.answerLabel : '';
+    const go = li.children[3];
+    go.setAttribute('aria-label', `Play question ${i + 1} from the start of its leg`);
+    go.onclick = () => { const cue = item.transcript.cues.find((c) => c.id === legs[legIndex][0].cueId); audio.currentTime = cue.start; state.time = cue.start; audio.play().catch(() => {}); tick(); renderPanel(); };
+    $('qs').appendChild(li);
+  });
+
+  const report = view.report, unfit = report.filter((r) => !r.fits);
+  const corrections = item.events.filter((e) => e.kind === 'correction');
+  const rows = [
+    ['Variant', v.name],
+    ['Map drawn at', `${Math.round(view.widthPx)} px wide, ${(view.unit).toFixed(2)} map units per px`],
+    ['Lettered places', `${map.targets.length} for ${item.questions.length} questions`],
+    ['Route', `${item.events.length} events in ${plans.length} legs (one per question)`],
+    ['Correction', corrections.length ? corrections.map((e) => e.wrongPath ? `${e.id}: wrong path, pulls back` : `${e.id}: frame only (no wrongPath)`).join('; ') : 'none'],
+    ['Motion', state.reduced ? 'reduced: wrong path stays dashed, no summary animation' : 'line jumps to each point when it is said; the place named is highlighted'],
+    ['Labels inside rooms', map.format === 2 ? (unfit.length ? `<span class="bad">${report.length - unfit.length}/${report.length} fit; too big: ${unfit.map((r) => r.text).join(', ')}</span>` : `${report.length}/${report.length} fit at ${LABEL_PX} px`) : 'v1 has no rooms'],
+    ['Marked letters', [...state.picked].sort().join(' ') || 'none'],
+    ['Audio position', state.time < 0 ? 'not started' : `${state.time.toFixed(1)} s`],
+  ];
+  $('state').innerHTML = rows.map(([k, val]) => `<dt>${k}</dt><dd>${val}</dd>`).join('');
+}
+
+function setVariantFromHash() {
+  const i = VARIANTS.findIndex((v) => '#' + v.key === location.hash);
+  state.variant = i < 0 ? 0 : i;
+  // Variant D has its own recording; switching recordings restarts playback.
+  const src = VARIANTS[state.variant].audio ?? 'first-challenge-001.mp4';
+  if (!audio.src.endsWith(src)) { audio.pause(); audio.src = src; state.time = -1; $('cue').textContent = 'Press Play: the route draws in step with the recording (Answer Replay preview).'; }
+  render();
+}
+function go(step) {
+  const i = (state.variant + step + VARIANTS.length) % VARIANTS.length;
+  location.hash = VARIANTS[i].key;
+}
+$('prev').onclick = () => go(-1);
+$('next').onclick = () => go(1);
+addEventListener('keydown', (e) => {
+  if (e.target.closest('input, textarea, [contenteditable]')) return;
+  if (e.key === 'ArrowLeft') go(-1);
+  if (e.key === 'ArrowRight') go(1);
+});
+addEventListener('hashchange', setVariantFromHash);
+addEventListener('resize', render);
+
+const audio = $('audio');
+$('play').onclick = () => {
+  if (audio.paused) { audio.play().catch(() => { $('cue').textContent = 'The recording could not start here. Tap Play again.'; }); }
+  else audio.pause();
+};
+// The line follows the audio clock every frame; timeupdate fires only about 4 times a second, which looks stepped.
+function frameLoop() {
+  if (audio.paused) return;
+  state.time = audio.currentTime;
+  tick();
+  requestAnimationFrame(frameLoop);
+}
+audio.addEventListener('play', () => { $('play').textContent = 'Pause'; requestAnimationFrame(frameLoop); });
+audio.addEventListener('pause', () => { $('play').textContent = 'Play recording'; });
+for (const ev of ['seeked', 'pause', 'ended']) audio.addEventListener(ev, () => { state.time = audio.currentTime; tick(); renderPanel(); });
+audio.addEventListener('timeupdate', () => {
+  state.time = audio.currentTime;
+  const cue = VARIANTS[state.variant].item.transcript.cues.filter((c) => c.start <= state.time).pop();
+  if (cue) $('cue').innerHTML = `<time>${cue.start.toFixed(1)} s</time>`, $('cue').append(cue.text);
+  renderPanel();
+});
+$('route').onclick = () => { state.showRoute = !state.showRoute; $('route').setAttribute('aria-pressed', state.showRoute); render(); };
+$('answers').onclick = () => { state.showAnswers = !state.showAnswers; $('answers').setAttribute('aria-pressed', state.showAnswers); render(); };
+// Reduced motion follows the device setting; the button lets the owner preview either version.
+const motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
+state.reduced = motionQuery.matches;
+$('motion').setAttribute('aria-pressed', state.reduced);
+$('motion').onclick = () => { state.reduced = !state.reduced; $('motion').setAttribute('aria-pressed', state.reduced); render(); };
+motionQuery.addEventListener?.('change', (e) => { state.reduced = e.matches; $('motion').setAttribute('aria-pressed', state.reduced); render(); });
+// For checks: seek the replay to a time without playing (used by the headless check script).
+window.__seek = (t) => { state.time = t; tick(); renderPanel(); };
+setVariantFromHash();
+</script>

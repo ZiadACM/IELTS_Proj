@@ -44,3 +44,23 @@ NOT CHECKED: 1, an agent cannot listen: the cue boundaries are measured, not hea
 Verdict: READY FOR HUMAN REVIEW (stays draft; a human sets reviewed/published, and a published item needs a human recording)
 ```
 Notes for 3 and 5: the trap letters (A, D, E, G) are places a careless listener would go, and the correct route needs no second listen; the setting and names are invented and generic. 4: landmarks 7, routeSteps 11, distractors 0, selfCorrections 1, pace natural, all match the audio and route. 7: the transcript is in the item; map places carry text labels.
+
+### 2026-11-18, agent (Kokoro audio, shorter pauses, Arabic explanations rewritten)
+Owner's review of the previous version: no PASS/FAIL entry was in this ticket; the owner's requests came in the task message (shorter pauses; Arabic explanations too mixed with English). Transcript, map, route and answers unchanged.
+
+**Audio.** Kokoro 0.9.4 (proposal `docs/development/proposals/2026-11-17-kokoro-tts.md`), voice `bf_emma` (owner's blind-test pick), run offline (`HF_HUB_OFFLINE=1`). `bf_emma.pt` SHA-256 `d0a423de…5da701` matches its VOICES.md prefix (was NOT VERIFIED in the proposal). Each cue rendered separately at speed 0.7: at speed 1.0 the voice speaks about 231 words per minute, far above tier 2. Pauses: inside a cue capped at 0.2 s (Kokoro's own were up to about 0.75 s), except 0.3 s in c14 so the "west side... oh, sorry" hesitation stays audible; between cues 0.25 s (was 0.6), lead-in 0.25 s (was 0.4), tail 0.4 s (was 0.6). AAC 64 kbit/s with `afconvert`: `docs/content/audio/first-challenge-001.m4a`, 85.48 s (was 90.82), 707 KB. Pace: 162 wpm during speech, 154 overall (tier 2 "natural", 140 to 160). History: a first render (speed 0.75; pauses 0.25 s inside, 0.35 s between) was 82.81 s and 159 wpm overall; the owner listened and asked for "speed a bit slower, pauses a bit shorter", which gave the settings above. Throwaway Python scripts in the session scratchpad; nothing added to the repo.
+
+**Timing check** (same method as before): decoded the `.m4a` back to PCM; for all 15 cues, speech within 0.06 s after each start and before each end, silence in every gap, the lead-in and the tail; decoded length equals `audio.durationSec`. PASS. The check fails as it should when c6 to c8 are shifted by 0.2 s.
+
+**Arabic explanations q1 to q3 rewritten** (owner: the Arabic–English mix is hard to read). One English quote per explanation, only the exact words heard («at the far end», «just past», «oh, sorry, I mean»), always with Arabic words on both sides; no English room names, nothing in brackets. Room names now Arabic only: غرفة الهدوء، غرفة الأشغال اليدوية (was «الحرف اليدوية»)، غرفة تنس الطاولة. q3 now quotes the correction signal «oh, sorry, I mean» instead of two quotes. English explanations unchanged. A script check of the rule (quote count, no Latin outside quotes except map letters, no quote at a sentence or clause edge, no brackets) passes for all three. The writing rule is now in `docs/content/prompts/draft-map-item.md`; ticket 09 now requires isolating English inside Arabic on the review screen.
+
+Layer 1: `node tools/validate-content.mjs docs/content/items/first-challenge-001.json --assets docs/content` exit 0. `--require-published` exit 1 (`not-published`; correct for a draft).
+
+```
+Item: first-challenge-001 v1     Layer 1: PASS (0 errors)
+Layer 2: 1 NOT CHECKED (timing machine-checked; the owner heard the 0.75 render, not this one) | 2 PASS (owner) | 3 PASS, agent view | 4 PASS | 5 PASS, agent view | 6 PASS (owner, from the right-to-left preview) | 7 PASS
+NOT CHECKED: 1, play the final file at c1 (0:00–0:04), c8/c9 (0:40–0:50) and c14 (1:10–1:17) against the transcript, and confirm the speed and pauses.
+Verdict: READY FOR HUMAN REVIEW (stays draft; a human sets reviewed/published, and a published item needs a human recording)
+```
+
+**Owner review, 2026-11-18** (given in chat, recorded by the agent): Arabic q1 to q3 **OK** (read in the right-to-left preview). Answers **PASS** (one defensible answer per question). Audio (0.75 render): "speed a bit slower, pauses a bit shorter", now re-rendered as above.

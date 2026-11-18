@@ -4,6 +4,8 @@ import type { Pool } from 'pg';
 import { createAuth } from './access/auth.ts';
 import { createRateLimit } from './access/rate-limit.ts';
 import { accessRoutes } from './access/routes.ts';
+import { attemptRoutes } from './attempts/routes.ts';
+import { catalogueRoutes } from './catalogue/routes.ts';
 import type { Clock } from './clock.ts';
 import type { Config } from './config.ts';
 import { settingsRoutes } from './settings/routes.ts';
@@ -11,7 +13,7 @@ import { staffRoutes } from './staff/routes.ts';
 import { testSupportRoutes } from './test-support/routes.ts';
 
 type AppOptions = {
-  config: Pick<Config, 'testSupportToken' | 'authSecret' | 'publicOrigin' | 'production'>;
+  config: Pick<Config, 'testSupportToken' | 'authSecret' | 'publicOrigin' | 'production' | 'contentDir'>;
   db: Pool;
   clock: Clock;
   webRoot: string; // the built single-page app (web/dist)
@@ -67,7 +69,9 @@ export async function buildApp({ config, db, clock, webRoot, logger = false }: A
   };
   await app.register(accessRoutes, { auth, db, clock, limits });
   await app.register(settingsRoutes, { auth, db });
-  await app.register(staffRoutes, { auth, db, clock });
+  await app.register(staffRoutes, { auth, db, clock, contentDir: config.contentDir });
+  await app.register(catalogueRoutes, { auth, db });
+  await app.register(attemptRoutes, { auth, db, clock, contentDir: config.contentDir });
   if (config.testSupportToken) {
     await app.register(testSupportRoutes, {
       token: config.testSupportToken,

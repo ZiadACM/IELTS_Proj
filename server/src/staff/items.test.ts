@@ -17,7 +17,7 @@ const FIXTURE = new URL('../../../tools/fixtures/map-001.valid.json', import.met
 // Only the fields the tests change; the rest of the fixture passes through untouched.
 type TestItem = {
   id: string;
-  audio: { source: string };
+  audio: { source: string; file: string };
   transcript: { cues: { text: string }[] };
   questions: { prompt: string; answerLabel: string; explanation: { en: string } }[];
   validation?: object;
@@ -170,6 +170,23 @@ describe('ADM-02 POST /admin/items (import)', () => {
     assert.ok(codes.includes('answer-label'), codes.join());
     assert.ok(codes.includes('markup'), codes.join());
     assert.equal(await storedContent(item.id), undefined);
+  });
+
+  test('an item whose audio file is not in the content folder is rejected without revealing server paths', async () => {
+    // Owner decision, ticket 07: audio lives in the configured content folder, checked at import and publish.
+    const app = await apps.app();
+    const author = await signedIn(app, 'content_author');
+    for (const file of ['audio/missing.mp3', '../outside.mp3']) {
+      const item = newItem((i) => {
+        i.audio.file = file;
+      });
+      const res = await importItem(app, author, item);
+      assert.equal(res.statusCode, 400, res.body);
+      const codes = res.json().problems.map((p: { code: string }) => p.code);
+      assert.ok(codes.includes('audio-missing') || codes.includes('audio-path'), `${file}: ${codes.join()}`);
+      assert.doesNotMatch(res.body, /content-[A-Za-z0-9]+|\/(tmp|var|private|Users|home)\//, res.body);
+      assert.equal(await storedContent(item.id), undefined);
+    }
   });
 
   test('a body that is not {item: object}, or has extra fields, is rejected', async () => {

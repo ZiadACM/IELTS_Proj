@@ -1,5 +1,6 @@
 // Items (content format v1) as stored by the app. Every write runs the content validator itself
 // (tools/validate-content.mjs, a protected file): import and publish apply exactly the checks the CLI applies.
+import path from 'node:path';
 import type { Pool } from 'pg';
 import { validateItem } from '../../../tools/validate-content.mjs';
 
@@ -17,10 +18,14 @@ export type ItemSummary = {
 };
 type Item = Record<string, unknown> & { id: string };
 
-// shortcut: no assets directory yet, so the audio file's existence and path are not checked here (owner decision,
-// ticket 06): ticket 07 decides where audio lives and passes that directory to validateItem.
-export function problemsOf(item: unknown): Problem[] {
-  return validateItem(item);
+// With a content folder (import and publish), the validator also checks that the audio file exists inside it (owner
+// decision, ticket 07). The folder's own path is cut from the messages: staff need the file name, not server paths.
+export function problemsOf(item: unknown, contentDir?: string): Problem[] {
+  if (!contentDir) return validateItem(item);
+  const root = path.resolve(contentDir) + path.sep;
+  // The validator is plain JS: TypeScript infers its assetsDir option (default null) as null only.
+  const options = { assetsDir: contentDir } as unknown as Parameters<typeof validateItem>[1];
+  return validateItem(item, options).map((p: Problem) => ({ ...p, msg: p.msg.replaceAll(root, '') }));
 }
 
 // The status lives in the app, not the file: an import is always a draft, whatever the file says.
@@ -32,9 +37,15 @@ export type ImportResult =
   | { kind: 'created' | 'replaced'; itemId: string };
 
 // Stores a valid item as a draft. An id that is still a draft is replaced; a published one is never changed.
-export async function importItem(db: Pool, item: Item, importedBy: string, now: Date): Promise<ImportResult> {
+export async function importItem(
+  db: Pool,
+  contentDir: string,
+  item: Item,
+  importedBy: string,
+  now: Date,
+): Promise<ImportResult> {
   const draft = asDraft(item);
-  const problems = problemsOf(draft);
+  const problems = problemsOf(draft, contentDir);
   if (problems.length) return { kind: 'invalid', problems };
   const { rows } = await db.query<{ id: string; created: boolean }>(
     `insert into items (content_id, status, content, imported_by, imported_at) values ($1, 'draft', $2, $3, $4)
@@ -56,7 +67,13 @@ export type PublishResult =
 
 // A content_reviewer publishes a draft (CS 3.1). The item is validated again as published, which also requires a
 // human recording (validator rule audio-source); the reviewer and date are recorded in the item.
-export async function publishItem(db: Pool, itemId: string, reviewerId: string, now: Date): Promise<PublishResult> {
+export async function publishItem(
+  db: Pool,
+  contentDir: string,
+  itemId: string,
+  reviewerId: string,
+  now: Date,
+): Promise<PublishResult> {
   const { rows } = await db.query<{ status: ItemStatus; content: Item }>(
     'select status, content from items where id = $1',
     [itemId],
@@ -67,7 +84,7 @@ export async function publishItem(db: Pool, itemId: string, reviewerId: string, 
     ...rows[0].content,
     validation: { status: 'published', reviewer: reviewerId, reviewedOn: now.toISOString().slice(0, 10) },
   };
-  const problems = problemsOf(published);
+  const problems = problemsOf(published, contentDir);
   if (problems.length) return { kind: 'invalid', problems };
   const { rowCount } = await db.query(
     `update items set status = 'published', content = $2, published_by = $3, published_at = $4
@@ -90,6 +107,7 @@ export async function listItems(db: Pool): Promise<ItemSummary[]> {
 
 // Test support only (docs/security/test-harness-contract.md): stores a valid item with the given status directly.
 // The file's own status must agree, so a published item still passes the published rules (human audio, reviewer).
+// The audio file is not checked: the security fixtures name audio that does not exist.
 export async function seedItem(
   db: Pool,
   item: Item,

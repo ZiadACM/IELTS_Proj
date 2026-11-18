@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 // Configuration comes from the environment only. Missing or unsafe configuration stops the app (CODING_STANDARDS 2.4).
 
 export type Config = {
@@ -11,6 +13,9 @@ export type Config = {
   authSecret: string;
   // The address learners use, e.g. https://masar.example. Required in production.
   publicOrigin: string;
+  // Folder holding item audio (`audio.file` paths in item files resolve inside it). Required everywhere: import and
+  // publish check the file exists, and attempts serve it from here.
+  contentDir: string;
 };
 
 const MIN_SECRET_LENGTH = 32;
@@ -42,5 +47,17 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
   const publicOrigin = env.PUBLIC_ORIGIN ?? (production ? undefined : `http://localhost:${port}`);
   if (!publicOrigin) throw new Error('PUBLIC_ORIGIN is not set');
 
-  return { databaseUrl, host: env.HOST ?? '127.0.0.1', port, production, testSupportToken, authSecret, publicOrigin };
+  if (!env.CONTENT_DIR) throw new Error('CONTENT_DIR is not set');
+  const contentDir = path.resolve(env.CONTENT_DIR);
+
+  return {
+    databaseUrl,
+    host: env.HOST ?? '127.0.0.1',
+    port,
+    production,
+    testSupportToken,
+    authSecret,
+    publicOrigin,
+    contentDir,
+  };
 }

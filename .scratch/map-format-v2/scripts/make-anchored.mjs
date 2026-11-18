@@ -50,7 +50,7 @@ const questions = [
 const item = {
   ...v2,
   version: 3,
-  difficulty: { landmarks: map.landmarks.length, routeSteps: events.filter((e) => ['move', 'landmark', 'turn'].includes(e.kind)).length, distractors: 0, selfCorrections: 1, audioPace: 'natural' },
+  difficulty: { landmarks: new Set(events.map((e) => e.landmarkId).filter(Boolean)).size, routeSteps: events.filter((e) => ['move', 'landmark', 'turn'].includes(e.kind)).length, distractors: 0, selfCorrections: 1, audioPace: 'natural' },
   audio: { file: 'audio/first-challenge-001-anchored.m4a', durationSec: 0, source: 'synthetic' },
   map, transcript: { cues }, events, questions,
   validation: { status: 'draft' },

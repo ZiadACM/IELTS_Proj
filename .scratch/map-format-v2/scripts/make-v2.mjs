@@ -16,7 +16,7 @@ const map = {
     room('store', [100, 165, 165, 105], { label: 'Store', door: { side: 'e' } }),
     room('room-f', [100, 270, 165, 130], { door: { side: 'e' } }),
     room('staff-office', [100, 400, 165, 185], { door: { side: 'e' } }),
-    room('room-b', [100, 585, 200, 235], { door: { side: 'n' } }),
+    room('room-b', [100, 585, 200, 235], { door: { side: 'n', at: 283 } }), // at the corridor corner; the middle of the wall would open into the staff office
     room('toilets', [300, 585, 170, 235], { door: { side: 'n' } }),
     room('room-h', [315, 20, 155, 145], { door: { side: 'w' } }),
     room('cafe', [315, 215, 155, 185], { label: 'Café', door: { side: 'w' } }),

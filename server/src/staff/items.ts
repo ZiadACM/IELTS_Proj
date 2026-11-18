@@ -66,7 +66,8 @@ export type PublishResult =
   | { kind: 'published' };
 
 // A content_reviewer publishes a draft (CS 3.1). The item is validated again as published, which also requires a
-// human recording (validator rule audio-source); the reviewer and date are recorded in the item.
+// human recording or synthetic audio with its D24 record (validator rule audio-source); the reviewer and date are
+// recorded in the item.
 export async function publishItem(
   db: Pool,
   contentDir: string,

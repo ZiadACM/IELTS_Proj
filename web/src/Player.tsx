@@ -61,8 +61,13 @@ export function Player({
   const [announcement, setAnnouncement] = useState('');
   const audioRef = useRef<HTMLAudioElement>(null);
   const phaseRef = useRef<Phase | 'left'>('reading');
+  const strip = useRef<HTMLDivElement>(null);
   const furthest = useRef(0); // the furthest point played: a retry resumes here, never earlier
   const stallTimer = useRef<number | undefined>(undefined);
+  // The strings in a ref: switching language mid-listen re-labels the screen and must not reload the item, which
+  // would remount the audio and lose the first listen.
+  const strings = useRef(t);
+  strings.current = t;
 
   const load = useCallback(async () => {
     setLoaded('loading');
@@ -74,8 +79,8 @@ export function Player({
     }
     setLoaded({ item: item.value, attempt: attempt.value });
     setSecondsLeft(item.value.readingTimeSec);
-    setAnnouncement(t.readingAnnounce(item.value.readingTimeSec));
-  }, [itemId, onSessionGone, t]);
+    setAnnouncement(strings.current.readingAnnounce(item.value.readingTimeSec));
+  }, [itemId, onSessionGone]);
 
   useEffect(() => {
     load();
@@ -94,6 +99,8 @@ export function Player({
   const beginListening = useCallback(() => {
     if (phaseRef.current !== 'reading') return;
     phaseRef.current = 'listening';
+    // "Start now" is about to disappear: keep keyboard focus on the status it leads to, not on the page.
+    if (strip.current?.contains(document.activeElement)) strip.current.focus();
     setPhase('listening');
     holdMediaControls(true);
     play();
@@ -185,7 +192,7 @@ export function Player({
       <div className="perforation" aria-hidden="true" />
       <p className="unofficial">{t.unofficial}</p>
 
-      <div className="status-strip">
+      <div className="status-strip" ref={strip} tabIndex={-1}>
         {phase === 'reading' && (
           <>
             <div className="status-row">
@@ -210,7 +217,7 @@ export function Player({
         {phase === 'listening' && audioState === 'failed' && (
           <div className="status-row">
             <p className="status-text error" role="alert">
-              {t.audioFailed}
+              {furthest.current > 0 ? t.audioFailed : t.audioNotLoaded}
             </p>
             <button type="button" className="primary" onClick={retry}>
               {t.retry}

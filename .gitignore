@@ -30,3 +30,6 @@ Desktop.ini
 
 # Build output
 dist/
+
+# Playwright results and traces (browser tests)
+web/e2e/.results/

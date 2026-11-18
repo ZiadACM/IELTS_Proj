@@ -110,7 +110,7 @@ Goal: every rule in `CODING_STANDARDS.md` section 2 and every row of the threat 
 
 | Case | Abuse case | Expected safe result | Test | Status |
 |---|---|---|---|---|
-| DEP-01 | A dependency with a known vulnerability is added or present | CI fails at the agreed severity threshold | The package manager's audit, or OSV-Scanner (pinned), in CI | **CI** (OSV-Scanner 2.7.1; NOT VERIFIED while no lockfile exists) |
+| DEP-01 | A dependency with a known vulnerability is added or present | CI fails at the agreed severity threshold | The package manager's audit, or OSV-Scanner (pinned), in CI | **CI** (OSV-Scanner 2.7.1). Exceptions live in `osv-scanner.toml`, each owner-approved with a reason and an expiry. Current: `GHSA-fc5q-39xc-vjpf` (picomatch ReDoS, no fix released; dev/build only via vite), approved by the owner 2026-11-18, expires 2026-12-18 |
 | DEP-02 | A direct dependency uses a version range, or the lockfile is missing or out of date | CI fails | `tests/security/dependency-policy.test.*` (manifest plus lockfile check; frozen install in CI) | STACK |
 | DEP-03 | A direct dependency has no stated reason | CI fails unless it has a row in a dependency register (e.g. `docs/architecture/dependencies.md`) | `dependency-policy` | STACK |
 | DEP-04 | A package with install scripts (`preinstall`, `install`, `postinstall`) enters the tree | CI fails unless it is on an owner-reviewed allow-list; install scripts disabled by default in CI | `dependency-policy` | STACK |

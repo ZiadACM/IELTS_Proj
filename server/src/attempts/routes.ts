@@ -1,5 +1,6 @@
-// Attempts (spec: Attempts, Audio delivery; matrix ATT-01, ATT-03, ATT-06). Ticket 07 starts guided practice and
-// serves its audio. Answers and submit are ticket 08, replays and hints 11, the independent check (mode `exam`) 13.
+// Attempts (spec: Attempts, Audio delivery; matrix ATT-01, ATT-03 to ATT-06). Ticket 07 starts guided practice and
+// serves its audio; ticket 08 saves answers and submits, scored here. Replays and hints are ticket 11, the independent
+// check (mode `exam`) 13.
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { Pool } from 'pg';
 import { type Auth, callerId, requireSession } from '../access/auth.ts';
@@ -37,8 +38,34 @@ const attemptOf = (r: Row) => ({
   // Only an independent check on an unseen item is evidence of independent readiness (spec: Skill states).
   countsTowardIndependentReadiness: r.mode === 'exam' && !r.seenBefore,
   late: r.late,
-  score: r.score,
+  // The harness contract has a score only after submit; an open attempt has none.
+  ...(r.status === 'submitted' ? { score: r.score } : {}),
 });
+
+type AnswerKey = { questions: { id: string; answerLabel: string }[]; map: { targets: { label: string }[] } };
+
+// The item content behind an attempt, for checking and scoring answers. Read by id, not through the published-only
+// lookup: the attempt was started on a published item and is scored against the same content.
+async function answerKeyOf(db: Pool, itemId: string) {
+  const { rows } = await db.query<{ content: AnswerKey }>('select content from items where id = $1', [itemId]);
+  return rows[0].content;
+}
+
+const ANSWERS_BODY = {
+  type: 'object',
+  required: ['answers'],
+  additionalProperties: false,
+  properties: {
+    answers: {
+      type: 'object',
+      maxProperties: 50,
+      propertyNames: { maxLength: 64 },
+      // No `type` here: Fastify's validator would coerce ["A"] or 12345 into a string. The handler checks each value
+      // is one of the map's letters, which only a string can be.
+      additionalProperties: { maxLength: 8 },
+    },
+  },
+};
 
 export async function attemptRoutes(
   fastify: FastifyInstance,
@@ -106,6 +133,57 @@ export async function attemptRoutes(
       const attempt = await ownAttempt(request);
       if (!attempt) return reply.code(404).send({ error: 'not_found' });
       return attemptOf(attempt);
+    },
+  );
+
+  // ATT-04: save the answers of the caller's own open attempt. The body is the whole answer set (a question left out
+  // has no answer), so a re-sent save after a lost connection is harmless. Each answer is a question of the item and a
+  // letter on its map.
+  fastify.put<{ Params: { attemptId: string }; Body: { answers: Record<string, string> } }>(
+    '/attempts/:attemptId/answers',
+    { preValidation: attemptUser, schema: { body: ANSWERS_BODY } },
+    async (request, reply) => {
+      const attempt = await ownAttempt(request);
+      if (!attempt) return reply.code(404).send({ error: 'not_found' });
+      if (attempt.status !== 'open') return reply.code(409).send({ error: 'attempt_submitted' });
+      const key = await answerKeyOf(db, attempt.itemId);
+      const questions = new Set(key.questions.map((q) => q.id));
+      const letters = new Set(key.map.targets.map((t) => t.label));
+      const { answers } = request.body;
+      if (
+        Object.entries(answers).some(
+          ([q, letter]) => !questions.has(q) || typeof letter !== 'string' || !letters.has(letter),
+        )
+      )
+        return reply.code(400).send({ error: 'answers_not_valid' });
+      const { rows } = await db.query<Row>(
+        `update attempts set answers = $2 where id = $1 and status = 'open' returning ${COLUMNS}`,
+        [attempt.id, JSON.stringify(answers)],
+      );
+      if (!rows[0]) return reply.code(409).send({ error: 'attempt_submitted' });
+      return attemptOf(rows[0]);
+    },
+  );
+
+  // ATT-05: submit the caller's own open attempt. The score is the number of questions whose saved answer is the
+  // item's answer letter, computed here from the stored answers; the request carries nothing.
+  fastify.post<{ Params: { attemptId: string } }>(
+    '/attempts/:attemptId/submit',
+    { preValidation: attemptUser, schema: { body: { type: 'object', additionalProperties: false } } },
+    async (request, reply) => {
+      const attempt = await ownAttempt(request);
+      if (!attempt) return reply.code(404).send({ error: 'not_found' });
+      if (attempt.status !== 'open') return reply.code(409).send({ error: 'attempt_submitted' });
+      const key = await answerKeyOf(db, attempt.itemId);
+      const score = key.questions.filter((q) => attempt.answers[q.id] === q.answerLabel).length;
+      // `status = 'open'` makes two racing submits score once; the loser gets 409.
+      const { rows } = await db.query<Row>(
+        `update attempts set status = 'submitted', submitted_at = $2, score = $3
+         where id = $1 and status = 'open' returning ${COLUMNS}`,
+        [attempt.id, clock.now(), score],
+      );
+      if (!rows[0]) return reply.code(409).send({ error: 'attempt_submitted' });
+      return attemptOf(rows[0]);
     },
   );
 

@@ -4,7 +4,7 @@
 
 **Blocked by:** none
 
-**Status:** ready-for-human (built on `agent/map-v2-app`; owner looks at the screenshots)
+**Status:** done (merged to `main` in PR #20; status line updated 2026-11-19)
 
 Spec: `../spec.md`
 

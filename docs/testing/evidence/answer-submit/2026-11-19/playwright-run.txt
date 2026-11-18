@@ -1,0 +1,36 @@
+
+Running 30 tests using 1 worker
+
+  ✓   1 [phone-chromium] › web/e2e/answer-submit.spec.ts:32:1 › a tap on the map and the letter list answer, change and save; offline answers are re-sent; submit is scored on the server (1.0s)
+  ✓   2 [phone-chromium] › web/e2e/answer-submit.spec.ts:95:1 › a score the browser sends with submit is refused; the stored score is the server’s own (510ms)
+  ✓   3 [phone-chromium] › web/e2e/answer-submit.spec.ts:116:1 › submit while offline says so and keeps the answers; it works once back online (559ms)
+  ✓   4 [phone-chromium] › web/e2e/browse-player.spec.ts:9:1 › Browse shows the three tiers; a tier with no maps says so (469ms)
+  ✓   5 [phone-chromium] › web/e2e/browse-player.spec.ts:25:1 › reading time counts down, can be skipped, and the first listen cannot be paused or sought (5.9s)
+  ✓   6 [phone-chromium] › web/e2e/browse-player.spec.ts:75:1 › switching language during the first listen keeps the audio playing (3.6s)
+  ✓   7 [phone-chromium] › web/e2e/browse-player.spec.ts:91:1 › audio that cannot load shows a message and a retry (472ms)
+  ✓   8 [phone-chromium] › web/e2e/browse-player.spec.ts:100:1 › a map that is no longer published says so and leads back to Browse (555ms)
+  ✓   9 [phone-chromium] › web/e2e/map-v2.spec.ts:65:1 › a v2 map is drawn as a floor plan, left to right inside the Arabic frame, with no sideways scroll (551ms)
+  ✓  10 [phone-chromium] › web/e2e/map-v2.spec.ts:111:1 › at 360 px the v2 map is 326 px wide (D22) and its letters stay readable (518ms)
+  ✓  11 [phone-webkit] › web/e2e/answer-submit.spec.ts:32:1 › a tap on the map and the letter list answer, change and save; offline answers are re-sent; submit is scored on the server (1.2s)
+  ✓  12 [phone-webkit] › web/e2e/answer-submit.spec.ts:95:1 › a score the browser sends with submit is refused; the stored score is the server’s own (3.0s)
+  ✓  13 [phone-webkit] › web/e2e/answer-submit.spec.ts:116:1 › submit while offline says so and keeps the answers; it works once back online (854ms)
+  ✓  14 [phone-webkit] › web/e2e/browse-player.spec.ts:9:1 › Browse shows the three tiers; a tier with no maps says so (649ms)
+  ✓  15 [phone-webkit] › web/e2e/browse-player.spec.ts:25:1 › reading time counts down, can be skipped, and the first listen cannot be paused or sought (6.1s)
+  ✓  16 [phone-webkit] › web/e2e/browse-player.spec.ts:75:1 › switching language during the first listen keeps the audio playing (3.6s)
+  ✓  17 [phone-webkit] › web/e2e/browse-player.spec.ts:91:1 › audio that cannot load shows a message and a retry (494ms)
+  ✓  18 [phone-webkit] › web/e2e/browse-player.spec.ts:100:1 › a map that is no longer published says so and leads back to Browse (518ms)
+  ✓  19 [phone-webkit] › web/e2e/map-v2.spec.ts:65:1 › a v2 map is drawn as a floor plan, left to right inside the Arabic frame, with no sideways scroll (515ms)
+  -  20 [phone-webkit] › web/e2e/map-v2.spec.ts:111:1 › at 360 px the v2 map is 326 px wide (D22) and its letters stay readable
+  ✓  21 [desktop-chromium] › web/e2e/answer-submit.spec.ts:32:1 › a tap on the map and the letter list answer, change and save; offline answers are re-sent; submit is scored on the server (841ms)
+  ✓  22 [desktop-chromium] › web/e2e/answer-submit.spec.ts:95:1 › a score the browser sends with submit is refused; the stored score is the server’s own (504ms)
+  ✓  23 [desktop-chromium] › web/e2e/answer-submit.spec.ts:116:1 › submit while offline says so and keeps the answers; it works once back online (550ms)
+  ✓  24 [desktop-chromium] › web/e2e/browse-player.spec.ts:9:1 › Browse shows the three tiers; a tier with no maps says so (435ms)
+  ✓  25 [desktop-chromium] › web/e2e/browse-player.spec.ts:25:1 › reading time counts down, can be skipped, and the first listen cannot be paused or sought (5.9s)
+  ✓  26 [desktop-chromium] › web/e2e/browse-player.spec.ts:75:1 › switching language during the first listen keeps the audio playing (3.6s)
+  ✓  27 [desktop-chromium] › web/e2e/browse-player.spec.ts:91:1 › audio that cannot load shows a message and a retry (527ms)
+  ✓  28 [desktop-chromium] › web/e2e/browse-player.spec.ts:100:1 › a map that is no longer published says so and leads back to Browse (551ms)
+  ✓  29 [desktop-chromium] › web/e2e/map-v2.spec.ts:65:1 › a v2 map is drawn as a floor plan, left to right inside the Arabic frame, with no sideways scroll (547ms)
+  -  30 [desktop-chromium] › web/e2e/map-v2.spec.ts:111:1 › at 360 px the v2 map is 326 px wide (D22) and its letters stay readable
+
+  2 skipped
+  28 passed (46.0s)

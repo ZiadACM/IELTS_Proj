@@ -40,7 +40,6 @@ describe('ATT-01 POST /attempts (start guided practice)', () => {
       seenBefore: false,
       countsTowardIndependentReadiness: false,
       late: false,
-      score: null,
     });
   });
 
@@ -165,5 +164,137 @@ describe('ATT-06 GET /attempts/{attemptId}/audio (guided practice)', () => {
     const { id } = (await start(app, owner, itemId)).json();
     const res = await call(app, 'GET', `/attempts/${id}/audio`, { cookie: owner });
     assert.equal(res.statusCode, 404, res.body);
+  });
+});
+
+// Ticket 08: answers and submit. Expected scores come from the validator fixture's answer key (q1 C, q2 E, q3 B), not
+// from the code under test. Saving replaces the whole answer set (PUT), so a learner can change or clear an answer.
+type App = Parameters<typeof call>[0];
+const save = (app: App, cookie: string | undefined, id: string, payload: object) =>
+  call(app, 'PUT', `/attempts/${id}/answers`, { payload, cookie });
+const submit = (app: App, cookie: string | undefined, id: string, payload: object = {}) =>
+  call(app, 'POST', `/attempts/${id}/submit`, { payload, cookie });
+const read = async (app: App, cookie: string | undefined, id: string) =>
+  (await call(app, 'GET', `/attempts/${id}`, { cookie })).json();
+
+async function openAttempt(who: 'guest' | 'learner' = 'learner') {
+  const app = await apps.app();
+  const { itemId } = await seedItem(app, 'published');
+  const cookie = await signedIn(app, apps.db, who);
+  const attempt = (await start(app, cookie, itemId)).json();
+  return { app, cookie, id: attempt.id as string, itemId };
+}
+
+describe('ATT-04 PUT /attempts/{attemptId}/answers', () => {
+  test('the owner saves answers, changes one and clears another; the attempt shows the saved set', async () => {
+    const { app, cookie, id } = await openAttempt('guest');
+    const first = await save(app, cookie, id, { answers: { q1: 'A', q2: 'D' } });
+    assert.equal(first.statusCode, 200, first.body);
+    assert.deepEqual(first.json().answers, { q1: 'A', q2: 'D' });
+    const changed = await save(app, cookie, id, { answers: { q1: 'C' } });
+    assert.equal(changed.statusCode, 200, changed.body);
+    const state = await read(app, cookie, id);
+    assert.deepEqual(state.answers, { q1: 'C' });
+    assert.equal(state.status, 'open');
+    assert.equal('score' in state, false, 'an open attempt has no score (harness contract: score after submit)');
+  });
+
+  test('malformed answers are refused and change nothing', async () => {
+    const { app, cookie, id } = await openAttempt();
+    await save(app, cookie, id, { answers: { q1: 'A' } });
+    const bad = [
+      { answers: { q1: 'Z' } },
+      { answers: { q1: 12345 } },
+      { answers: { q1: ['A'] } },
+      { answers: { q1: '' } },
+      { answers: 'C' },
+      { answers: { 'no-such-question': 'A' } },
+      { answers: { q1: 'B' }, score: 3, status: 'submitted', mode: 'exam' },
+      {},
+    ];
+    for (const payload of bad) {
+      const res = await save(app, cookie, id, payload);
+      assert.equal(res.statusCode, 400, JSON.stringify(payload));
+    }
+    const state = await read(app, cookie, id);
+    assert.deepEqual(state.answers, { q1: 'A' });
+    assert.equal(state.mode, 'guided');
+    assert.equal(state.status, 'open');
+  });
+
+  test('anonymous 401; another learner 404 and nothing stored; an admin is denied', async () => {
+    const { app, cookie, id } = await openAttempt();
+    assert.equal((await save(app, undefined, id, { answers: { q1: 'A' } })).statusCode, 401);
+    const other = await signedIn(app, apps.db, 'learner');
+    assert.equal((await save(app, other, id, { answers: { q1: 'A' } })).statusCode, 404);
+    const admin = await signedIn(app, apps.db, 'admin');
+    assert.equal((await save(app, admin, id, { answers: { q1: 'A' } })).statusCode, 403);
+    assert.equal((await save(app, cookie, 'not-an-attempt', { answers: { q1: 'A' } })).statusCode, 404);
+    assert.deepEqual((await read(app, cookie, id)).answers, {});
+  });
+
+  test('a submitted attempt refuses new answers (409) and keeps the submitted ones', async () => {
+    const { app, cookie, id } = await openAttempt();
+    await save(app, cookie, id, { answers: { q1: 'C' } });
+    assert.equal((await submit(app, cookie, id)).statusCode, 200);
+    assert.equal((await save(app, cookie, id, { answers: { q1: 'A' } })).statusCode, 409);
+    assert.deepEqual((await read(app, cookie, id)).answers, { q1: 'C' });
+  });
+});
+
+describe('ATT-05 POST /attempts/{attemptId}/submit', () => {
+  test('the server scores the saved answers: one right of three (q1 C right, q2 A wrong, q3 unanswered)', async () => {
+    const { app, cookie, id } = await openAttempt('guest');
+    await save(app, cookie, id, { answers: { q1: 'C', q2: 'A' } });
+    const res = await submit(app, cookie, id);
+    assert.equal(res.statusCode, 200, res.body);
+    const attempt = res.json();
+    assert.equal(attempt.status, 'submitted');
+    assert.equal(attempt.score, 1);
+    assert.deepEqual(await read(app, cookie, id), attempt);
+  });
+
+  test('all right scores 3; nothing answered scores 0', async () => {
+    const all = await openAttempt();
+    await save(all.app, all.cookie, all.id, { answers: { q1: 'C', q2: 'E', q3: 'B' } });
+    assert.equal((await submit(all.app, all.cookie, all.id)).json().score, 3);
+    const none = await openAttempt();
+    assert.equal((await submit(none.app, none.cookie, none.id)).json().score, 0);
+  });
+
+  test('a score or answers sent by the client are refused; the stored attempt stays open', async () => {
+    const { app, cookie, id } = await openAttempt();
+    await save(app, cookie, id, { answers: { q1: 'A', q2: 'D' } });
+    for (const payload of [{ score: 3 }, { answers: { q1: 'C', q2: 'E', q3: 'B' } }, { status: 'submitted' }])
+      assert.equal((await submit(app, cookie, id, payload)).statusCode, 400, JSON.stringify(payload));
+    assert.equal((await read(app, cookie, id)).status, 'open');
+    assert.equal((await submit(app, cookie, id)).json().score, 0);
+  });
+
+  test('submitting twice gives 409 and keeps the first result', async () => {
+    const { app, cookie, id } = await openAttempt();
+    await save(app, cookie, id, { answers: { q1: 'C' } });
+    await submit(app, cookie, id);
+    const again = await submit(app, cookie, id);
+    assert.equal(again.statusCode, 409, again.body);
+    assert.equal((await read(app, cookie, id)).score, 1);
+  });
+
+  test('anonymous 401; another learner 404 and the attempt stays open; an admin is denied', async () => {
+    const { app, cookie, id } = await openAttempt();
+    assert.equal((await submit(app, undefined, id)).statusCode, 401);
+    assert.equal((await submit(app, await signedIn(app, apps.db, 'learner'), id)).statusCode, 404);
+    assert.equal((await submit(app, await signedIn(app, apps.db, 'admin'), id)).statusCode, 403);
+    assert.equal((await read(app, cookie, id)).status, 'open');
+  });
+
+  test('after submit the audio is closed and practising again opens a new attempt marked seen before', async () => {
+    const { app, cookie, id, itemId } = await openAttempt();
+    await submit(app, cookie, id);
+    assert.equal((await call(app, 'GET', `/attempts/${id}/audio`, { cookie })).statusCode, 409);
+    const next = await start(app, cookie, itemId);
+    assert.equal(next.statusCode, 201, next.body);
+    assert.notEqual(next.json().id, id);
+    assert.equal(next.json().seenBefore, true);
   });
 });

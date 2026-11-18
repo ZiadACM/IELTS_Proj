@@ -1,0 +1,31 @@
+✖ AUTHZ-06: every role x every endpoint matches its authorization-matrix cell (and the cell condition is enforced) (15095.26725ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 15142.227875
+
+✖ failing tests:
+
+test at tests/security/lib/live.mjs:27:3
+✖ AUTHZ-06: every role x every endpoint matches its authorization-matrix cell (and the cell condition is enforced) (15095.26725ms)
+  AssertionError [ERR_ASSERTION]: guest-ATT-07 could not start a exam attempt on p3: 501 {"error":"not_implemented","ticket":"13-independent-check"}
+      at env.startAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async ownAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/authorization-enforcement.test.mjs:20:18)
+      at async ATT-07 (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/authorization-enforcement.test.mjs:64:107)
+      at async prepare (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/authorization-enforcement.test.mjs:75:13)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/authorization-enforcement.test.mjs:86:19
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

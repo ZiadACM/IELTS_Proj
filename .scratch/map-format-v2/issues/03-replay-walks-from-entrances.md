@@ -4,7 +4,7 @@
 
 **Blocked by:** 01, 02. The second half waits for the owner to bring back the AI draft.
 
-**Status:** ready-for-agent
+**Status:** done (every box ticked; merged to `main` in PR #17; status line updated 2026-11-19)
 
 Handoff (start here): `docs/development/handoffs/2026-11-18-map-v2-replay-fixes.md`
 

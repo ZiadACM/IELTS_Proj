@@ -4,7 +4,7 @@
 
 **Blocked by:** 02 First real item; 04 Invite codes and guest onboarding; 06 Staff: import, list, publish
 
-**Status:** ready-for-agent
+**Status:** merged to `main` in PR #16 (status line updated 2026-11-19; the boxes below were never ticked and are not re-checked)
 
 Spec: `../spec.md`
 

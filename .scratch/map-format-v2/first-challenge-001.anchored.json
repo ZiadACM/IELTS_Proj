@@ -29,7 +29,14 @@
   "audio": {
     "file": "audio/first-challenge-001-anchored.m4a",
     "durationSec": 81.3,
-    "source": "synthetic"
+    "source": "synthetic",
+    "synthetic": {
+      "engine": "Kokoro-82M, voice bf_isabella, speed 0.75 (D26)",
+      "licence": "Apache-2.0",
+      "listenedBy": "owner",
+      "listenedOn": "2026-11-19",
+      "timingCheck": "pass"
+    }
   },
   "map": {
     "format": 2,
@@ -879,6 +886,8 @@
     }
   ],
   "validation": {
-    "status": "draft"
+    "status": "reviewed",
+    "reviewer": "owner",
+    "reviewedOn": "2026-11-19"
   }
 }

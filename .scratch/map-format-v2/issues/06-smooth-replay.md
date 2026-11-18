@@ -1,6 +1,6 @@
-# 06: Smooth Answer Replay (prototype)
+# 06: Answer Replay in the prototype (smooth, then jump and highlight)
 
-**What to build:** On `agent/map-format-v2-prototype` after merging `agent/map-format-v2`: eased growth arriving at each point at its `atSec`, never early (D23a); pull-back and redraw at a self-correction only (D25 wrong path); all 3 answers highlighted at the end; reduced-motion version. Publish to the same artifact page after reading it.
+**What to build (changed by D27, below):** On `agent/map-format-v2-prototype` after merging `agent/map-format-v2`: eased growth arriving at each point at its `atSec`, never early (D23a); pull-back and redraw at a self-correction only (D25 wrong path); all 3 answers highlighted at the end; reduced-motion version. Publish to the same artifact page after reading it.
 
 **Source:** `docs/content/map-redesign-interview.md`, `docs/product/owner-decisions.md` (D23a, D24, D25).
 
@@ -27,3 +27,23 @@ Built on `agent/map-format-v2-prototype` (merged `agent/map-format-v2` first; co
 - **NOT VERIFIED:**
   - live playback with the recording: headless Chromium cannot play the AAC audio, so the frame loop was driven by seeking, not by `audio.currentTime` while playing;
   - how it feels on a real phone (the owner judges).
+
+### 2026-11-18, owner review of version 8, and version 9
+- The owner still did not like the line. They asked to go back to the line following the words, with no gliding, and to highlight each place as it is named. The agent asked three follow-up questions; the answers:
+  - instant jump;
+  - the highlight stays until the next place is named;
+  - keep the pull-back, the end summary and the answer-letter highlight.
+- Recorded as **D27**; D23a withdrawn. `map-format-v2.md` and the interview record updated.
+- Prototype (commit 4b6cd34), page version 9:
+  - each point appears whole at its `atSec`;
+  - the room, symbol or answer letter just named gets a light orange fill and outline, one at a time; a new question starts with nothing lit;
+  - the wrong path appears at its time, holds 0.8 s, pulls back over 0.45 s, and the walk waits for it;
+  - summary and reduced motion unchanged.
+- The first noticeboard highlight was too big (it covered E and A in the screenshot); it was tightened to the board and its label.
+- **Checks** (`check-replay.mjs` rewritten), 14 of 14 PASS:
+  - every point at its time, not before; no half-drawn pieces;
+  - each of 9 named places or answers lit from its time until the next, one at a time;
+  - the wrong path appears, pulls back and is gone, with the frame kept;
+  - the summary appears at its time and replaces the single highlight;
+  - reduced motion; no sideways scroll; no script errors in A to D.
+- NOT VERIFIED: playback with the real audio (headless cannot play AAC); feel on a phone.

@@ -9,7 +9,7 @@ Status: interview complete (owner with an external AI, 2026-11-18). Checked by t
 - Voice: synthetic, using the best free text-to-speech engine, for drafts and prototypes. The owner will not record and does not want volunteers. The voice must be free (no paid services or voice actors).
 - **Engine: keep Kokoro** (owner, 2026-11-18, after the OmniVoice check). Improve how it sounds within Kokoro (pipeline, voice and settings) instead of switching engine.
 - Target sound: clean studio, no background ambience.
-- Answer Replay motion: driven by the word times, but eased between them so it never looks stepped.
+- Answer Replay motion: ~~driven by the word times, but eased between them so it never looks stepped~~. **Changed 2026-11-18 (D27), after seeing it:** the line jumps to each point when it is said, and the place named is highlighted until the next one.
 - The line pulls back and redraws **only** at a self-correction, not at traps (decoy rooms, preposition tricks): traps do not change the route, so the line moves through them normally.
 - At the end of the replay, all 3 answers are highlighted together as a short summary.
 - Quality bar ("much nicer"): a clean, modern, minimal app feel. The owner does not want to name specific apps, games or videos.
@@ -46,7 +46,7 @@ Status: interview complete (owner with an external AI, 2026-11-18). Checked by t
 ## Owner answers to the Agent review (2026-11-18)
 The owner accepted every proposal as written, in the session that started the redesign:
 1. **Accepted:** a published item may use synthetic audio if the engine's licence allows use in the app, the owner has listened to it, and it passes the timing checks. Recorded as **D24**; the validator rule `audio-source` changes accordingly.
-2. **Accepted:** D23 rule 3 amended (eased replay). Recorded in D23's amendment line in `docs/product/owner-decisions.md`.
+2. **Accepted, then withdrawn:** D23 rule 3 amended (eased replay, D23a). After seeing it in the prototype (version 8) the owner withdrew it: see D27.
 3. **Accepted:** keep the spec; help is split by mode, not tier.
 4. **Accepted:** traps per tier as proposed. Recorded as **D25**.
 5. **Accepted:** a correction event carries a short wrong path along the corridors. Recorded as **D25**.

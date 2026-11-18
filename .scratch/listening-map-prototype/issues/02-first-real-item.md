@@ -4,14 +4,14 @@
 
 **Blocked by:** 01 Content format version 1
 
-**Status:** ready-for-human
+**Status:** done for the prototype (2026-11-18): item `reviewed` by the owner. Publishing it needs a human recording instead of the synthetic audio (validator rule `audio-source`) and a `content_reviewer` to publish.
 
 Spec: `../spec.md`
 
-- [ ] Item is original, carries the Unofficial practice label and is marked as the featured first challenge
-- [ ] Map, transcript cues, authored route with distractor or correction events, hints and English and Arabic explanations are complete
-- [ ] Validator exits 0 with the assets directory
-- [ ] `validate-ielts-content` judgement checks done; Arabic explanations checked by a fluent reader; status stays draft until a human reviewer approves
+- [x] Item is original, carries the Unofficial practice label and is marked as the featured first challenge (`purpose: first-challenge`; the format has no label field, so the app shows the label on every item: ticket 07)
+- [x] Map, transcript cues, authored route with distractor or correction events, hints and English and Arabic explanations are complete
+- [x] Validator exits 0 with the assets directory
+- [x] `validate-ielts-content` judgement checks done; Arabic explanations checked by a fluent reader; status stays draft until a human reviewer approves
 
 ## Comments
 
@@ -64,3 +64,6 @@ Verdict: READY FOR HUMAN REVIEW (stays draft; a human sets reviewed/published, a
 ```
 
 **Owner review, 2026-11-18** (given in chat, recorded by the agent): Arabic q1 to q3 **OK** (read in the right-to-left preview). Answers **PASS** (one defensible answer per question). Audio (speed 0.75 render): "the sound was a bit slower and the pauses were a bit shorter" (than the `say` version), no change requested.
+
+### 2026-11-18, owner decision (recorded by the agent)
+Owner: "mark reviewed". `validation` is now `{ "status": "reviewed", "reviewer": "owner", "reviewedOn": "2026-11-18" }`. The owner made the decision; the agent only wrote it into the file. Basis: Layer 1 PASS and Layer 2 all PASS or PASS (agent view) in the report above (listening, one defensible answer and Arabic checked by the owner). Layer 1 after the change: `node tools/validate-content.mjs docs/content/items/first-challenge-001.json --assets docs/content` exit 0; `--require-published` exit 1 (`not-published`, as expected). Not published: publishing needs a human recording and a `content_reviewer`.

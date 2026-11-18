@@ -4,7 +4,7 @@
 
 **Blocked by:** 01; and `.scratch/listening-map-prototype/` tickets 08 (answer and submit), 09 (review) and 10 (Answer Replay), which hold the screen this runs on. See the comment.
 
-**Status:** needs-info (owner decides how this joins ticket 10)
+**Status:** done (folded into `.scratch/listening-map-prototype/issues/10-answer-replay-preview.md`, owner 2026-11-19)
 
 Spec: `../spec.md`
 
@@ -19,3 +19,6 @@ Spec: `../spec.md`
 
 ### 2026-11-19, agent
 Answer Replay is not in the app yet: it is ticket 10 of the main plan, after 08 and 09. Ticket 10's text predates D27 (it says "traces the route", "step between route events", "0.75x or 1x", and a reduced-motion version "drawn at once with numbered steps"). Proposal: amend ticket 10 to D27 and build this there, rather than a second replay.
+
+### 2026-11-19, owner (via agent)
+Decision: amend main-plan ticket 10 to D27 and build 08, 09, 10 in order. This ticket is closed; its checklist moved into ticket 10.

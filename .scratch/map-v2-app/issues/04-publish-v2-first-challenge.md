@@ -2,7 +2,7 @@
 
 **What to build:** Replace `docs/content/items/first-challenge-001.json` (v1) with the reviewed v2 item (`.scratch/map-format-v2/first-challenge-001.anchored.json`, version 5) and its audio, import it through the staff flow and publish it as a `content_reviewer`. Prove the learner flow with `verify-user-flow` (mobile, desktop, Arabic/RTL, keyboard, exam mode).
 
-**Blocked by:** 01, 02 (replay), 03 (if the owner wants v2 rules before publishing); the PR from `agent/first-challenge-v2-reviewed` merged to `main`.
+**Blocked by:** 01; main-plan tickets 08 to 10 (replay); 03; the PR from `agent/first-challenge-v2-reviewed` merged to `main`.
 
 **Status:** needs-info
 

@@ -4,7 +4,7 @@
 
 **Blocked by:** none. **Protected files** (`tools/validate-content.mjs`, its tests, `tools/fixtures/**`): needs the owner's explicit approval in the session that builds it.
 
-**Status:** needs-info (owner approval; which rules)
+**Status:** ready-for-agent (first 4 rules approved by the owner, 2026-11-19)
 
 Spec: `../spec.md`
 
@@ -14,3 +14,6 @@ Spec: `../spec.md`
 - [ ] Staff import shows the new codes (it calls the validator itself)
 
 ## Comments
+
+### 2026-11-19, owner (via agent)
+Approved: edit the protected validator, its tests and fixtures to add **only** `v2-shape`, `v2-ref`, `v2-inside`, `v2-wrong-path`. The other rules are not approved yet.

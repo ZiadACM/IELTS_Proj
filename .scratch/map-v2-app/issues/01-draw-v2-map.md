@@ -4,7 +4,7 @@
 
 **Blocked by:** none
 
-**Status:** needs-info (owner confirms the split)
+**Status:** in-progress (branch `agent/map-v2-app`)
 
 Spec: `../spec.md`
 

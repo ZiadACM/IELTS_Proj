@@ -7,6 +7,7 @@ Status: interview complete (owner with an external AI, 2026-11-18). Checked by t
 
 ## Decisions (owner)
 - Voice: synthetic, using the best free text-to-speech engine, for drafts and prototypes. The owner will not record and does not want volunteers. The voice must be free (no paid services or voice actors).
+- **Engine: keep Kokoro** (owner, 2026-11-18, after the OmniVoice check). Improve how it sounds within Kokoro (pipeline, voice and settings) instead of switching engine.
 - Target sound: clean studio, no background ambience.
 - Answer Replay motion: driven by the word times, but eased between them so it never looks stepped.
 - The line pulls back and redraws **only** at a self-correction, not at traps (decoy rooms, preposition tricks): traps do not change the route, so the line moves through them normally.
@@ -17,7 +18,7 @@ Status: interview complete (owner with an external AI, 2026-11-18). Checked by t
 
 1. **Blocker: who records the published voice.** The validator refuses to publish an item without a human recording (`audio-source`: a published item needs `audio.source: "human"`). The owner will not record, wants no volunteers, and the voice must be free. As things stand, no item can be published.
    - **Proposed (agent):** allow a published item to use synthetic audio, with three conditions: the engine's licence allows use in the app, the owner has listened to it, and it passes the timing checks. This changes a validator rule (a protected file) and the spec, so it needs an owner decision recorded as D24.
-   - The licence matters here: Kokoro's model is Apache-2.0, but OmniVoice's model is non-commercial only (see "Voice candidates").
+   - Kokoro, the chosen engine, is Apache-2.0 (code and model), so its licence allows this.
 2. **Smooth replay versus D23 rule 3.** D23 says a part of the line appears only after its words. Easing means the line grows toward a point while its words are being spoken.
    - **Proposed (agent):** amend D23. The line may grow toward a point while its words are spoken, arrives exactly when they end (`atSec`), and never reaches a point early.
 3. **Help is split by mode, not by tier.** The interview recorded "tier 1 generous, tiers 2 to 3 exam-strict, as already planned". The spec actually splits help by mode, at every tier:
@@ -50,14 +51,11 @@ Status: interview complete (owner with an external AI, 2026-11-18). Checked by t
   - **Word times:** none, so the replay's word times would need a separate alignment step (for example Whisper word timestamps).
   - **Size and hardware:** 0.6B parameters; runs on Apple Silicon (MPS) and NVIDIA GPUs; install with `pip install omnivoice`.
   - **Not checked:** sound quality, speed on this Mac, Python version needs.
-- **Proposed (agent):** a blind listening test, as done for Kokoro on 2026-11-17. The same 3 sentences are rendered by:
-  - Kokoro with a better pipeline (whole paragraphs, natural pauses);
-  - OmniVoice with a designed voice;
-  - one more free engine with a licence that allows use in the app.
-  The owner picks by ear; the agent checks the licence and the word timing for the winner.
+- **Owner decision (2026-11-18): keep Kokoro.** OmniVoice is not used.
+- **Proposed (agent):** improve Kokoro before judging it again. Render whole paragraphs instead of sentence by sentence, let natural pauses stand instead of capping them, and add a deliberate pause before a self-correction. Then run a short blind test, the same 3 sentences in 2 or 3 Kokoro voices or settings; the owner picks by ear.
 
 ## Open questions
-- Which free engine wins the listening test (above)?
+- Which Kokoro voice and settings win the listening test (above)?
 - Which accent counts as "clear": the owner decides when listening to samples.
 - Exact wording of a left/right self-correction, with a pause before the correction: still to be drafted.
 - Outdoor maps (parks, campuses): the indoor look needs nothing added; outdoor path maps have not been reviewed and may need their own look (a key, path styles).
@@ -68,7 +66,7 @@ Status: interview complete (owner with an external AI, 2026-11-18). Checked by t
 ### Voice and audio
 - What's wrong with the current voice (Kokoro, bf_emma, 0.70 speed): **robotic and flat**, and **odd pauses and joins between sentences**. Not flagged: the speed itself, accent or pronunciation.
 - Target voice and accent: any clear native English accent (British, American, Australian). The accent isn't the issue; clarity and naturalness are.
-- Getting the voice, given it must stay free: the best free text-to-speech engine, no humans. The owner does not want to record or find volunteers. (Publishing then needs a rule change: Agent review item 1.)
+- Getting the voice, given it must stay free: a free text-to-speech engine (Kokoro, owner decision 2026-11-18), no humans. The owner does not want to record or find volunteers. (Publishing then needs a rule change: Agent review item 1.)
 - Ambience: clean studio sound, no room tone or background noise, like real IELTS.
 - Real IELTS feel versus the current app: calm, clear, deliberately paced, measured but still natural, not robotic. This is the pacing target (not conversational speed, not the current flat delivery).
 

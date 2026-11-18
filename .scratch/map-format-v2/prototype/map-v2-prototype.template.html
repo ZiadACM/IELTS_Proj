@@ -90,7 +90,7 @@
 <div class="page">
   <div>
     <h1>Content format v2: first-challenge-001 redrawn</h1>
-    <p class="note">Prototype for the map format ticket. The recording, route order and answers are unchanged.
+    <p class="note">Prototype for the map format ticket. A to C keep the original recording; D is the anchored redraft (every question starts at the main entrance, D23).
       Open this on your phone and flip variants with the bar at the bottom.</p>
   </div>
 
@@ -103,7 +103,6 @@
     <button type="button" id="play" class="primary">Play recording</button>
     <button type="button" id="route" aria-pressed="false">Show whole route</button>
     <button type="button" id="answers" aria-pressed="false">Show answers</button>
-    <button type="button" id="point" aria-pressed="false">Example pointing leg</button>
   </div>
   <audio id="audio" src="first-challenge-001.mp4" preload="metadata"></audio>
   <p class="cue" id="cue" aria-live="polite">Press Play: the route draws in step with the recording (Answer Replay preview).</p>
@@ -111,7 +110,6 @@
   <section class="card">
     <ol class="qs" id="qs"></ol>
     <p class="note" style="margin-top:8px">Tap a letter on the map to mark it. Tap ▶ to replay one question's leg.</p>
-    <p class="note" id="point-note" hidden>Example pointing leg, not in this recording: "Room B is directly south of the staff office." The speaker names an anchor and a direction, so the replay points instead of walking.</p>
   </section>
 
   <section class="card" aria-label="Prototype state">
@@ -138,7 +136,7 @@ const VARIANTS = [
 const MARGIN = 40, LABEL_PX = 11, BOX_PX = 26, LETTER_PX = 15;
 const NS = 'http://www.w3.org/2000/svg';
 const $ = (id) => document.getElementById(id);
-const state = { variant: 0, picked: new Set(), showRoute: false, showAnswers: false, demoPoint: false, time: -1 };
+const state = { variant: 0, picked: new Set(), showRoute: false, showAnswers: false, time: -1 };
 
 function el(name, attrs = {}, parent) {
   const node = document.createElementNS(NS, name);
@@ -266,19 +264,14 @@ function legsOf(events) {
   return legs;
 }
 
-// One leg per question: the line starts over at each question's anchor. A walked leg is a solid line along the
-// route; a pointing leg (how: "point") is a dashed arrow from the anchor straight to the answer place.
+// One leg per question: the line starts over at an entrance for each question (D23) and walks the corridors.
 function drawLeg(svg, leg, label, unit, opacity) {
   const g = el('g', { opacity }, svg);
-  const start = leg[0], end = leg[leg.length - 1];
-  if (start.how === 'point') {
-    const dx = end.at.x - start.at.x, dy = end.at.y - start.at.y, len = Math.hypot(dx, dy) || 1;
-    const stop = (BOX_PX / 2 + 5) * unit, ux = dx / len, uy = dy / len;
-    const tx = end.at.x - ux * stop, ty = end.at.y - uy * stop, head = 9 * unit;
-    el('line', { class: 'm-route', x1: start.at.x, y1: start.at.y, x2: tx - ux * head, y2: ty - uy * head, 'stroke-width': 3.5 * unit, 'stroke-dasharray': `${7 * unit} ${5 * unit}` }, g);
-    el('path', { fill: 'var(--saffron)', d: `M${tx} ${ty} L${tx - ux * head - uy * head * 0.6} ${ty - uy * head + ux * head * 0.6} L${tx - ux * head + uy * head * 0.6} ${ty - uy * head - ux * head * 0.6}Z` }, g);
-  } else if (leg.length > 1) {
-    el('polyline', { class: 'm-route', points: leg.map((e) => `${e.at.x},${e.at.y}`).join(' '), 'stroke-width': 4 * unit }, g);
+  const start = leg[0];
+  // A correction marks the place named by mistake (framed below); the walk does not go there.
+  const walk = leg.filter((e) => e.kind !== 'correction');
+  if (walk.length > 1) {
+    el('polyline', { class: 'm-route', points: walk.map((e) => `${e.at.x},${e.at.y}`).join(' '), 'stroke-width': 4 * unit }, g);
   }
   for (const e of leg) {
     if (e.kind === 'destination') el('circle', { class: 'm-dest', cx: e.at.x, cy: e.at.y, r: 4 * unit }, g);
@@ -290,40 +283,35 @@ function drawLeg(svg, leg, label, unit, opacity) {
   t.textContent = label;
 }
 
+// When an event may be drawn: once the speaker has said it (D23). atSec is the end of its words;
+// without one, the end of its cue. Never the cue's start, which draws the line before the words.
+function shownAt(item, e) {
+  return e.atSec ?? item.transcript.cues.find((c) => c.id === e.cueId).end;
+}
+
 function currentLeg(item) {
-  const cues = new Map(item.transcript.cues.map((c) => [c.id, c]));
   const legs = legsOf(item.events);
   let index = -1;
-  legs.forEach((leg, i) => { if (cues.get(leg[0].cueId).start <= state.time) index = i; });
-  return { legs, index, cues };
+  legs.forEach((leg, i) => { if (shownAt(item, leg[0]) <= state.time) index = i; });
+  return { legs, index };
 }
 
 function drawRoute(svg, item, unit) {
-  const { legs, index, cues } = currentLeg(item);
+  const { legs, index } = currentLeg(item);
   if (state.showRoute) legs.forEach((leg, i) => drawLeg(svg, leg, i + 1, unit, 1));
   else if (index >= 0) {
     // Earlier legs fade; the current leg draws as far as the recording has got.
     legs.slice(0, index).forEach((leg, i) => drawLeg(svg, leg, i + 1, unit, 0.25));
-    const part = legs[index].filter((e) => cues.get(e.cueId).start <= state.time);
+    const part = legs[index].filter((e) => shownAt(item, e) <= state.time);
     drawLeg(svg, part, index + 1, unit, 1);
-    const last = part[part.length - 1];
+    const last = part.filter((e) => e.kind !== 'correction').pop();
     el('circle', { cx: last.at.x, cy: last.at.y, r: 7 * unit, fill: 'var(--saffron)', stroke: 'var(--map-ink)', 'stroke-width': 1.5 * unit }, svg);
-  }
-  if (state.demoPoint && item.map.format === 2) {
-    // Example only, not in this recording: "Room B is directly south of the staff office."
-    const anchor = item.map.landmarks.find((l) => l.id === 'staff-office'), b = item.map.targets.find((t) => t.label === 'B');
-    // The anchor ring sits just below the room's label so it never covers it.
-    drawLeg(svg, [{ at: { x: anchor.x, y: anchor.y + 56 }, how: 'point' }, { kind: 'destination', at: b }], '•', unit, 1);
   }
 }
 
 function render() {
   const v = VARIANTS[state.variant], item = v.item, map = item.map;
   $('variant-name').textContent = v.name;
-  // The invented example only makes sense on items without real pointing legs.
-  const hasPointing = item.events.some((e) => e.how === 'point');
-  $('point').hidden = hasPointing;
-  if (hasPointing) { state.demoPoint = false; $('point').setAttribute('aria-pressed', 'false'); $('point-note').hidden = true; }
   $('map-title').textContent = map.title ?? '(v1 has no map title)';
   const frame = $('frame');
   frame.className = 'frame' + (v.zoom > 1 ? ' zoom' : '');
@@ -402,7 +390,6 @@ audio.addEventListener('timeupdate', () => {
   render();
 });
 $('route').onclick = () => { state.showRoute = !state.showRoute; $('route').setAttribute('aria-pressed', state.showRoute); render(); };
-$('point').onclick = () => { state.demoPoint = !state.demoPoint; $('point').setAttribute('aria-pressed', state.demoPoint); $('point-note').hidden = !state.demoPoint; render(); };
 $('answers').onclick = () => { state.showAnswers = !state.showAnswers; $('answers').setAttribute('aria-pressed', state.showAnswers); render(); };
 setVariantFromHash();
 </script>

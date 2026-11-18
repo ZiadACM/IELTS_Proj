@@ -36,3 +36,6 @@ web/e2e/.results/
 
 # Real IELTS map examples kept for reference only (third-party copyright; never committed)
 docs/content/images/
+
+# Real IELTS transcripts kept for reference only (third-party copyright; never committed)
+docs/content/transcripts/

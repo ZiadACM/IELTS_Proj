@@ -1,0 +1,718 @@
+{
+  "id": "first-challenge-001",
+  "type": "listening.map-labelling",
+  "version": 3,
+  "skills": [
+    "spatial-language",
+    "landmark-vs-answer",
+    "corrections-distractors"
+  ],
+  "tier": 2,
+  "purpose": "first-challenge",
+  "difficulty": {
+    "landmarks": 7,
+    "routeSteps": 6,
+    "distractors": 0,
+    "selfCorrections": 1,
+    "audioPace": "natural"
+  },
+  "supportPolicy": {
+    "learning": {
+      "replay": true,
+      "hints": true
+    },
+    "exam": {
+      "replay": false,
+      "hints": false
+    }
+  },
+  "audio": {
+    "file": "audio/first-challenge-001-anchored.m4a",
+    "durationSec": 67.92,
+    "source": "synthetic"
+  },
+  "map": {
+    "format": 2,
+    "width": 1000,
+    "height": 900,
+    "title": "Riverside Community Centre",
+    "compass": {
+      "x": 50,
+      "y": 760,
+      "north": 0
+    },
+    "areas": [
+      {
+        "id": "garden",
+        "kind": "grass",
+        "rect": [
+          0,
+          20,
+          100,
+          640
+        ]
+      },
+      {
+        "id": "building",
+        "kind": "building",
+        "rect": [
+          100,
+          20,
+          880,
+          800
+        ]
+      },
+      {
+        "id": "room-g",
+        "kind": "room",
+        "rect": [
+          100,
+          20,
+          165,
+          145
+        ],
+        "door": {
+          "side": "e"
+        }
+      },
+      {
+        "id": "store",
+        "kind": "room",
+        "rect": [
+          100,
+          165,
+          165,
+          105
+        ],
+        "label": "Store",
+        "door": {
+          "side": "e"
+        }
+      },
+      {
+        "id": "room-f",
+        "kind": "room",
+        "rect": [
+          100,
+          270,
+          165,
+          130
+        ],
+        "door": {
+          "side": "e"
+        }
+      },
+      {
+        "id": "staff-office",
+        "kind": "room",
+        "rect": [
+          100,
+          400,
+          165,
+          185
+        ],
+        "door": {
+          "side": "e"
+        }
+      },
+      {
+        "id": "room-b",
+        "kind": "room",
+        "rect": [
+          100,
+          585,
+          200,
+          235
+        ],
+        "door": {
+          "side": "n"
+        }
+      },
+      {
+        "id": "toilets",
+        "kind": "room",
+        "rect": [
+          300,
+          585,
+          170,
+          235
+        ],
+        "door": {
+          "side": "n"
+        }
+      },
+      {
+        "id": "room-h",
+        "kind": "room",
+        "rect": [
+          315,
+          20,
+          155,
+          145
+        ],
+        "door": {
+          "side": "w"
+        }
+      },
+      {
+        "id": "cafe",
+        "kind": "room",
+        "rect": [
+          315,
+          215,
+          155,
+          185
+        ],
+        "door": {
+          "side": "w"
+        }
+      },
+      {
+        "id": "room-e",
+        "kind": "room",
+        "rect": [
+          315,
+          400,
+          155,
+          135
+        ],
+        "door": {
+          "side": "w"
+        }
+      },
+      {
+        "id": "sports-hall",
+        "kind": "room",
+        "rect": [
+          470,
+          20,
+          510,
+          380
+        ],
+        "label": "Sports hall",
+        "door": {
+          "side": "w",
+          "at": 190
+        }
+      },
+      {
+        "id": "room-a",
+        "kind": "room",
+        "rect": [
+          470,
+          400,
+          270,
+          135
+        ],
+        "door": {
+          "side": "s"
+        }
+      },
+      {
+        "id": "kitchen",
+        "kind": "room",
+        "rect": [
+          740,
+          400,
+          240,
+          135
+        ],
+        "label": "Kitchen",
+        "door": {
+          "side": "s"
+        }
+      },
+      {
+        "id": "meeting-room",
+        "kind": "room",
+        "rect": [
+          530,
+          585,
+          220,
+          125
+        ],
+        "door": {
+          "side": "n"
+        }
+      },
+      {
+        "id": "reception",
+        "kind": "room",
+        "rect": [
+          530,
+          710,
+          220,
+          110
+        ],
+        "door": {
+          "side": "w"
+        }
+      },
+      {
+        "id": "room-d",
+        "kind": "room",
+        "rect": [
+          750,
+          585,
+          115,
+          235
+        ],
+        "door": {
+          "side": "n"
+        }
+      },
+      {
+        "id": "room-c",
+        "kind": "room",
+        "rect": [
+          865,
+          585,
+          115,
+          235
+        ],
+        "door": {
+          "side": "n"
+        }
+      }
+    ],
+    "paths": [
+      {
+        "id": "main-hall",
+        "kind": "corridor",
+        "label": "Main hall",
+        "width": 60,
+        "points": [
+          [
+            500,
+            820
+          ],
+          [
+            500,
+            560
+          ]
+        ]
+      },
+      {
+        "id": "east-corridor",
+        "kind": "corridor",
+        "width": 50,
+        "points": [
+          [
+            500,
+            560
+          ],
+          [
+            980,
+            560
+          ]
+        ]
+      },
+      {
+        "id": "west-corridor",
+        "kind": "corridor",
+        "width": 50,
+        "points": [
+          [
+            500,
+            560
+          ],
+          [
+            290,
+            560
+          ],
+          [
+            290,
+            20
+          ]
+        ]
+      },
+      {
+        "id": "cross-corridor",
+        "kind": "corridor",
+        "width": 50,
+        "points": [
+          [
+            290,
+            190
+          ],
+          [
+            470,
+            190
+          ]
+        ]
+      }
+    ],
+    "entrances": [
+      {
+        "id": "main-door",
+        "kind": "main",
+        "x": 500,
+        "y": 820,
+        "side": "s",
+        "youAreHere": true
+      }
+    ],
+    "symbols": [
+      {
+        "kind": "noticeboard",
+        "x": 500,
+        "y": 540
+      },
+      {
+        "kind": "tree",
+        "x": 50,
+        "y": 110
+      },
+      {
+        "kind": "tree",
+        "x": 50,
+        "y": 260
+      },
+      {
+        "kind": "tree",
+        "x": 50,
+        "y": 410
+      },
+      {
+        "kind": "tree",
+        "x": 50,
+        "y": 560
+      }
+    ],
+    "landmarks": [
+      {
+        "id": "main-entrance",
+        "label": "Main entrance",
+        "x": 500,
+        "y": 840,
+        "entrance": "main-door"
+      },
+      {
+        "id": "reception",
+        "label": "Reception",
+        "x": 640,
+        "y": 765,
+        "area": "reception"
+      },
+      {
+        "id": "toilets",
+        "label": "Toilets",
+        "x": 385,
+        "y": 702,
+        "area": "toilets"
+      },
+      {
+        "id": "noticeboard",
+        "label": "Noticeboard",
+        "x": 500,
+        "y": 545,
+        "symbol": "noticeboard"
+      },
+      {
+        "id": "meeting-room",
+        "label": "Meeting room",
+        "x": 640,
+        "y": 647,
+        "area": "meeting-room"
+      },
+      {
+        "id": "staff-office",
+        "label": "Staff office",
+        "x": 182,
+        "y": 548,
+        "area": "staff-office"
+      },
+      {
+        "id": "cafe",
+        "label": "Café",
+        "x": 392,
+        "y": 375,
+        "area": "cafe"
+      }
+    ],
+    "targets": [
+      {
+        "label": "A",
+        "x": 605,
+        "y": 467,
+        "area": "room-a"
+      },
+      {
+        "label": "B",
+        "x": 200,
+        "y": 702,
+        "area": "room-b"
+      },
+      {
+        "label": "C",
+        "x": 933,
+        "y": 702,
+        "area": "room-c"
+      },
+      {
+        "label": "D",
+        "x": 805,
+        "y": 702,
+        "area": "room-d"
+      },
+      {
+        "label": "E",
+        "x": 392,
+        "y": 467,
+        "area": "room-e"
+      },
+      {
+        "label": "F",
+        "x": 182,
+        "y": 335,
+        "area": "room-f"
+      },
+      {
+        "label": "G",
+        "x": 182,
+        "y": 92,
+        "area": "room-g"
+      },
+      {
+        "label": "H",
+        "x": 392,
+        "y": 92,
+        "area": "room-h"
+      }
+    ]
+  },
+  "transcript": {
+    "cues": [
+      {
+        "id": "c1",
+        "start": 0.3,
+        "end": 6.48,
+        "text": "Hello, everyone, and welcome to our Open Day at Riverside Community Centre."
+      },
+      {
+        "id": "c2",
+        "start": 6.83,
+        "end": 12.77,
+        "text": "I'm one of the volunteers, and I'm going to show you where three of our activity rooms are."
+      },
+      {
+        "id": "c3",
+        "start": 13.12,
+        "end": 18.87,
+        "text": "Have a look at the map. We're at the main entrance, right at the bottom, and north is at the top."
+      },
+      {
+        "id": "c4",
+        "start": 19.22,
+        "end": 26.76,
+        "text": "First, the Quiet Lounge. From the main entrance, go straight up the main hall to the noticeboard, and turn right."
+      },
+      {
+        "id": "c5",
+        "start": 27.11,
+        "end": 34.76,
+        "text": "You'll pass the meeting room on your right. The Quiet Lounge is at the far end of that corridor, also on your right."
+      },
+      {
+        "id": "c6",
+        "start": 35.11,
+        "end": 40.6,
+        "text": "Next, the Craft Room. Find the staff office, over on the west side of the map."
+      },
+      {
+        "id": "c7",
+        "start": 40.95,
+        "end": 46.18,
+        "text": "The Craft Room is directly north of the staff office, next door to it."
+      },
+      {
+        "id": "c8",
+        "start": 46.53,
+        "end": 51.61,
+        "text": "And finally, the table tennis room. For this one, start at the café."
+      },
+      {
+        "id": "c9",
+        "start": 51.96,
+        "end": 60.51,
+        "text": "The table tennis room is directly south of the café... oh, sorry, I mean north. It's just across the corridor from it."
+      },
+      {
+        "id": "c10",
+        "start": 60.86,
+        "end": 67.42,
+        "text": "So that's the Quiet Lounge, the Craft Room and the table tennis room. Enjoy the Open Day!"
+      }
+    ]
+  },
+  "events": [
+    {
+      "id": "e1",
+      "cueId": "c3",
+      "kind": "move",
+      "landmarkId": "main-entrance",
+      "at": {
+        "x": 500,
+        "y": 840
+      }
+    },
+    {
+      "id": "e2",
+      "cueId": "c4",
+      "kind": "turn",
+      "landmarkId": "noticeboard",
+      "at": {
+        "x": 500,
+        "y": 560
+      }
+    },
+    {
+      "id": "e3",
+      "cueId": "c5",
+      "kind": "landmark",
+      "landmarkId": "meeting-room",
+      "at": {
+        "x": 640,
+        "y": 560
+      }
+    },
+    {
+      "id": "m1",
+      "cueId": "c5",
+      "kind": "move",
+      "at": {
+        "x": 933,
+        "y": 560
+      }
+    },
+    {
+      "id": "e4",
+      "cueId": "c5",
+      "kind": "destination",
+      "at": {
+        "x": 933,
+        "y": 702
+      }
+    },
+    {
+      "id": "e5",
+      "cueId": "c6",
+      "kind": "landmark",
+      "landmarkId": "staff-office",
+      "at": {
+        "x": 182,
+        "y": 548
+      },
+      "startsLeg": true,
+      "how": "point"
+    },
+    {
+      "id": "e6",
+      "cueId": "c7",
+      "kind": "destination",
+      "at": {
+        "x": 182,
+        "y": 335
+      }
+    },
+    {
+      "id": "e7",
+      "cueId": "c8",
+      "kind": "landmark",
+      "landmarkId": "cafe",
+      "at": {
+        "x": 392,
+        "y": 375
+      },
+      "startsLeg": true,
+      "how": "point"
+    },
+    {
+      "id": "e8",
+      "cueId": "c9",
+      "kind": "correction",
+      "at": {
+        "x": 392,
+        "y": 467
+      },
+      "note": "The guide first says the table tennis room is directly south of the café (letter E), then corrects herself to north."
+    },
+    {
+      "id": "e9",
+      "cueId": "c9",
+      "kind": "destination",
+      "at": {
+        "x": 392,
+        "y": 92
+      }
+    }
+  ],
+  "questions": [
+    {
+      "id": "q1",
+      "prompt": "Quiet Lounge",
+      "answerLabel": "C",
+      "eventId": "e4",
+      "microSkill": "spatial-language",
+      "hints": [
+        {
+          "level": 1,
+          "landmarkId": "meeting-room"
+        },
+        {
+          "level": 2,
+          "cueId": "c5"
+        }
+      ],
+      "explanation": {
+        "en": "The guide starts from the main entrance: up the main hall, right at the noticeboard, past the meeting room. The Quiet Lounge is 'at the far end of that corridor', on your right. D is also on the right, but not at the far end, and A is on the left. Only C is at the far end, on the right.",
+        "ar": "تبدأ المرشدة من المدخل الرئيسي: تصعد في القاعة الرئيسية حتى لوحة الإعلانات، ثم تنعطف يميناً وتمرّ بغرفة الاجتماعات. وتقول إن غرفة الهدوء تقع «at the far end» من الممر، أي في آخره تماماً، وعلى يمينك. الحرف D على اليمين أيضاً لكنه ليس في آخر الممر، والحرف A على اليسار. لذلك فالحرف C وحده يقع في آخر الممر وعلى اليمين."
+      }
+    },
+    {
+      "id": "q2",
+      "prompt": "Craft Room",
+      "answerLabel": "F",
+      "eventId": "e6",
+      "microSkill": "landmark-vs-answer",
+      "hints": [
+        {
+          "level": 1,
+          "landmarkId": "staff-office"
+        },
+        {
+          "level": 2,
+          "cueId": "c7"
+        }
+      ],
+      "explanation": {
+        "en": "The staff office is only the reference point, not the answer. The guide says the Craft Room is 'directly north of the staff office, next door to it'. Don't confuse it with E, which is opposite the staff office, across the corridor, or with the store, which is further north but not next door. Only F is next door, to the north.",
+        "ar": "تذكر المرشدة مكتب الموظفين لتوجيهك فقط، وليس هو الإجابة. فهي تقول إن غرفة الأشغال اليدوية تقع شمال المكتب مباشرة، أي «next door to it» من جهة الشمال. فلا تخلط بينها وبين الحرف E الذي يقع مقابل المكتب على الجهة الأخرى من الممر، ولا المخزن الذي يقع أبعد نحو الشمال ولا يجاور المكتب. لذلك فالإجابة هي الحرف F."
+      }
+    },
+    {
+      "id": "q3",
+      "prompt": "Table tennis room",
+      "answerLabel": "H",
+      "eventId": "e9",
+      "microSkill": "corrections-distractors",
+      "hints": [
+        {
+          "level": 1,
+          "landmarkId": "cafe"
+        },
+        {
+          "level": 2,
+          "cueId": "c9"
+        }
+      ],
+      "explanation": {
+        "en": "The guide first says 'directly south of the café', then corrects herself: 'oh, sorry, I mean north'. Always trust the correction. South of the café is E, which she said by mistake; north of it, just across the corridor, is H.",
+        "ar": "تقول المرشدة أولاً إن غرفة تنس الطاولة تقع جنوب المقهى، ثم تعتذر وتصحّح كلامها قائلةً «I mean north» أي إنها شمال المقهى. عندما يصحّح المتحدث نفسه، اعتمد دائماً على التصحيح الأخير. فالحرف E جنوب المقهى هو ما قالته خطأً، والإجابة الصحيحة هي الحرف H شمال المقهى، بعد الممر."
+      }
+    }
+  ],
+  "validation": {
+    "status": "draft"
+  }
+}

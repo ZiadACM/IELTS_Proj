@@ -170,9 +170,9 @@ Each item adds: difficulty tier (1, 2 or 3) alongside the existing difficulty di
 The five micro-skills: spatial language; following a sequence; landmark vs answer place; corrections and distractors; orientation.
 
 ### Content set (produced in Phase B, not by this spec's code tickets)
-- 10 guided tour items: tier 1 (3 items: small map, 3 questions, slow clear speech, few distractors); tier 2 (4 items: about 8 lettered places, 4 to 5 questions, natural pace, one distractor or correction); tier 3 (3 items: 9 or more places, 5 to 6 questions, several distractors and corrections, mixed accents).
+- 10 map items (amended 2026-11-18, D21: tier 1 items are **guided tour items**; tier 2 and tier 3 items are **anchored items**): tier 1 (3 items: small map, 3 questions, slow clear speech, few distractors); tier 2 (4 items: about 8 lettered places, 4 to 5 questions, natural pace, one distractor or correction); tier 3 (3 items: 9 or more places, 5 to 6 questions, several distractors and corrections, mixed accents).
 - 6 focused skill challenges: 2 each for spatial language, landmark vs answer place, and corrections and distractors.
-- 1 featured first challenge: a dedicated tier 2 item with 3 questions.
+- 1 featured first challenge: a dedicated tier 2 item with 3 questions (an anchored item from D21; first-challenge-001 is still a guided tour and needs a rewrite).
 - 2 pilot transfer items: equivalent tier 2 items.
 - Audio drafted with synthetic voices; published pilot items use human recordings.
 

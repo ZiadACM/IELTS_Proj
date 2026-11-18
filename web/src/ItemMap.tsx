@@ -1,8 +1,10 @@
-// The item's map: landmarks as small labelled squares, lettered places as large discs (size carries the hierarchy, not
+// The item's map. A v2 map (`format: 2`) is drawn by MapV2 as a floor plan; a v1 map as below.
+// v1: landmarks as small labelled squares, lettered places as large discs (size carries the hierarchy, not
 // colour). Map content is English and stays left-to-right inside the Arabic frame. Text is sized in screen pixels, so
 // labels stay readable on a 360 px phone without pinch-zoom.
 import { useEffect, useRef, useState } from 'react';
 import type { MapData } from './api.ts';
+import { MapV2 } from './MapV2.tsx';
 
 const LABEL_PX = 12;
 const LETTER_PX = 15;
@@ -104,18 +106,34 @@ export function ItemMap({ map, label }: { map: MapData; label: string }) {
   const viewWidth = map.width + 2 * MARGIN;
   // Map units per screen pixel; before the first measurement, assume a phone-width map.
   const unit = viewWidth / (width || 360);
-  const labels = placeLabels(map, unit);
+  const v2 = map.format === 2;
+  const labels = v2 ? [] : placeLabels(map, unit);
 
   return (
-    <svg
-      ref={ref}
-      className="item-map"
-      viewBox={`${-MARGIN} ${-MARGIN} ${viewWidth} ${map.height + 2 * MARGIN}`}
-      role="img"
-      aria-label={label}
-      direction="ltr"
-      lang="en"
-    >
+    <>
+      {v2 && map.title && (
+        <p className="map-title" lang="en" dir="ltr">
+          {map.title}
+        </p>
+      )}
+      <svg
+        ref={ref}
+        className="item-map"
+        viewBox={`${-MARGIN} ${-MARGIN} ${viewWidth} ${map.height + 2 * MARGIN}`}
+        role="img"
+        aria-label={label}
+        direction="ltr"
+        lang="en"
+      >
+        {v2 ? <MapV2 map={map} unit={unit} /> : <V1Map map={map} unit={unit} labels={labels} />}
+      </svg>
+    </>
+  );
+}
+
+function V1Map({ map, unit, labels }: { map: MapData; unit: number; labels: Placed[] }) {
+  return (
+    <>
       {map.landmarks.map((l) => (
         <rect
           key={l.id}
@@ -152,6 +170,6 @@ export function ItemMap({ map, label }: { map: MapData; label: string }) {
           ))}
         </text>
       ))}
-    </svg>
+    </>
   );
 }

@@ -1,0 +1,27 @@
+
+Running 21 tests using 1 worker
+
+  ✓   1 [phone-chromium] › web/e2e/browse-player.spec.ts:70:1 › Browse shows the three tiers; a tier with no maps says so (435ms)
+  ✓   2 [phone-chromium] › web/e2e/browse-player.spec.ts:86:1 › reading time counts down, can be skipped, and the first listen cannot be paused or sought (5.9s)
+  ✓   3 [phone-chromium] › web/e2e/browse-player.spec.ts:136:1 › switching language during the first listen keeps the audio playing (3.6s)
+  ✓   4 [phone-chromium] › web/e2e/browse-player.spec.ts:152:1 › audio that cannot load shows a message and a retry (459ms)
+  ✓   5 [phone-chromium] › web/e2e/browse-player.spec.ts:161:1 › a map that is no longer published says so and leads back to Browse (537ms)
+  ✓   6 [phone-chromium] › web/e2e/map-v2.spec.ts:65:1 › a v2 map is drawn as a floor plan, left to right inside the Arabic frame, with no sideways scroll (523ms)
+  ✓   7 [phone-chromium] › web/e2e/map-v2.spec.ts:111:1 › at 360 px the v2 map is 326 px wide (D22) and its letters stay readable (501ms)
+  ✓   8 [phone-webkit] › web/e2e/browse-player.spec.ts:70:1 › Browse shows the three tiers; a tier with no maps says so (707ms)
+  ✓   9 [phone-webkit] › web/e2e/browse-player.spec.ts:86:1 › reading time counts down, can be skipped, and the first listen cannot be paused or sought (6.0s)
+  ✓  10 [phone-webkit] › web/e2e/browse-player.spec.ts:136:1 › switching language during the first listen keeps the audio playing (3.7s)
+  ✓  11 [phone-webkit] › web/e2e/browse-player.spec.ts:152:1 › audio that cannot load shows a message and a retry (478ms)
+  ✓  12 [phone-webkit] › web/e2e/browse-player.spec.ts:161:1 › a map that is no longer published says so and leads back to Browse (530ms)
+  ✓  13 [phone-webkit] › web/e2e/map-v2.spec.ts:65:1 › a v2 map is drawn as a floor plan, left to right inside the Arabic frame, with no sideways scroll (557ms)
+  -  14 [phone-webkit] › web/e2e/map-v2.spec.ts:111:1 › at 360 px the v2 map is 326 px wide (D22) and its letters stay readable
+  ✓  15 [desktop-chromium] › web/e2e/browse-player.spec.ts:70:1 › Browse shows the three tiers; a tier with no maps says so (519ms)
+  ✓  16 [desktop-chromium] › web/e2e/browse-player.spec.ts:86:1 › reading time counts down, can be skipped, and the first listen cannot be paused or sought (5.9s)
+  ✓  17 [desktop-chromium] › web/e2e/browse-player.spec.ts:136:1 › switching language during the first listen keeps the audio playing (3.6s)
+  ✓  18 [desktop-chromium] › web/e2e/browse-player.spec.ts:152:1 › audio that cannot load shows a message and a retry (455ms)
+  ✓  19 [desktop-chromium] › web/e2e/browse-player.spec.ts:161:1 › a map that is no longer published says so and leads back to Browse (518ms)
+  ✓  20 [desktop-chromium] › web/e2e/map-v2.spec.ts:65:1 › a v2 map is drawn as a floor plan, left to right inside the Arabic frame, with no sideways scroll (510ms)
+  -  21 [desktop-chromium] › web/e2e/map-v2.spec.ts:111:1 › at 360 px the v2 map is 326 px wide (D22) and its letters stay readable
+
+  2 skipped
+  19 passed (36.5s)

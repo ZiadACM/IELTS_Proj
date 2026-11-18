@@ -115,11 +115,34 @@ export type CatalogueItem = {
   questionCount: number;
 };
 export type Point = { x: number; y: number };
+// Map format v2 drawing (docs/content/map-format-v2.md); absent on a v1 map.
+export type MapArea = {
+  id: string;
+  kind: string;
+  rect?: [number, number, number, number];
+  polygon?: [number, number][];
+  label?: string;
+  door?: { side: 'n' | 'e' | 's' | 'w'; at?: number };
+};
 export type MapData = {
+  format?: 2;
   width: number;
   height: number;
-  landmarks: (Point & { id: string; label: string })[];
-  targets: (Point & { label: string })[];
+  title?: string;
+  compass?: Point & { north: number };
+  areas?: MapArea[];
+  paths?: { id: string; kind: string; points: [number, number][]; width?: number; label?: string }[];
+  entrances?: (Point & { id: string; kind: string; side?: string; youAreHere?: boolean })[];
+  symbols?: (Point & { kind: string })[];
+  landmarks: (Point & {
+    id: string;
+    label: string;
+    area?: string;
+    symbol?: string;
+    entrance?: string;
+    path?: string;
+  })[];
+  targets: (Point & { label: string; area?: string })[];
 };
 export type DeliveredItem = {
   itemId: string;

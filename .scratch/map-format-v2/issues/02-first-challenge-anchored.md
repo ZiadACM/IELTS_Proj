@@ -54,3 +54,14 @@ Re-record at speed 0.70 (D22).
 
 ### 2026-11-18, agent
 Re-rendered at speed 0.70 with the same pause settings: 67.92 s, 176 words, **155 words per minute overall** (165 during speech), inside tier 2's 140 to 160: check 4 now PASS. Map coordinates also changed (ticket 01, D22): C is now at (933, 702), and the q1 route follows it. Timing check against the decoded file: PASS. Layer 1 with assets: exit 0. Still open: the owner's listen (check 1), own answer check (check 2) and a fluent reader for the Arabic (check 6).
+
+### 2026-11-18, owner
+Review of prototype version 6, variant D: the line from the main entrance is fine, but the pointing lines cut through walls and rooms; every line is drawn before its words are spoken; a leg must start at an entrance, never at a room. The talk will be redrafted by an external AI. Recorded as D23.
+
+### 2026-11-18, agent
+- Version 3 of the anchored draft is superseded: its q2 and q3 legs start at rooms (staff office, café). Kept as the base the redraft merges into (map, audio settings, fields).
+- Drafting prompt for the owner's AI: `docs/content/prompts/redraft-first-challenge-anchored.md` (every question starts at the main entrance and walks the corridors; events carry `word` for timing; map tables included).
+- The fixes and the rest of this work moved to ticket 03 and its handoff, `docs/development/handoffs/2026-11-18-map-v2-replay-fixes.md`, for a new session. The helper scripts are saved in `.scratch/map-format-v2/scripts/`.
+
+### 2026-11-18, owner (listen of prototype version 7, variant D)
+"Cool … I like this as a start." The map looks good. The voice, audio and talk overall still need a lot of help. The replay lines could move more smoothly. The self-correction ("oh, sorry, I mean north") is unneeded. "Okay for now."

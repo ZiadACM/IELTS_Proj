@@ -99,14 +99,30 @@ describe('ATT-03 GET /attempts/{attemptId}', () => {
       assert.equal((await call(app, 'GET', `/attempts/${id}`, { cookie: owner })).statusCode, 404);
   });
 
-  test('an admin may start an attempt but not read it or play its audio (ATT-01 allow; ATT-03, ATT-06 deny)', async () => {
+  test('guided practice on a pilot transfer item gives 404 and stores nothing (owner decision, ticket 07)', async () => {
+    const app = await apps.app();
+    const { itemId } = await seedItem(
+      app,
+      'published',
+      newItem((i) => {
+        i.purpose = 'pilot-transfer';
+        i.tier = 2;
+      }),
+    );
+    const res = await start(app, await signedIn(app, apps.db, 'learner'), itemId);
+    assert.equal(res.statusCode, 404, res.body);
+    const { rows } = await apps.db.query('select 1 from attempts where item_id = $1', [itemId]);
+    assert.equal(rows.length, 0);
+  });
+
+  test('an admin cannot start an attempt (ATT-01 deny, D20) and nothing is stored', async () => {
     const app = await apps.app();
     const { itemId } = await seedItem(app, 'published');
     const admin = await signedIn(app, apps.db, 'admin');
-    // ATT-01 allows admin; the attempt it creates is still unreadable to it (ATT-03, ATT-06 deny).
     const res = await start(app, admin, itemId);
-    assert.equal(res.statusCode, 201, res.body);
-    assert.equal((await call(app, 'GET', `/attempts/${res.json().id}/audio`, { cookie: admin })).statusCode, 403);
+    assert.equal(res.statusCode, 403, res.body);
+    const { rows } = await apps.db.query('select 1 from attempts where item_id = $1', [itemId]);
+    assert.equal(rows.length, 0);
   });
 });
 

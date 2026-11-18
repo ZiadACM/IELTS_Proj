@@ -174,7 +174,7 @@ export function Player({
   return (
     <article className="player">
       <header className="stub">
-        <h1>{mapNumber ? t.mapName(mapNumber) : t.guidedPractice}</h1>
+        <h1>{mapNumber ? t.mapName(item.tier, mapNumber) : t.guidedPractice}</h1>
         <dl className="stub-facts">
           <div>
             <dt>{t.itemTier}</dt>

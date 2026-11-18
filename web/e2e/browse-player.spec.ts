@@ -8,16 +8,18 @@ const BASE = process.env.SECURITY_BASE_URL;
 const TOKEN = process.env.SECURITY_TEST_SUPPORT_TOKEN;
 test.skip(!BASE || !TOKEN, 'SECURITY_BASE_URL and SECURITY_TEST_SUPPORT_TOKEN are not set: NOT VERIFIED');
 
-const CONTENT_ITEM = new URL('../../docs/content/items/first-challenge-001.json', import.meta.url);
+// The validator's fixture map, played with the first challenge's recording (the only audio in the content folder).
+const FIXTURE_ITEM = new URL('../../tools/fixtures/map-001.valid.json', import.meta.url);
 const FORBIDDEN = ['answerLabel', 'route', 'transcript', 'explanation', 'hint', 'events', 'cues'];
 
 // A published tier 2 practice item. With `audioFile` missing from the content folder, the audio fails.
 async function seedTier2(audioFile = 'audio/first-challenge-001.m4a') {
-  const item = JSON.parse(readFileSync(CONTENT_ITEM, 'utf8'));
+  const item = JSON.parse(readFileSync(FIXTURE_ITEM, 'utf8'));
+  delete item._comment;
+  item.tier = 2;
   item.id = `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   item.purpose = 'standard';
-  item.audio.file = audioFile;
-  item.audio.source = 'human'; // the owner's synthetic first-challenge audio stands in for a human recording here
+  item.audio = { file: audioFile, durationSec: 82.81, source: 'human' }; // stands in for a human recording here
   item.validation = { status: 'published', reviewer: 'synthetic-reviewer', reviewedOn: '2026-11-18' };
   const res = await fetch(`${BASE}/__test__/items`, {
     method: 'POST',
@@ -25,7 +27,8 @@ async function seedTier2(audioFile = 'audio/first-challenge-001.m4a') {
     body: JSON.stringify({ item, status: 'published' }),
   });
   expect(res.status, await res.clone().text()).toBe(201);
-  return item as { questions: { prompt: string }[] };
+  const { itemId } = await res.json();
+  return { itemId: itemId as string, questions: item.questions as { prompt: string }[] };
 }
 
 // Onboarding in Arabic (the default), then Browse.
@@ -49,9 +52,20 @@ async function openBrowse(page: Page) {
   await expect(page.getByRole('heading', { name: 'فئة الصعوبة 1' })).toBeVisible();
 }
 
-// The newest item in tier 2 is the last card: items are listed in publishing order.
-const openNewestTier2 = (page: Page) =>
-  page.getByRole('region', { name: 'فئة الصعوبة 2' }).getByRole('button').last().click();
+// The dev database holds many published items, so Browse is narrowed to the one this test seeded, which is then the
+// only card in tier 2. Everything else about Browse and the player is the real app.
+async function onlyItem(page: Page, itemId: string) {
+  await page.route('**/items', async (route) => {
+    const res = await route.fetch();
+    const { items } = await res.json();
+    await route.fulfill({
+      response: res,
+      json: { items: items.filter((i: { itemId: string }) => i.itemId === itemId) },
+    });
+  });
+}
+const openSeeded = (page: Page) =>
+  page.getByRole('region', { name: 'فئة الصعوبة 2' }).getByRole('button', { name: /خريطة/ }).click();
 
 test('Browse shows the three tiers; a tier with no maps says so', async ({ page }) => {
   await page.route('**/items', async (route) => {
@@ -71,13 +85,14 @@ test('Browse shows the three tiers; a tier with no maps says so', async ({ page 
 
 test('reading time counts down, can be skipped, and the first listen cannot be paused or sought', async ({ page }) => {
   const item = await seedTier2();
+  await onlyItem(page, item.itemId);
   await openBrowse(page);
   const delivered: unknown[] = [];
   page.on('response', async (r) => {
     if (/\/(items|attempts)\//.test(r.url()) && r.headers()['content-type']?.includes('json'))
       delivered.push(await r.json());
   });
-  await openNewestTier2(page);
+  await openSeeded(page);
 
   // Reading time: counting down, the questions and the map are there, English content is left to right.
   const countdown = page.getByText(/يبدأ الصوت بعد \d+ ث/);
@@ -119,9 +134,9 @@ test('reading time counts down, can be skipped, and the first listen cannot be p
 });
 
 test('switching language during the first listen keeps the audio playing', async ({ page }) => {
-  await seedTier2();
+  await onlyItem(page, (await seedTier2()).itemId);
   await openBrowse(page);
-  await openNewestTier2(page);
+  await openSeeded(page);
   await page.getByRole('button', { name: 'ابدأ الآن' }).click();
   await expect(page.getByText(/قيد التشغيل/)).toBeVisible({ timeout: 15_000 });
   await page.waitForTimeout(1500);
@@ -135,19 +150,19 @@ test('switching language during the first listen keeps the audio playing', async
 });
 
 test('audio that cannot load shows a message and a retry', async ({ page }) => {
-  await seedTier2('audio/does-not-exist.m4a');
+  await onlyItem(page, (await seedTier2('audio/does-not-exist.m4a')).itemId);
   await openBrowse(page);
-  await openNewestTier2(page);
+  await openSeeded(page);
   await page.getByRole('button', { name: 'ابدأ الآن' }).click();
   await expect(page.getByRole('alert')).toHaveText(/تعذّر تحميل الصوت/);
   await expect(page.getByRole('button', { name: 'حاول مرة أخرى' })).toBeVisible();
 });
 
 test('a map that is no longer published says so and leads back to Browse', async ({ page }) => {
-  await seedTier2();
+  await onlyItem(page, (await seedTier2()).itemId);
   await openBrowse(page);
   await page.route(/\/items\/[^/]+$/, (route) => route.fulfill({ status: 404, json: { error: 'not_found' } }));
-  await openNewestTier2(page);
+  await openSeeded(page);
   await expect(page.getByRole('alert')).toHaveText('هذه الخريطة لم تعد متاحة.');
   await page.getByRole('button', { name: 'العودة إلى الخرائط' }).click();
   await expect(page.getByRole('heading', { name: 'فئة الصعوبة 1' })).toBeVisible();

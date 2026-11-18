@@ -2,6 +2,10 @@
 // Placeholder product name (spec: "Masar" until the owner picks the final name).
 import type { InterfaceLanguage, MicroSkill } from './api.ts';
 
+// A map's code: its difficulty tier and its number within the tier, "2·01" (owner decision 2026-11-18, ticket 07).
+// Wrapped in a left-to-right isolate, so Arabic text keeps it as "2·01" and does not reorder it to "01·2".
+export const mapCode = (tier: number, n: number) => `\u2066${tier}·${String(n).padStart(2, '0')}\u2069`;
+
 const en = {
   appName: 'Masar',
   switchLabel: 'العربية',
@@ -111,7 +115,7 @@ const en = {
     'Choose any map. You get 30 seconds to read the questions, then the first listen plays straight through.',
   tierHeading: (tier: number) => `Difficulty tier ${tier}`,
   tierEmpty: 'No maps at this difficulty tier yet.',
-  mapName: (n: number) => `Map ${String(n).padStart(2, '0')}`,
+  mapName: (tier: number, n: number) => `Map ${mapCode(tier, n)}`,
   questionCount: (n: number) => (n === 1 ? '1 question' : `${n} questions`),
   skillChallenge: 'Skill challenge',
   microSkills: {
@@ -248,7 +252,7 @@ const ar: typeof en = {
   browseIntro: 'اختر أي خريطة. لديك 30 ثانية لقراءة الأسئلة، ثم يُشغَّل الاستماع الأول دون توقف.',
   tierHeading: (tier: number) => `فئة الصعوبة ${tier}`,
   tierEmpty: 'لا توجد خرائط في فئة الصعوبة هذه بعد.',
-  mapName: (n: number) => `خريطة ${String(n).padStart(2, '0')}`,
+  mapName: (tier: number, n: number) => `خريطة ${mapCode(tier, n)}`,
   questionCount: (n: number) => (n === 1 ? 'سؤال واحد' : n === 2 ? 'سؤالان' : n <= 10 ? `${n} أسئلة` : `${n} سؤالًا`),
   skillChallenge: 'تحدّي مهارة',
   microSkills: {

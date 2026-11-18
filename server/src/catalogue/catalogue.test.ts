@@ -143,6 +143,20 @@ describe('ITEM-02 GET /items/{itemId} (the player)', () => {
     assert.equal(res.statusCode, 200, res.body);
   });
 
+  test('a pilot transfer item gives 404, so testers cannot see it before the check (owner decision, ticket 07)', async () => {
+    const app = await apps.app();
+    const { itemId } = await seedItem(
+      app,
+      'published',
+      newItem((i) => {
+        i.purpose = 'pilot-transfer';
+        i.tier = 2;
+      }),
+    );
+    const res = await call(app, 'GET', `/items/${itemId}`, { cookie: await signedIn(app, apps.db, 'guest') });
+    assert.equal(res.statusCode, 404, res.body);
+  });
+
   test('a draft, an unknown id and a malformed id all give 404 with no content', async () => {
     const app = await apps.app();
     const draft = await seedItem(app, 'draft', withCanaries());

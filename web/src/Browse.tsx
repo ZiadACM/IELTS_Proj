@@ -3,7 +3,7 @@
 // order (owner decision, ticket 07). "Seen" marks are ticket 12.
 import { useCallback, useEffect, useState } from 'react';
 import { type CatalogueItem, listItems, type Tier } from './api.ts';
-import type { Strings } from './strings.ts';
+import { mapCode, type Strings } from './strings.ts';
 
 const TIERS: Tier[] = [1, 2, 3];
 export type ChosenItem = { itemId: string; mapNumber: number };
@@ -67,10 +67,10 @@ export function Browse({
                         onClick={() => onOpen({ itemId: item.itemId, mapNumber: index + 1 })}
                       >
                         <span className="stub-number" aria-hidden="true">
-                          {String(index + 1).padStart(2, '0')}
+                          {mapCode(tier, index + 1)}
                         </span>
                         <span className="stub-body">
-                          <span className="stub-name">{t.mapName(index + 1)}</span>
+                          <span className="stub-name">{t.mapName(tier, index + 1)}</span>
                           <span>{t.questionCount(item.questionCount)}</span>
                           {item.focusSkill && (
                             <span>

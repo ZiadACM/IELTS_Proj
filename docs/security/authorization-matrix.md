@@ -47,7 +47,7 @@ Status: **Proposed**. **No API exists yet.** The endpoints below are a logical, 
 | ITEM-01 | GET | `/items` | `deny` | `published` | `published` | `published` | `published` | `published` | deliveryPayload | T1, T5, CS2.2, CS3.1 |
 | ITEM-02 | GET | `/items/{itemId}` | `deny` | `published` | `published` | `published` | `published` | `published` | deliveryPayload | T1, T5, CS2.2, CS3.1 |
 | REP-01 | POST | `/items/{itemId}/reports` | `deny` | `published` | `published` | `published` | `published` | `published` | acceptsUserText | T5, CS2.5 |
-| ATT-01 | POST | `/attempts` | `deny` | `allow` | `allow` | `allow` | `allow` | `allow` | massAssignmentRisk | T1, T3, T4, CS2.1, CS2.3 |
+| ATT-01 | POST | `/attempts` | `deny` | `allow` | `allow` | `allow` | `allow` | `deny` | massAssignmentRisk | T1, T3, T4, CS2.1, CS2.3 |
 | ATT-02 | GET | `/me/attempts` | `deny` | `own` | `own` | `own` | `own` | `own` | ownerScoped | T3, CS2.1 |
 | ATT-03 | GET | `/attempts/{attemptId}` | `deny` | `own` | `own` | `own` | `own` | `deny` | ownerScoped, deliveryPayload | T1, T3, CS2.1, CS2.2 |
 | ATT-04 | PUT | `/attempts/{attemptId}/answers` | `deny` | `own-open` | `own-open` | `own-open` | `own-open` | `deny` | ownerScoped, massAssignmentRisk | T3, T4, CS2.1, CS2.3 |

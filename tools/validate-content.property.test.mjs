@@ -28,7 +28,8 @@ function genItem(seed) {
   const nTargets = r.int(nQuestions, 9);
   const nLandmarks = r.int(2, 9);
   const labels = 'ABCDEFGHI'.split('').slice(0, nTargets);
-  const targets = labels.map((label, i) => ({ label, x: 100 + i * 90, y: 100 }));
+  // Two rows of up to five, 150 apart: wider than the letter-spacing minimum (target-spacing, ticket 07).
+  const targets = labels.map((label, i) => ({ label, x: 100 + (i % 5) * 150, y: 100 + Math.floor(i / 5) * 200 }));
   const landmarks = Array.from({ length: nLandmarks }, (_, j) => ({ id: `lm${j}`, label: `Place ${j}`, x: 100 + j * 90, y: 500 }));
   const answers = r.shuffle(labels).slice(0, nQuestions);
   const skills = r.shuffle(MICRO_SKILLS).slice(0, r.int(1, MICRO_SKILLS.length));

@@ -115,3 +115,39 @@ I ran a review on two axes (standards and spec). Neither found a blocking issue.
 - **Pilot items:** they are hidden from Browse, but `GET /items/{id}` and guided `POST /attempts` still accept a pilot item's id. Should they be refused before the check?
 - **"Seen" flag:** the spec puts it on the catalogue, and it is deferred to ticket 12.
 - **Reload during a listen:** it restarts reading time and the audio from 0 (verify row 4, PARTIAL).
+
+### 2026-11-18, owner (via agent `implement` session)
+Answers to the open questions (the agent's recommendations): (1) maps are named with a tier-qualified code, "2·01"; (2) admins are refused at attempt start (D20; a change to the security matrix, approved); (3) the server refuses pilot transfer items for practice, not only in Browse; (4) Home and onboarding get the full Boarding Pass design with ticket 16, not now; (5) the content validator rejects letter discs too close to read apart on a 360 px phone (a change to protected files, approved: `tools/validate-content.mjs`, its tests, and the synthetic security fixture for D20).
+
+### 2026-11-18, agent (follow-up: owner answers)
+- **Map codes:**
+  - Each map is named "Map 2·01" / «خريطة 2·01», and the same code goes on the Browse stub and the player heading.
+  - The code is wrapped in a left-to-right isolate, so Arabic shows "2·01", not "01·2". I checked this in a screenshot.
+- **Admins (D20):**
+  - `ATT-01` is now `deny` for admin in `authorization-matrix.json` and `.md`.
+  - `POST /attempts` uses the same guard as the other attempt routes.
+  - The synthetic fixture refuses admin on `POST /attempts`.
+  - D20 is added to `docs/product/owner-decisions.md`.
+- **Pilot items:**
+  - `GET /items/{id}` and `POST /attempts` give 404 for a `pilot-transfer` item; the audio route uses the same lookup.
+  - Ticket 13 must open them for the independent check.
+- **Letter spacing (`target-spacing`):**
+  - Two letter discs need centres at least 36 px apart on the map as drawn at a 360 px screen (measured at 326 px wide). That is two 15 px discs, each with a 1 px half-stroke, plus a 4 px gap. On a 1000-unit map this is 120 units.
+  - New cases in `tools/validate-content.test.mjs` cover a crowded pair and the exact limit (the limit passes; one unit closer fails).
+  - The property test's generator now spaces its letters 150 apart, which keeps "every generated item is valid" true.
+- **Browser tests:**
+  - They seed the validator's fixture map with the first challenge's recording.
+  - They narrow Browse to the seeded map, so they no longer depend on publishing order. The server's test clock moves between runs.
+
+**Results:**
+- `npm test`: 115/115. Three tests changed or were added and were seen failing first; one was the admin test, which now expects 403.
+- Offline security and tools: 109 pass, 0 fail, 27 skipped. This includes the matrix test (Markdown matches JSON) and the fixture proof.
+- Lint, type check and build pass.
+- `npm run test:browser`: 15/15.
+
+**Needs the owner:**
+- **First challenge spacing:** `docs/content/items/first-challenge-001.json` now fails `target-spacing`. C (the answer to question 1) and D are 100 units apart; at least 120 is needed. Moving C right to x=840 or more, together with its destination event `e7`, would pass. That changes reviewed content, so it needs your review again. I did not change it.
+
+**NOT VERIFIED:**
+- The PR needs the `protected-change-approved` label (agents do not set labels).
+- The live AUTHZ-06 suite was not rerun for the admin cell (it stops at ticket 08).

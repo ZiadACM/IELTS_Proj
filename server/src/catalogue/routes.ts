@@ -46,11 +46,13 @@ function deliveryOf(itemId: string, c: Content) {
   };
 }
 
-// A published item's content, or null (unknown, malformed or not published all look the same: 404).
+// A published item's content for practice, or null (unknown, malformed, not published and pilot all look the same:
+// 404). Pilot transfer items are refused too, not only hidden from Browse, so a tester holding an id cannot practise
+// one before the pilot's check (owner decision, ticket 07); the independent check (ticket 13) opens them.
 export async function publishedContent(db: Pool, itemId: string): Promise<(Content & { audioFile: string }) | null> {
   if (!UUID.test(itemId)) return null;
   const { rows } = await db.query<{ content: Content & { audio: { file: string } } }>(
-    `select content from items where id = $1 and status = 'published'`,
+    `select content from items where id = $1 and status = 'published' and content->>'purpose' <> 'pilot-transfer'`,
     [itemId],
   );
   return rows[0] ? { ...rows[0].content, audioFile: rows[0].content.audio.file } : null;

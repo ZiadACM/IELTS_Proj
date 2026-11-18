@@ -68,7 +68,7 @@ export async function attemptRoutes(
   fastify.post<{ Body: { itemId: string; mode: Mode } }>(
     '/attempts',
     {
-      preValidation: signedIn,
+      preValidation: attemptUser,
       schema: {
         body: {
           type: 'object',

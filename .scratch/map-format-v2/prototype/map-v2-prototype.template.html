@@ -79,6 +79,8 @@
   .m-box.picked text { fill: var(--on-night); }
   .m-route { fill: none; stroke: var(--saffron); stroke-linecap: round; stroke-linejoin: round; opacity: 0.9; }
   .m-dest { fill: var(--done); }
+  /* The place the speaker has just named. */
+  .m-hl { fill: rgb(232 163 61 / 0.22); stroke: var(--saffron); }
   .m-wrong { fill: none; stroke: var(--wrong); stroke-linecap: round; stroke-linejoin: round; opacity: 0.85; }
   /* End-of-replay summary: the answer frames pop in one after another, once. */
   .m-sum { transform-box: fill-box; transform-origin: center; animation: sum-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
@@ -98,7 +100,7 @@
     <h1>Content format v2: first-challenge-001 redrawn</h1>
     <p class="note">Prototype for the map format ticket. A to C keep the original recording; D is the anchored redraft (every question starts at the main entrance, D23).
       Open this on your phone and flip variants with the bar at the bottom.</p>
-    <p class="note"><strong>New: smooth Answer Replay (D).</strong> The line grows along the corridors and reaches each point as the guide finishes saying it. At the self-correction it goes the wrong way, pauses, pulls back, then carries on. At the end all three answers light up together. "Reduced motion" shows the version without animation. D still has the old recording and talk; the wrong path is a demo until the redraft.</p>
+    <p class="note"><strong>New (version 9): Answer Replay (D).</strong> The line jumps to each point as soon as the guide has said it, and the place she names lights up until she names the next one. At the self-correction the line goes the wrong way, pauses, then pulls back. At the end all three answers light up together. D still has the old recording and talk; the wrong path is a demo until the redraft.</p>
   </div>
 
   <section aria-labelledby="map-title">
@@ -278,20 +280,17 @@ function shownAt(item, e) {
   return e.atSec ?? item.transcript.cues.find((c) => c.id === e.cueId).end;
 }
 
-// ---- Smooth Answer Replay (ticket 06; owner decisions D23a and D25) ----
-// Each piece of line grows toward its point while its words are spoken and arrives exactly at the point's atSec,
-// never before (D23a). Growth is eased so it never looks stepped. A correction with a wrongPath draws the wrong
-// way, holds it, pulls it back, and only then does the walk carry on (D25). Traps without a correction do not
-// change the route. Reduced motion: every piece appears whole at its time; a wrong path appears dashed and stays.
-const UNITS_PER_SEC = 260, GROW_MIN = 0.35, GROW_MAX = 1.6; // how long a piece takes to grow, by its length
-const HOLD = 0.5, PULL = 0.55;                                // correction: hold the wrong path, then pull back
-const SUMMARY_AFTER = 0.8;                                    // seconds after the last answer is reached
-// Sine ease-in-out: smooth start and stop, with a short settling tail, so the line is visibly still moving
-// until its word time instead of creeping the last pixel for a tenth of a second (cubic did; D23a never early).
-const ease = (f) => (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, f)))) / 2;
+// ---- Answer Replay (ticket 06, owner review of version 8) ----
+// The line jumps to each point the moment the speaker has said it (its atSec; D23 rule 3), no gliding.
+// The place she has just named is highlighted (a named room, the noticeboard, or the answer letter) until she
+// names the next one; only one place is lit at a time. A correction with a wrongPath shows the wrong way at its
+// time, holds it, then pulls it back (D25). Reduced motion: the wrong path stays dashed instead of pulling back,
+// and the end summary does not animate.
+const HOLD = 0.8, PULL = 0.45;   // correction: hold the wrong path, then pull it back
+const SUMMARY_AFTER = 0.8;       // seconds after the last answer is reached
+const ease = (f) => (1 - Math.cos(Math.PI * Math.min(1, Math.max(0, f)))) / 2; // the pull-back only
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const pathLen = (pts) => pts.slice(1).reduce((s, p, i) => s + dist(pts[i], p), 0);
-const growTime = (len) => Math.min(GROW_MAX, Math.max(GROW_MIN, len / UNITS_PER_SEC));
 
 // The first fraction f (0 to 1) of a polyline, measured along its length.
 function partial(pts, f) {
@@ -308,27 +307,50 @@ function partial(pts, f) {
   return out;
 }
 
-// One leg as a timeline: walk pieces (one per event) and wrong paths, each with its growth window [g0, g1].
+// One leg as a timeline: walk points, wrong paths, frames and highlights, each with the time it appears.
 function legPlan(item, leg) {
-  const plan = { start: leg[0], t0: shownAt(item, leg[0]), walk: [], wrong: [], frames: [], dests: [] };
-  let at = leg[0].at, free = plan.t0; // where the line is now, and from when it may move on
+  const plan = { start: leg[0], t0: shownAt(item, leg[0]), walk: [], wrong: [], frames: [], dests: [], marks: [] };
+  plan.marks.push({ T: plan.t0, none: true }); // a new leg starts with nothing lit
+  let at = leg[0].at, free = plan.t0;        // where the line is, and from when it may move on
   for (const e of leg.slice(1)) {
-    const T = shownAt(item, e);
+    const T = Math.max(shownAt(item, e), free);
     if (e.kind === 'correction') {
       plan.frames.push({ e, T });
-      if (!e.wrongPath?.length) continue; // old format: the place named by mistake is only framed
-      const pts = [at, ...e.wrongPath];
-      const g0 = Math.min(T, Math.max(free, T - growTime(pathLen(pts))));
-      plan.wrong.push({ pts, g0, g1: T, back0: T + HOLD, back1: T + HOLD + PULL });
-      free = Math.max(free, T + HOLD + PULL);
+      plan.marks.push({ T, none: true }); // the dashed red frame marks the place named by mistake
+      if (!e.wrongPath?.length) continue;   // old format: framed only
+      plan.wrong.push({ pts: [at, ...e.wrongPath], t: T, back0: T + HOLD, back1: T + HOLD + PULL });
+      free = T + HOLD + PULL;               // the walk waits until the wrong path is pulled back
       continue;
     }
-    const g0 = Math.min(T, Math.max(free, T - growTime(dist(at, e.at))));
-    plan.walk.push({ from: at, to: e.at, g0, g1: T });
-    if (e.kind === 'destination') plan.dests.push({ at: e.at, T });
-    at = e.at; free = Math.max(free, T);
+    plan.walk.push({ to: e.at, T });
+    if (e.kind === 'destination') { plan.dests.push({ at: e.at, T }); plan.marks.push({ T, letter: e.at }); }
+    else if (e.landmarkId) plan.marks.push({ T, landmarkId: e.landmarkId });
+    at = e.at; free = T;
   }
   return plan;
+}
+
+// The highlight on the place just named: the room's outline and a light fill, a box around a symbol and its
+// label (the noticeboard), or a ring around the answer letter.
+function drawMark(layer, item, m, unit) {
+  if (!m || m.none) return;
+  if (m.letter) {
+    const h = (BOX_PX / 2 + 6) * unit;
+    el('rect', { class: 'm-hl', x: m.letter.x - h, y: m.letter.y - h, width: 2 * h, height: 2 * h, rx: 5 * unit, 'stroke-width': 3 * unit }, layer);
+    return;
+  }
+  const map = item.map, l = map.landmarks.find((x) => x.id === m.landmarkId);
+  if (!l) return;
+  const a = l.area && map.areas?.find((x) => x.id === l.area);
+  if (a?.rect) {
+    const r = rectOf(a), i = 3 * unit;
+    el('rect', { class: 'm-hl', x: r.x + i, y: r.y + i, width: r.w - 2 * i, height: r.h - 2 * i, 'stroke-width': 3 * unit }, layer);
+    return;
+  }
+  if (l.entrance) return; // the leg's start ring already marks the entrance
+  // Tight around the symbol and its label (label baseline is 13 px below the point).
+  const w = (textPx(l.label, LABEL_PX) + 10) * unit, h = 23 * unit;
+  el('rect', { class: 'm-hl', x: l.x - w / 2, y: l.y - 6 * unit, width: w, height: h, rx: 5 * unit, 'stroke-width': 2 * unit }, layer);
 }
 
 // The letter box a correction points at: the target in the room whose door the wrong path ends at, else the nearest.
@@ -344,19 +366,14 @@ function wrongTarget(map, e) {
 function drawLeg(svg, item, plan, label, unit, opacity, t, study) {
   const g = el('g', { opacity }, svg);
   const pts = [plan.start.at];
-  for (const p of plan.walk) {
-    if (t >= p.g1) { pts.push(p.to); continue; }
-    if (!state.reduced && t > p.g0) { const f = ease((t - p.g0) / (p.g1 - p.g0)); pts.push({ x: p.from.x + (p.to.x - p.from.x) * f, y: p.from.y + (p.to.y - p.from.y) * f }); }
-    break;
-  }
+  for (const p of plan.walk) { if (t >= p.T) pts.push(p.to); else break; }
   let head = pts[pts.length - 1];
   // The walked line first, so a wrong path that runs back along it stays visible on top.
   if (pts.length > 1) el('polyline', { class: 'm-route', points: pts.map((p) => `${p.x},${p.y}`).join(' '), 'stroke-width': 4 * unit }, g);
   for (const w of plan.wrong) {
     let f = 0, dashed = false;
-    if (study || state.reduced) { f = t >= w.g1 ? 1 : 0; dashed = true; }
-    else if (t > w.g0 && t < w.g1) f = ease((t - w.g0) / (w.g1 - w.g0));
-    else if (t >= w.g1 && t < w.back0) f = 1;
+    if (study || state.reduced) { f = t >= w.t ? 1 : 0; dashed = true; }
+    else if (t >= w.t && t < w.back0) f = 1;
     else if (t >= w.back0 && t < w.back1) f = 1 - ease((t - w.back0) / (w.back1 - w.back0));
     if (f <= 0) continue;
     const part = partial(w.pts, f);
@@ -398,8 +415,9 @@ function tick() {
   if (state.showRoute) plans.forEach((p, i) => drawLeg(routeLayer, item, p, i + 1, unit, 1, Infinity, true));
   else if (summary) plans.forEach((p, i) => drawLeg(routeLayer, item, p, i + 1, unit, 0.3, Infinity, false));
   else if (index >= 0) {
-    // Earlier legs fade; the current leg grows with the recording.
+    // Earlier legs fade; the current leg is drawn as far as the speaker has got.
     plans.slice(0, index).forEach((p, i) => drawLeg(routeLayer, item, p, i + 1, unit, 0.25, Infinity, false));
+    drawMark(routeLayer, item, plans[index].marks.filter((m) => m.T <= state.time).pop(), unit);
     const head = drawLeg(routeLayer, item, plans[index], index + 1, unit, 1, state.time, false);
     el('circle', { cx: head.x, cy: head.y, r: 7 * unit, fill: 'var(--saffron)', stroke: 'var(--map-ink)', 'stroke-width': 1.5 * unit }, routeLayer);
   }
@@ -474,7 +492,7 @@ function renderPanel() {
     ['Lettered places', `${map.targets.length} for ${item.questions.length} questions`],
     ['Route', `${item.events.length} events in ${plans.length} legs (one per question)`],
     ['Correction', corrections.length ? corrections.map((e) => e.wrongPath ? `${e.id}: wrong path, pulls back${e.demoWrongPath ? ' (demo path added for the prototype)' : ''}` : `${e.id}: frame only (no wrongPath)`).join('; ') : 'none'],
-    ['Motion', state.reduced ? 'reduced: pieces appear at their word times' : 'smooth: eased, arrives at each word time'],
+    ['Motion', state.reduced ? 'reduced: wrong path stays dashed, no summary animation' : 'line jumps to each point when it is said; the place named is highlighted'],
     ['Labels inside rooms', map.format === 2 ? (unfit.length ? `<span class="bad">${report.length - unfit.length}/${report.length} fit; too big: ${unfit.map((r) => r.text).join(', ')}</span>` : `${report.length}/${report.length} fit at ${LABEL_PX} px`) : 'v1 has no rooms'],
     ['Marked letters', [...state.picked].sort().join(' ') || 'none'],
     ['Audio position', state.time < 0 ? 'not started' : `${state.time.toFixed(1)} s`],

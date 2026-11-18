@@ -427,6 +427,8 @@
     }
   ],
   "validation": {
-    "status": "draft"
+    "status": "reviewed",
+    "reviewer": "owner",
+    "reviewedOn": "2026-11-18"
   }
 }

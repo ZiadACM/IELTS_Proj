@@ -26,9 +26,7 @@ function ownerBody(env, e) {
     'ATT-07': {},
     'ATT-08': { questionId: env.questionIds[0] },
     'ADM-02': { item: { id: env.uniq('import') } },
-    'ADM-03': { item: { id: env.uniq('edit') } },
     'ADM-05': {},
-    'ADM-07': { roles: ['content_author'] },
   };
   assert.ok(e.id in recipes, `no request recipe for ${e.id} in cross-user-access.test.mjs; add one (fail closed)`);
   return recipes[e.id];
@@ -162,14 +160,6 @@ liveTest('AUTHZ-07: extra fields on massAssignmentRisk endpoints are ignored or 
       if (!ok2xx(r.status)) r = await a.req('POST', fillPath(byId['ATT-05'].path, { attemptId: att.id }), { body: {} });
       const s = await env.readAttempt(a, att.id);
       if (s.score !== 0) problems.push(`ATT-05: score ${s.score} for all-wrong answers (client score accepted)`);
-    },
-    'ADM-07': async () => {
-      const admin = await env.user('admin', 'admin-1');
-      const target = await env.user('learner', 'target');
-      await admin.req('PUT', fillPath(byId['ADM-07'].path, { userId: target.userId }), { body: { roles: ['content_author'], email: env.email('hijack'), password: env.newPassword(), userId: admin.userId } });
-      const again = env.anonymous('target-again'); again.email = target.email; again.password = target.password;
-      const r = await again.req('POST', byId['AUTH-02'].path, { body: { email: target.email, password: target.password } });
-      if (!ok2xx(r.status)) problems.push(`ADM-07: extra fields changed the target's credentials (sign-in ${r.status})`);
     },
   };
   for (const e of massAssign) {

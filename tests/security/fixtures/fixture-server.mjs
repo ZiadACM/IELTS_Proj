@@ -458,13 +458,6 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
     const id = randomUUID(); items.set(id, { id, item: r.item, status: 'draft' });
     json(res, 201, { itemId: id, status: 'draft' });
   });
-  route('PUT', '/admin/items/{itemId}', (req, res, body, url, p) => {
-    const c = requireRole(req, res, AUTHOR_REVIEWER); if (!c) return;
-    const rec = items.get(p.itemId); if (!rec) return err(res, 404, 'not found');
-    if (rec.status === 'published') return err(res, 409, 'published items cannot be edited');
-    const r = importItem(body); if (r.error) return json(res, 422, r);
-    rec.item = r.item; json(res, 200, { itemId: rec.id, status: rec.status });
-  });
   route('GET', '/admin/items/{itemId}/preview', (req, res, body, url, p) => {
     const c = requireRole(req, res, AUTHOR_REVIEWER); if (!c) return;
     const rec = items.get(p.itemId); if (!rec) return err(res, 404, 'not found');
@@ -482,15 +475,6 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
     const c = requireRole(req, res, AUTHOR_REVIEWER); if (!c) return;
     if (vuln('XSS-02')) return send(res, 200, `<ul>${reports.map((r) => `<li>${r.text}</li>`).join('')}</ul>`, 'text/html; charset=utf-8');
     json(res, 200, { reports: reports.map((r) => ({ id: r.id, itemId: r.itemId, text: r.text, createdAt: r.createdAt })) });
-  });
-  route('PUT', '/admin/users/{userId}/roles', (req, res, body, url, p) => {
-    const c = requireRole(req, res, ['admin']); if (!c) return;
-    const u = users.get(p.userId); if (!u || u.role === 'guest') return err(res, 404, 'not found');
-    if (!vuln('AUTHZ-07') && !onlyKeys(body, ['roles'])) return err(res, 400, 'unexpected field');
-    if (!Array.isArray(body.roles) || !body.roles.every((r) => ['content_author', 'content_reviewer', 'admin'].includes(r))) return err(res, 400, 'invalid roles');
-    u.role = body.roles[0] ?? 'learner';
-    if (vuln('AUTHZ-07')) { const { roles, ...rest } = body; Object.assign(u, rest); }
-    json(res, 200, { userId: u.id, roles: body.roles });
   });
 
   // TEST SUPPORT (contract: docs/security/test-harness-contract.md). Disabled without the token.

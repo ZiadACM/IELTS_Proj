@@ -1,6 +1,6 @@
 // AUTHZ-06 (docs/security/test-plan.md): every role calls every endpoint; the status must match the matrix cell.
 // Also exercises each decision's condition (CONTENT-02 for `published`, state checks for own-open, own-open-guided,
-// own-submitted and draft-only), so a server that ignores the condition fails. Each cell uses a fresh synthetic actor.
+// own-submitted), so a server that ignores the condition fails. Each cell uses a fresh synthetic actor.
 // Live suite: needs SECURITY_BASE_URL. Every matrix row needs a recipe below; a new row without one fails closed.
 import assert from 'node:assert/strict';
 import { liveTest, matrix, fillPath, ok2xx, buildItem, DENIED_WITH_SESSION } from './lib/live.mjs';
@@ -14,15 +14,20 @@ async function prepare(env, e, role, actor, allowed) {
   // one attempt per item (D10): the main request uses p1, the negative variants use p2 (submitted) or p3 (exam)
   // A role that may not drive an attempt itself (admin cannot save or submit, D7) is denied anyway; its deny check
   // then uses a learner's attempt. For an allowed cell a setup failure is a real failure.
-  const ownAttempt = async (itemKey, mode = 'guided', submitted = false) => {
+  // A denied cell retries once with a fresh learner; a second failure is a setup failure, not a reason to loop.
+  const ownAttempt = async (itemKey, mode = 'guided', submitted = false, retried = false) => {
     try {
       const at = await env.startAttempt(owner, itemKey, mode);
       if (submitted) { await env.saveWrongAnswers(owner, at.id); await env.submit(owner, at.id); }
       return at.id;
     } catch (err) {
       if (allowed) throw err;
+      if (retried) {
+        throw new Error(`${e.id} as ${role}: could not set up an attempt on ${itemKey} (${mode}${submitted ? ', submitted' : ''}) `
+          + `even with a fresh learner, so the deny check cannot run: ${err.message}`, { cause: err });
+      }
       owner = await env.user('learner', `owner-of-${e.id}`);
-      return ownAttempt(itemKey, mode, submitted);
+      return ownAttempt(itemKey, mode, submitted, true);
     }
   };
   const freshCreds = async () => { const email = env.email('signin'); const password = env.newPassword(); await env.supportOk('POST', '/users', { role: 'learner', email, password }); return { email, password }; };
@@ -62,15 +67,9 @@ async function prepare(env, e, role, actor, allowed) {
     'PROG-01': () => ({}), 'PROG-02': () => ({}),
     'ADM-01': () => ({}),
     'ADM-02': () => ({ body: { item: buildItem(env.runId, { suffix: `-imp${env.uniq('i')}`, status: 'draft' }) } }),
-    'ADM-03': async () => {
-      const published = (await env.supportOk('POST', '/items', { item: buildItem(env.runId, { suffix: `-pub${env.uniq('p')}` }), status: 'published' })).itemId;
-      const body = { item: buildItem(env.runId, { suffix: '-edited', status: 'draft' }) };
-      return { params: { itemId: await env.seedDraft() }, body, negative: { params: { itemId: published }, body, expect: [403, 409] } };
-    },
     'ADM-04': () => ({ params: { itemId: env.items.p1 } }),
     'ADM-05': async () => ({ params: { itemId: await env.seedDraft() }, body: {} }),
     'ADM-06': () => ({}),
-    'ADM-07': async () => ({ params: { userId: (await env.user('learner', 'role-target')).userId }, body: { roles: ['content_author'] } }),
   };
   assert.ok(recipes[e.id], `no request recipe for ${e.id} in authorization-enforcement.test.mjs; add one (fail closed)`);
   const r = await recipes[e.id]();

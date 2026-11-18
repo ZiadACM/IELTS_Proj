@@ -1,5 +1,5 @@
-// Staff item routes (spec: Staff; matrix ADM-01, ADM-02, ADM-05). ADM-03 (item editor), ADM-04 (preview, ticket 10),
-// ADM-06 (reports, ticket 14) and ADM-07 (roles: owner script instead, ticket 06 decision) are not built here.
+// Staff item routes (spec: Staff; matrix ADM-01, ADM-02, ADM-05). ADM-04 (preview, ticket 10) and ADM-06 (reports,
+// ticket 14) are not built yet. There is no item editor and no roles endpoint (owner decision D19).
 import type { FastifyInstance } from 'fastify';
 import type { Pool } from 'pg';
 import { type Auth, callerId } from '../access/auth.ts';

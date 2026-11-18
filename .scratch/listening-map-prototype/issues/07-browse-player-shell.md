@@ -88,3 +88,30 @@ Snapshot: `.impeccable/critique/2026-11-18T09-59-54Z__web-src-player-tsx.md`.
 - The Boarding Pass world does not reach Home and onboarding yet; they only take the colours. Should that be redesigned now or with ticket 16 (Home recommendation)?
 - Map spacing: should the content validator refuse letter discs closer than N px at a 360 px render? That needs the protected `tools/validate-content.mjs`.
 - The dev database is shared with server tests, so Browse in dev shows hundreds of leftover test items. A separate test database would fix it.
+
+### 2026-11-18, agent (code-review)
+I ran a review on two axes (standards and spec). Neither found a blocking issue.
+
+**Fixed:**
+- The "Start the audio" prompt for blocked autoplay is now announced to screen readers.
+- The admin attempt test is renamed to say what it asserts: an admin may start an attempt but not read it or play its audio.
+- `shortcut:` tags added on the validator type cast and on the Media Session catch.
+- The invalid `transform-origin: inline-start` line is removed.
+- The duration formatter is renamed from `clock` to `minutesSeconds`.
+
+**After the fixes:**
+- `npm test`: 113/113.
+- `npm run test:browser`: 15/15.
+- Lint, type check and build pass.
+
+**Left as is (judgement calls):**
+- The UUID regex is now defined three times.
+- `publishedContent` sits in the catalogue routes file, which the attempt routes import from.
+- The five positional parameters on import and publish.
+- `Player.tsx` mixes the timer, the audio rules and the layout. An audio hook would split them, ideally before ticket 08 adds answering.
+
+**Open for the owner (from the spec review):**
+- **Admin attempts:** the matrix lets an admin start an attempt (ATT-01) but not read it or play its audio (ATT-03, ATT-06). An admin who opens a map therefore gets the audio failure. Should ATT-01 deny admins?
+- **Pilot items:** they are hidden from Browse, but `GET /items/{id}` and guided `POST /attempts` still accept a pilot item's id. Should they be refused before the check?
+- **"Seen" flag:** the spec puts it on the catalogue, and it is deferred to ticket 12.
+- **Reload during a listen:** it restarts reading time and the audio from 0 (verify row 4, PARTIAL).

@@ -99,7 +99,7 @@ describe('ATT-03 GET /attempts/{attemptId}', () => {
       assert.equal((await call(app, 'GET', `/attempts/${id}`, { cookie: owner })).statusCode, 404);
   });
 
-  test('an admin starting an attempt is refused too (matrix: admin may not read or use attempts)', async () => {
+  test('an admin may start an attempt but not read it or play its audio (ATT-01 allow; ATT-03, ATT-06 deny)', async () => {
     const app = await apps.app();
     const { itemId } = await seedItem(app, 'published');
     const admin = await signedIn(app, apps.db, 'admin');

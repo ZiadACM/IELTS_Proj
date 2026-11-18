@@ -23,7 +23,7 @@ type Item = Record<string, unknown> & { id: string };
 export function problemsOf(item: unknown, contentDir?: string): Problem[] {
   if (!contentDir) return validateItem(item);
   const root = path.resolve(contentDir) + path.sep;
-  // The validator is plain JS: TypeScript infers its assetsDir option (default null) as null only.
+  // shortcut: the cast stands in for types on the protected validator (CS section 7). It is plain JS: TypeScript infers its assetsDir option (default null) as null only.
   const options = { assetsDir: contentDir } as unknown as Parameters<typeof validateItem>[1];
   return validateItem(item, options).map((p: Problem) => ({ ...p, msg: p.msg.replaceAll(root, '') }));
 }

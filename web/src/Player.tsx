@@ -23,7 +23,7 @@ const MEDIA_ACTIONS: MediaSessionAction[] = [
 // React sets this through the CSSOM, which the page's CSP allows (it forbids inline style attributes in markup).
 const lineShare = (share: number) => ({ '--share': share }) as CSSProperties;
 
-const clock = (seconds: number) => {
+const minutesSeconds = (seconds: number) => {
   const s = Math.max(0, Math.floor(seconds));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
@@ -35,7 +35,7 @@ function holdMediaControls(hold: boolean) {
     try {
       navigator.mediaSession.setActionHandler(action, hold ? () => {} : null);
     } catch {
-      // the browser does not support this action
+      // shortcut: a browser without this action has no key for it to hold, so there is nothing to report
     }
   }
 }
@@ -92,7 +92,10 @@ export function Player({
     try {
       await audio.play();
     } catch (error) {
-      setAudioState((error as DOMException).name === 'NotAllowedError' ? 'blocked' : 'failed');
+      const blocked = (error as DOMException).name === 'NotAllowedError';
+      setAudioState(blocked ? 'blocked' : 'failed');
+      // A screen reader must hear that the audio waits for a tap (a failure is announced by its alert).
+      if (blocked) setAnnouncement(strings.current.audioBlocked);
     }
   }, []);
 
@@ -227,7 +230,9 @@ export function Player({
         {phase === 'listening' && audioState !== 'blocked' && audioState !== 'failed' && (
           <>
             <p className="status-text">
-              {audioState === 'playing' ? t.playing(clock(position), clock(duration)) : t.audioLoading}
+              {audioState === 'playing'
+                ? t.playing(minutesSeconds(position), minutesSeconds(duration))
+                : t.audioLoading}
             </p>
             <div className="time-line" aria-hidden="true">
               <span style={lineShare(share(position, duration))} />

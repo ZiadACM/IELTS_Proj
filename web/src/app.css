@@ -536,7 +536,6 @@ button.quiet {
   block-size: 100%;
   background: var(--saffron);
   transform: scaleX(var(--share, 0));
-  transform-origin: inline-start;
   transition: transform 250ms linear;
 }
 

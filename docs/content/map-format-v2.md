@@ -89,9 +89,16 @@ Example (the second leg of an anchored item, "Starting from the main entrance ag
 { "id": "e6", "cueId": "c6", "kind": "move", "landmarkId": "main-entrance", "at": { "x": 500, "y": 840 }, "startsLeg": true, "word": "Starting from the main entrance again", "atSec": 38.12 }
 ```
 
-## Validator rules for v2 (to add later, protected file, owner approval needed)
+## Validator rules for v2 (protected file, owner approval needed)
 
-New codes, each with a failing fixture:
+**Built (2026-11-19, owner approved, map-v2-app ticket 03):** `v2-shape`, `v2-ref`, `v2-inside`, `v2-wrong-path`, in `tools/validate-content.mjs`, with test cases against `tools/fixtures/map-002-v2.valid.json`. Choices made while building them:
+- They run only when `map.format` is present; any value other than `2` is `v2-shape`.
+- `v2-shape` also covers: an area with both or neither of `rect` and `polygon`; a door on a polygon area or with `at` outside its side; a path with fewer than 2 points or no `width`; more than one `youAreHere`; `compass.north` other than 0; a non-text `title`.
+- A landmark's `symbol` link names a symbol **kind** drawn on the map (symbols have no ids).
+- `v2-wrong-path`: a point is "on a path" when it is within half the path's `width` of its centre line, and "at a door" within 20 map units of a room door or an entrance. A point outside the map also fails.
+- The historical redraw `first-challenge-001.v2.json` now fails `v2-wrong-path` (its correction has no wrong path). Expected: it is a record, not content.
+
+**Not approved yet** (the rest of this list):
 - `v2-shape`: unknown `kind`, a bad `rect` or `polygon`, a point outside the map, a duplicate id across areas, paths and entrances.
 - `v2-ref`: a landmark or target links to a missing area, symbol, entrance or path, or a landmark has more than one link.
 - `v2-inside`: a landmark or target with `area` is not inside that area.

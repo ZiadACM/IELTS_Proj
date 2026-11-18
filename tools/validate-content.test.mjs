@@ -129,3 +129,61 @@ test('two letters exactly at the minimum distance pass; one unit closer fails', 
   const min = Math.ceil(minTargetDistance(base().map.width));
   assert.equal(at(min), false); assert.equal(at(min - 1), true);
 });
+
+// Content format v2 maps (docs/content/map-format-v2.md; map-v2-app ticket 03, rules approved by the owner 2026-11-19:
+// v2-shape, v2-ref, v2-inside, v2-wrong-path). The fixture is the reviewed v2 first challenge; each case breaks one rule.
+const v2 = () => JSON.parse(readFileSync(new URL('./fixtures/map-002-v2.valid.json', import.meta.url), 'utf8'));
+const area = (i, id) => i.map.areas.find((a) => a.id === id);
+const correction = (i) => i.events.find((e) => e.kind === 'correction');
+test('valid v2 fixture passes with no errors', () => assert.deepEqual(codes(v2()), []));
+const v2Cases = [
+  ['v2-shape', 'format other than 2', (i) => { i.map.format = 3; }],
+  ['v2-shape', 'unknown area kind', (i) => { area(i, 'store').kind = 'lava'; }],
+  ['v2-shape', 'rect with three numbers', (i) => { area(i, 'store').rect = [100, 165, 165]; }],
+  ['v2-shape', 'rect with no width', (i) => { area(i, 'store').rect = [100, 165, 0, 105]; }],
+  ['v2-shape', 'polygon with two points', (i) => { delete area(i, 'garden').rect; area(i, 'garden').polygon = [[0, 20], [100, 20]]; }],
+  ['v2-shape', 'area with both rect and polygon', (i) => { area(i, 'garden').polygon = [[0, 20], [100, 20], [100, 660]]; }],
+  ['v2-shape', 'area outside the map', (i) => { area(i, 'sports-hall').rect = [470, 20, 600, 380]; }],
+  ['v2-shape', 'door on an unknown side', (i) => { area(i, 'store').door = { side: 'x' }; }],
+  ['v2-shape', 'unknown path kind', (i) => { i.map.paths[0].kind = 'tunnel'; }],
+  ['v2-shape', 'path point outside the map', (i) => { i.map.paths[0].points[0] = [500, 950]; }],
+  ['v2-shape', 'path with one point', (i) => { i.map.paths[0].points = [[500, 820]]; }],
+  ['v2-shape', 'path with no width', (i) => { delete i.map.paths[0].width; }],
+  ['v2-shape', 'unknown entrance kind', (i) => { i.map.entrances[0].kind = 'window'; }],
+  ['v2-shape', 'entrance outside the map', (i) => { i.map.entrances[0].y = 950; }],
+  ['v2-shape', 'two "You are here" marks', (i) => { i.map.entrances.push({ id: 'side-door', kind: 'door', x: 980, y: 560, side: 'e', youAreHere: true }); }],
+  ['v2-shape', 'unknown symbol kind', (i) => { i.map.symbols[1].kind = 'fountain'; }],
+  ['v2-shape', 'symbol outside the map', (i) => { i.map.symbols[1].x = -5; }],
+  ['v2-shape', 'compass turned', (i) => { i.map.compass.north = 90; }],
+  ['v2-shape', 'compass outside the map', (i) => { i.map.compass.y = 950; }],
+  ['v2-shape', 'id shared by an area and a path', (i) => { i.map.paths[0].id = 'store'; }],
+  ['v2-shape', 'id shared by an area and an entrance', (i) => { i.map.entrances[0].id = 'store'; i.map.landmarks.find((l) => l.entrance).entrance = 'store'; }],
+  ['v2-ref', 'landmark in a missing area', (i) => { i.map.landmarks.find((l) => l.area).area = 'attic'; }],
+  ['v2-ref', 'landmark on a symbol not drawn', (i) => { i.map.landmarks.find((l) => l.symbol).symbol = 'bench'; }],
+  ['v2-ref', 'landmark at a missing entrance', (i) => { i.map.landmarks.find((l) => l.entrance).entrance = 'back-door'; }],
+  ['v2-ref', 'landmark on a missing path', (i) => { i.map.landmarks.find((l) => l.area).path = 'ghost-corridor'; delete i.map.landmarks.find((l) => l.path).area; }],
+  ['v2-ref', 'landmark with two links', (i) => { i.map.landmarks.find((l) => l.symbol).area = 'room-a'; }],
+  ['v2-ref', 'target in a missing area', (i) => { i.map.targets[0].area = 'attic'; }],
+  ['v2-inside', 'landmark outside its area', (i) => { const l = i.map.landmarks.find((x) => x.id === 'reception'); l.x = 640; l.y = 650; }],
+  ['v2-inside', 'target outside its area', (i) => { const t = i.map.targets.find((x) => x.label === 'A'); t.y = 560; }],
+  ['v2-wrong-path', 'correction without a wrong path', (i) => { delete correction(i).wrongPath; }],
+  ['v2-wrong-path', 'empty wrong path', (i) => { correction(i).wrongPath = []; }],
+  ['v2-wrong-path', 'four points', (i) => { const c = correction(i); c.wrongPath = [{ x: 290, y: 150 }, { x: 290, y: 120 }, { x: 290, y: 92 }, { x: 265, y: 92 }]; }],
+  ['v2-wrong-path', 'a point inside a room, off every corridor and door', (i) => { correction(i).wrongPath[0] = { x: 200, y: 92 }; }],
+  ['v2-wrong-path', '"at" is not the last point', (i) => { correction(i).at = { x: 290, y: 92 }; }],
+];
+for (const [code, name, mutate] of v2Cases) {
+  test(`v2 detects ${code}: ${name}`, () => { const i = v2(); mutate(i); assert.ok(codes(i).includes(code), `expected ${code}, got ${codes(i).join(',') || 'nothing'}`); });
+}
+test('v2: a point within half a corridor\'s width of its centre line and a point at a room door are on the way', () => {
+  const i = v2(); correction(i).wrongPath = [{ x: 314, y: 120 }, { x: 265, y: 92 }]; correction(i).at = { x: 265, y: 92 };
+  assert.deepEqual(codes(i), []);
+});
+test('v2: a polygon area holds the landmark inside it', () => {
+  const i = v2(); const r = area(i, 'reception'); delete r.rect; delete r.door; r.polygon = [[530, 710], [750, 710], [750, 820], [530, 820]];
+  assert.deepEqual(codes(i), []);
+});
+test('v2 rules do not apply to a v1 map: a v1 correction needs no wrong path', () => {
+  const i = base(); i.events[3].kind = 'correction';
+  assert.ok(!codes(i).some((c) => c.startsWith('v2-')));
+});

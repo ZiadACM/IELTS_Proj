@@ -172,6 +172,21 @@ describe('ADM-02 POST /admin/items (import)', () => {
     assert.equal(await storedContent(item.id), undefined);
   });
 
+  test('a v2 map breaking a v2 rule is rejected with its validator code (map-v2-app ticket 03)', async () => {
+    const app = await apps.app();
+    const author = await signedIn(app, 'content_author');
+    const item = JSON.parse(
+      readFileSync(new URL('../../../tools/fixtures/map-002-v2.valid.json', import.meta.url), 'utf8'),
+    );
+    item.id = `v2-${Date.now()}`;
+    delete item.events.find((e: { kind: string }) => e.kind === 'correction').wrongPath;
+    const res = await importItem(app, author, item);
+    assert.equal(res.statusCode, 400, res.body);
+    const codes = res.json().problems.map((p: { code: string }) => p.code);
+    assert.ok(codes.includes('v2-wrong-path'), codes.join());
+    assert.equal(await storedContent(item.id), undefined);
+  });
+
   test('an item whose audio file is not in the content folder is rejected without revealing server paths', async () => {
     // Owner decision, ticket 07: audio lives in the configured content folder, checked at import and publish.
     const app = await apps.app();

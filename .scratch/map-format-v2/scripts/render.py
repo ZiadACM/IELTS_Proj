@@ -129,6 +129,12 @@ for pi, para in enumerate(paragraphs):
             while w > 0 and m[w - 1] and (w - 1) * WIN >= prev_end: w -= 1
         else:                    # a start in silence moves forward to the speech
             while w < len(m) and not m[w]: w += 1
+        # A quiet onset ("F" of "First") can sit just before a short dip: take it in when the dip is <= 50 ms.
+        while True:
+            k = next((j for j in range(w - 1, max(w - 6, 0) - 1, -1) if m[j] and j * WIN >= prev_end), None)
+            if k is None: break
+            w = k
+            while w > 0 and m[w - 1] and (w - 1) * WIN >= prev_end: w -= 1
         start = w * WIN
         end = prev_end = snap_back(to_out(toks[-1][3]), m)
         times.append({'id': c['id'], 'start': round(t + start / SR, 2), 'end': round(t + end / SR, 2)})

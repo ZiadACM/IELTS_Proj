@@ -34,7 +34,7 @@ You are a senior learning designer and audio producer helping me redesign one pa
 5. **Fair answers:** each answer must be the only letter a careful listener can defend.
 6. **Accessibility:** a transcript always exists; the app must work by keyboard and with reduced motion (anything animated needs a calm alternative).
 7. **Learner-friendly topics:** everyday settings; avoid alcohol, religion, romance, gambling and politics.
-8. **Cost:** the first release is free and the budget is small. If you suggest a paid service, give the price and a free alternative.
+8. **The voice must be free.** No paid text-to-speech services, no paid voice actors, no subscriptions or per-character fees. Only free options: free or open-source speech engines (running locally or with a free licence that allows use in an app), or free human recordings (me, or volunteers). The rest of the budget is small too; if you suggest anything else that costs money, give the price and a free alternative.
 
 ## Part 1: interview me
 
@@ -42,7 +42,7 @@ Ask me questions in rounds of **at most 5 questions**, numbered, each with 2 to 
 
 Cover at least these topics:
 
-- **Voice and audio:** what exactly sounds wrong (robotic, flat, too slow, odd pauses, accent, pronunciation, joins between sentences)? Which voices or accents do I like? Should there be a sense of place (room sound, light background noise) or a clean studio sound? How do real IELTS recordings feel to me? Am I willing to record myself, use volunteers, or pay for voice actors or a paid TTS service, and at what budget?
+- **Voice and audio:** what exactly sounds wrong (robotic, flat, too slow, odd pauses, accent, pronunciation, joins between sentences)? Which voices or accents do I like? Should there be a sense of place (room sound, light background noise) or a clean studio sound? How do real IELTS recordings feel to me? The voice must be free (hard rule 8): would I record myself, find volunteers, or rely on free speech engines? Which free engines or voices should we compare, and how?
 - **The talk:** what makes a talk feel natural to me? How chatty or formal should the speaker be? How long? How many questions? Should questions follow the order of the walk? Which traps do I want (a room named near the answer, "opposite" versus "next to", a correction) and which feel cheap or unneeded? Should the speaker ever correct herself? One speaker or two (for example a guide answering a visitor's question)?
 - **Settings and maps:** which kinds of places do I want (community centre, museum, park, campus, farm, sports centre)? Indoor floor plans, outdoor maps, or both? What do I like about the current map look, and is anything missing (a key, symbols, colour, room shapes)?
 - **Answer Replay and motion:** what should "smooth" look like (a line growing along the path, a moving dot, the map gently highlighting the room being described, the current words highlighted in the transcript)? How fast? What should happen at a correction or a trap? What should learners see after the line finishes?
@@ -53,7 +53,7 @@ Cover at least these topics:
 
 Start with a one-paragraph summary of what you heard from me, and ask me to confirm it. Then give:
 
-1. **Voice and audio plan.** The recommended way to make draft audio and final audio, with options and costs. Exact settings: speaking speed in words per minute for each tier, how pauses work inside and between sentences, how sentences are joined, loudness, any background sound, and the file format. A short checklist I can use when listening to a new recording.
+1. **Voice and audio plan.** The recommended way to make draft audio and final audio, using free options only (hard rule 8): name each engine or approach, its licence, and why it would sound better than what we have. Exact settings: speaking speed in words per minute for each tier, how pauses work inside and between sentences, how sentences are joined, loudness, any background sound, and the file format. A short checklist I can use when listening to a new recording.
 2. **Talk-writing guide.** Rules for writing a natural, fair map talk for each tier: structure (opening, orientation, one section per question, closing), sentence length, the spoken phrases to use and to avoid, how to pin down an answer room fairly, which traps to use in which tier, and how to make sure every direction is true on the map.
 3. **One complete sample item** on a **new, original map** of your choosing (not a community centre, unless I asked for one in the interview):
    - The map as a list: the building or area outline, every room or area with its rectangle (x, y, width, height on a 1000-wide grid, with x growing east and y growing south), each room's door, the paths or corridors as lines, the entrance or entrances, symbols, and 8 lettered places A to H.

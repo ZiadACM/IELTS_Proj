@@ -10,7 +10,7 @@
   "tier": 2,
   "purpose": "first-challenge",
   "difficulty": {
-    "landmarks": 7,
+    "landmarks": 6,
     "routeSteps": 11,
     "distractors": 0,
     "selfCorrections": 1,
@@ -125,7 +125,8 @@
           235
         ],
         "door": {
-          "side": "n"
+          "side": "n",
+          "at": 283
         }
       },
       {

@@ -21,7 +21,7 @@ const out = {
   ...item,
   version: item.version + 1,
   difficulty: {
-    landmarks: item.map.landmarks.length,
+    landmarks: new Set(events.map((e) => e.landmarkId).filter(Boolean)).size, // landmarks the talk names
     routeSteps: events.filter((e) => ['move', 'landmark', 'turn'].includes(e.kind)).length,
     distractors: events.filter((e) => e.kind === 'distractor').length,
     selfCorrections: events.filter((e) => e.kind === 'correction').length,

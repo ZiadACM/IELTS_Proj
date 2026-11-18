@@ -2,9 +2,13 @@
 // the spec (Item catalogue; Security & Privacy), the authorization matrix (ITEM-01, ITEM-02: published only) and the
 // leak rules of tests/security/lib/live.mjs (forbidden keys and canaries).
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { after, describe, test } from 'node:test';
 import { createTestApps } from '../test-app.ts';
 import { call, newItem, seedItem, signedIn } from '../test-callers.ts';
+
+// The reviewed v2 first challenge (map-format-v2 ticket 07) as the worked example of a v2 map.
+const V2_ITEM = new URL('../../../.scratch/map-format-v2/first-challenge-001.anchored.json', import.meta.url);
 
 const apps = createTestApps();
 after(() => apps.close());
@@ -126,6 +130,38 @@ describe('ITEM-02 GET /items/{itemId} (the player)', () => {
       map: full.map,
       questions: item.questions.map((q) => ({ id: q.id, prompt: q.prompt })),
     });
+  });
+
+  test('a v2 map is delivered with its drawing (map-format-v2.md) and still nothing else', async () => {
+    const app = await apps.app();
+    const anchored = JSON.parse(readFileSync(V2_ITEM, 'utf8'));
+    const { itemId } = await seedItem(
+      app,
+      'published',
+      newItem((i) => Object.assign(i, anchored, { id: i.id, validation: i.validation })),
+    );
+    const res = await call(app, 'GET', `/items/${itemId}`, { cookie: await signedIn(app, apps.db, 'learner') });
+    assert.equal(res.statusCode, 200, res.body);
+    assert.doesNotMatch(res.body, FORBIDDEN_KEY);
+    assert.doesNotMatch(res.body, /"(wrongPath|startsLeg|word|atSec)"\s*:/);
+    // Everything inside `map` is drawing or v1 position data; the route lives in `events`, outside it.
+    assert.deepEqual(res.json().map, anchored.map);
+  });
+
+  test('unknown fields inside a map are not delivered', async () => {
+    const app = await apps.app();
+    const { itemId } = await seedItem(
+      app,
+      'published',
+      newItem((i) => {
+        const { map } = i as unknown as { map: { targets: object[] } };
+        Object.assign(map, { format: 2, secret: 'CANARY-MAP', areas: [] });
+        Object.assign(map.targets[0], { answer: 'CANARY-TARGET' });
+      }),
+    );
+    const res = await call(app, 'GET', `/items/${itemId}`, { cookie: await signedIn(app, apps.db, 'learner') });
+    assert.equal(res.statusCode, 200, res.body);
+    assert.doesNotMatch(res.body, /CANARY-/);
   });
 
   test('the first challenge is still delivered (it is only hidden from Browse)', async () => {

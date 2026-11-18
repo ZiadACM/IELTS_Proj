@@ -100,6 +100,7 @@ export function validateItem(item, { assetsDir = null, requirePublished = false 
     if (e.kind === 'distractor' && !isStr(e.note)) err('distractor-note', `distractor event ${e.id} needs a note explaining why it is misleading (used by Answer Replay)`);
     if (e.kind === 'correction' && !isStr(e.note)) err('correction-note', `correction event ${e.id} needs a note explaining what the speaker corrected (used by Answer Replay)`);
   }
+  if (map.format !== undefined) validateMapV2(item, err);
   const events = new Map(item.events.map((e) => [e.id, e]));
   const routeIndex = new Map(item.events.map((e, i) => [e?.id, i]));
 
@@ -187,6 +188,141 @@ export function validateItem(item, { assetsDir = null, requirePublished = false 
     else if (!existsSync(resolved)) err('audio-missing', `audio file not found: ${resolved}`);
   }
   return errors;
+}
+
+// ---- content format v2 maps (docs/content/map-format-v2.md) ----------------------------------------------
+// Rules approved by the owner on 2026-11-19 (map-v2-app ticket 03): v2-shape, v2-ref, v2-inside, v2-wrong-path.
+// The other planned v2 rules in map-format-v2.md are not approved yet.
+const AREA_KINDS = new Set(['building', 'room', 'water', 'grass', 'car-park', 'courtyard', 'field']);
+const PATH_KINDS = new Set(['corridor', 'road', 'path', 'footpath', 'covered-walkway', 'river', 'railway']);
+const ENTRANCE_KINDS = new Set(['main', 'door', 'gate']);
+const SYMBOL_KINDS = new Set(['tree', 'noticeboard', 'information-board', 'bench', 'toilets', 'stairs', 'cafe', 'bridge', 'parking']);
+const SIDES = new Set(['n', 'e', 's', 'w']);
+const DOOR_TOL = 20; // map units: how close a wrong-path point must be to a door or entrance to count as at it
+
+const segmentDistance = (p, [ax, ay], [bx, by]) => {
+  const dx = bx - ax, dy = by - ay, len2 = dx * dx + dy * dy;
+  const k = len2 ? Math.max(0, Math.min(1, ((p.x - ax) * dx + (p.y - ay) * dy) / len2)) : 0;
+  return Math.hypot(p.x - (ax + k * dx), p.y - (ay + k * dy));
+};
+// Even-odd ray casting; a point on the edge of a rect counts as inside.
+function insideArea(p, a) {
+  if (Array.isArray(a.rect)) { const [x, y, w, h] = a.rect; return p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h; }
+  let inside = false;
+  for (let i = 0, j = a.polygon.length - 1; i < a.polygon.length; j = i++) {
+    const [xi, yi] = a.polygon[i], [xj, yj] = a.polygon[j];
+    if (yi > p.y !== yj > p.y && p.x < ((xj - xi) * (p.y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+// Where a room's door is: the middle of its side, or `at` along it.
+function doorPoint(a) {
+  const [x, y, w, h] = a.rect, { side, at } = a.door;
+  if (side === 'n' || side === 's') return { x: at ?? x + w / 2, y: side === 'n' ? y : y + h };
+  return { x: side === 'w' ? x : x + w, y: at ?? y + h / 2 };
+}
+
+function validateMapV2(item, err) {
+  const map = item.map;
+  const isNum = (n) => typeof n === 'number' && Number.isFinite(n);
+  const isStr = (s) => typeof s === 'string' && s.trim() !== '';
+  const o = (v) => v && typeof v === 'object' && !Array.isArray(v);
+  const inMap = (x, y) => isNum(x) && isNum(y) && x >= 0 && y >= 0 && x <= map.width && y <= map.height;
+  const isPair = (p) => Array.isArray(p) && p.length === 2 && inMap(p[0], p[1]);
+  const shape = (msg) => err('v2-shape', msg);
+  if (map.format !== 2) { shape(`map.format must be 2, got ${JSON.stringify(map.format)}`); return; }
+  const list = (key) => { if (map[key] === undefined) return []; if (Array.isArray(map[key])) return map[key]; shape(`map.${key} must be an array`); return []; };
+  const areas = list('areas'), paths = list('paths'), entrances = list('entrances'), symbols = list('symbols');
+
+  // --- v2-shape: kinds, shapes, everything inside the map, ids unique across areas, paths and entrances ---
+  const ids = new Set();
+  const uniqueId = (x, what) => {
+    if (!isStr(x?.id)) shape(`${what} needs an id`);
+    else if (ids.has(x.id)) shape(`id ${JSON.stringify(x.id)} is used twice (areas, paths and entrances share one set of ids)`);
+    else ids.add(x.id);
+  };
+  const goodAreas = new Map();
+  for (const a of areas) {
+    uniqueId(a, 'an area');
+    const at = `area ${JSON.stringify(a?.id)}`;
+    if (!AREA_KINDS.has(a?.kind)) { shape(`${at}: kind must be one of ${[...AREA_KINDS].join('|')}`); continue; }
+    const hasRect = a.rect !== undefined, hasPoly = a.polygon !== undefined;
+    if (hasRect === hasPoly) { shape(`${at} needs exactly one of rect or polygon`); continue; }
+    if (hasRect) {
+      const r = a.rect;
+      if (!Array.isArray(r) || r.length !== 4 || !r.every(isNum) || r[2] <= 0 || r[3] <= 0) { shape(`${at}: rect must be [x, y, width, height] with width and height above 0`); continue; }
+      if (!inMap(r[0], r[1]) || !inMap(r[0] + r[2], r[1] + r[3])) { shape(`${at}: rect goes outside the ${map.width}x${map.height} map`); continue; }
+    } else if (!Array.isArray(a.polygon) || a.polygon.length < 3 || !a.polygon.every(isPair)) { shape(`${at}: polygon must be 3 or more [x, y] points inside the map`); continue; }
+    if (a.label !== undefined && !isStr(a.label)) shape(`${at}: label must be text`);
+    if (a.door !== undefined) {
+      if (!hasRect || !o(a.door) || !SIDES.has(a.door.side)) { shape(`${at}: door needs side n, e, s or w, on a rect area`); continue; }
+      const along = a.door.side === 'n' || a.door.side === 's' ? [a.rect[0], a.rect[0] + a.rect[2]] : [a.rect[1], a.rect[1] + a.rect[3]];
+      if (a.door.at !== undefined && (!isNum(a.door.at) || a.door.at < along[0] || a.door.at > along[1])) { shape(`${at}: door.at must lie along its side`); continue; }
+    }
+    goodAreas.set(a.id, a);
+  }
+  const goodPaths = [];
+  for (const p of paths) {
+    uniqueId(p, 'a path');
+    const at = `path ${JSON.stringify(p?.id)}`;
+    if (!PATH_KINDS.has(p?.kind)) { shape(`${at}: kind must be one of ${[...PATH_KINDS].join('|')}`); continue; }
+    if (!Array.isArray(p.points) || p.points.length < 2 || !p.points.every(isPair)) { shape(`${at}: points must be 2 or more [x, y] points inside the map`); continue; }
+    if (!isNum(p.width) || p.width <= 0) { shape(`${at}: width must be a number above 0`); continue; }
+    goodPaths.push(p);
+  }
+  const goodEntrances = new Map();
+  for (const e of entrances) {
+    uniqueId(e, 'an entrance');
+    const at = `entrance ${JSON.stringify(e?.id)}`;
+    if (!ENTRANCE_KINDS.has(e?.kind)) { shape(`${at}: kind must be one of ${[...ENTRANCE_KINDS].join('|')}`); continue; }
+    if (!inMap(e.x, e.y)) { shape(`${at}: x/y must be inside the map`); continue; }
+    if (e.side !== undefined && !SIDES.has(e.side)) { shape(`${at}: side must be n, e, s or w`); continue; }
+    goodEntrances.set(e.id, e);
+  }
+  if (entrances.filter((e) => e?.youAreHere === true).length > 1) shape('at most one entrance may have youAreHere');
+  for (const s of symbols) {
+    if (!SYMBOL_KINDS.has(s?.kind)) shape(`symbol kind must be one of ${[...SYMBOL_KINDS].join('|')}, got ${JSON.stringify(s?.kind)}`);
+    else if (!inMap(s.x, s.y)) shape(`symbol ${s.kind}: x/y must be inside the map`);
+  }
+  if (map.compass !== undefined) {
+    if (!o(map.compass) || !inMap(map.compass.x, map.compass.y)) shape('compass needs x/y inside the map');
+    if (map.compass?.north !== 0) shape('compass.north must be 0 (other directions are not allowed yet)');
+  }
+  if (map.title !== undefined && !isStr(map.title)) shape('map.title must be text');
+
+  // --- v2-ref and v2-inside: what landmarks and targets link to, and that they sit inside their area ---
+  const symbolKinds = new Set(symbols.map((s) => s?.kind));
+  const pathIds = new Set(paths.map((p) => p?.id));
+  const linkArea = (what, id, p) => {
+    const a = goodAreas.get(id);
+    if (!a) { if (!areas.some((x) => x?.id === id)) err('v2-ref', `${what} links to area ${JSON.stringify(id)}, which does not exist`); return; }
+    if (isNum(p?.x) && isNum(p?.y) && !insideArea(p, a)) err('v2-inside', `${what} at (${p.x},${p.y}) is not inside its area ${JSON.stringify(id)}`);
+  };
+  for (const l of map.landmarks) {
+    const what = `landmark ${JSON.stringify(l?.id)}`;
+    const links = ['area', 'symbol', 'entrance', 'path'].filter((k) => l?.[k] !== undefined);
+    if (links.length > 1) { err('v2-ref', `${what} has ${links.join(' and ')}; a landmark has one link`); continue; }
+    if (l?.area !== undefined) linkArea(what, l.area, l);
+    if (l?.symbol !== undefined && !symbolKinds.has(l.symbol)) err('v2-ref', `${what} links to symbol ${JSON.stringify(l.symbol)}, which is not drawn on the map`);
+    if (l?.entrance !== undefined && !entrances.some((e) => e?.id === l.entrance)) err('v2-ref', `${what} links to entrance ${JSON.stringify(l.entrance)}, which does not exist`);
+    if (l?.path !== undefined && !pathIds.has(l.path)) err('v2-ref', `${what} links to path ${JSON.stringify(l.path)}, which does not exist`);
+  }
+  for (const t of map.targets) if (t?.area !== undefined) linkArea(`target ${JSON.stringify(t?.label)}`, t.area, t);
+
+  // --- v2-wrong-path (D25): a correction's short wrong path, along corridors or at doors, ending at `at` ---
+  const doors = [...[...goodAreas.values()].filter((a) => a.door && Array.isArray(a.rect)).map(doorPoint), ...goodEntrances.values()];
+  const onTheWay = (p) =>
+    goodPaths.some((path) => path.points.slice(1).some((b, i) => segmentDistance(p, path.points[i], b) <= path.width / 2)) ||
+    doors.some((d) => Math.hypot(p.x - d.x, p.y - d.y) <= DOOR_TOL);
+  for (const e of item.events) {
+    if (e?.kind !== 'correction') continue;
+    const wp = e.wrongPath, what = `correction ${e.id}`;
+    if (!Array.isArray(wp) || wp.length < 1 || wp.length > 3) { err('v2-wrong-path', `${what}: wrongPath must be 1 to 3 points (D25)`); continue; }
+    if (!wp.every((p) => o(p) && inMap(p.x, p.y))) { err('v2-wrong-path', `${what}: every wrongPath point needs x/y inside the map`); continue; }
+    for (const p of wp) if (!onTheWay(p)) err('v2-wrong-path', `${what}: wrongPath point (${p.x},${p.y}) is not on a path or corridor or at a door`);
+    const last = wp[wp.length - 1];
+    if (!o(e.at) || e.at.x !== last.x || e.at.y !== last.y) err('v2-wrong-path', `${what}: "at" must equal the last wrongPath point`);
+  }
 }
 
 // ---- CLI ---------------------------------------------------------------------------------------------

@@ -13,19 +13,92 @@ export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{1
 const HIDDEN_FROM_BROWSE = ['first-challenge', 'pilot-transfer'];
 
 type Point = { x: number; y: number };
+// Map format v2 drawing (docs/content/map-format-v2.md). Plain data; the player decides how it looks.
+type Area = {
+  id: string;
+  kind: string;
+  rect?: [number, number, number, number];
+  polygon?: [number, number][];
+  label?: string;
+  door?: { side: string; at?: number };
+};
+type MapPath = { id: string; kind: string; points: [number, number][]; width?: number; label?: string };
+type Entrance = Point & { id: string; kind: string; side?: string; youAreHere?: boolean };
+type MapSymbol = Point & { kind: string };
 type Content = {
   tier: number;
   purpose: string;
   focusSkill?: string;
   audio: { durationSec: number };
   map: {
+    format?: 2;
     width: number;
     height: number;
-    landmarks: (Point & { id: string; label: string })[];
-    targets: (Point & { label: string })[];
+    title?: string;
+    compass?: Point & { north: number };
+    areas?: Area[];
+    paths?: MapPath[];
+    entrances?: Entrance[];
+    symbols?: MapSymbol[];
+    landmarks: (Point & {
+      id: string;
+      label: string;
+      area?: string;
+      symbol?: string;
+      entrance?: string;
+      path?: string;
+    })[];
+    targets: (Point & { label: string; area?: string })[];
   };
   questions: { id: string; prompt: string }[];
 };
+
+// The map as drawn: an allow-list, so a field added to the content format later is not sent until it is listed here.
+// The route (events, wrongPath, word, atSec) lives outside `map` and is never sent before review.
+function mapOf(m: Content['map']) {
+  const v1 = {
+    width: m.width,
+    height: m.height,
+    landmarks: m.landmarks.map(({ id, label, x, y }) => ({ id, label, x, y })),
+    targets: m.targets.map(({ label, x, y }) => ({ label, x, y })),
+  };
+  if (m.format !== 2) return v1;
+  return {
+    format: 2,
+    ...v1,
+    title: m.title,
+    compass: m.compass && { x: m.compass.x, y: m.compass.y, north: m.compass.north },
+    areas: (m.areas ?? []).map(({ id, kind, rect, polygon, label, door }) => ({
+      id,
+      kind,
+      rect,
+      polygon,
+      label,
+      door: door && { side: door.side, at: door.at },
+    })),
+    paths: (m.paths ?? []).map(({ id, kind, points, width, label }) => ({ id, kind, points, width, label })),
+    entrances: (m.entrances ?? []).map(({ id, kind, x, y, side, youAreHere }) => ({
+      id,
+      kind,
+      x,
+      y,
+      side,
+      youAreHere,
+    })),
+    symbols: (m.symbols ?? []).map(({ kind, x, y }) => ({ kind, x, y })),
+    landmarks: m.landmarks.map(({ id, label, x, y, area, symbol, entrance, path }) => ({
+      id,
+      label,
+      x,
+      y,
+      area,
+      symbol,
+      entrance,
+      path,
+    })),
+    targets: m.targets.map(({ label, x, y, area }) => ({ label, x, y, area })),
+  };
+}
 
 // What the player receives for a published item.
 function deliveryOf(itemId: string, c: Content) {
@@ -36,12 +109,7 @@ function deliveryOf(itemId: string, c: Content) {
     focusSkill: c.focusSkill ?? null,
     readingTimeSec: READING_TIME_SEC,
     audio: { durationSec: c.audio.durationSec },
-    map: {
-      width: c.map.width,
-      height: c.map.height,
-      landmarks: c.map.landmarks.map(({ id, label, x, y }) => ({ id, label, x, y })),
-      targets: c.map.targets.map(({ label, x, y }) => ({ label, x, y })),
-    },
+    map: mapOf(c.map),
     questions: c.questions.map(({ id, prompt }) => ({ id, prompt })),
   };
 }

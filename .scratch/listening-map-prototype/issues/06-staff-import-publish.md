@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 Content format version 1; 05 Accounts
 
-**Status:** in-review (branch `agent/staff-import-publish`)
+**Status:** merged to `main` in PR #10 (status line updated 2026-11-19; the unticked box below is not re-checked: AUTHZ-06 could not run, see comment)
 
 Spec: `../spec.md`
 

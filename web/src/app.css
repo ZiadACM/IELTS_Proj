@@ -29,6 +29,11 @@
   --font-ui: system-ui, "Segoe UI", "Noto Sans Arabic", "Geeza Pro", sans-serif;
   --font-code: "Barlow Condensed", var(--font-ui);
   --radius: 8px;
+  /* v2 maps: black on white like the exam paper (map-format-v2 prototype, owner-approved look). */
+  --map-ink: #111111;
+  --map-paper: #ffffff;
+  --map-grass: #eef2ea;
+  --map-faint: #6b7a85;
 
   font-family: var(--font-ui);
   color: var(--ink);
@@ -606,6 +611,76 @@ button.quiet {
   text-anchor: middle;
   font-family: var(--font-code);
   font-weight: 600;
+}
+
+.map-title {
+  margin: 0;
+  padding: 0.5rem 0.75rem 0;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+.item-map .map-v2 text {
+  font-family: system-ui, "Segoe UI", sans-serif;
+  fill: var(--map-ink);
+  text-anchor: middle;
+}
+
+.item-map .map-v2 .wall,
+.item-map .map-v2 .tree {
+  fill: var(--map-paper);
+  stroke: var(--map-ink);
+}
+
+.item-map .map-v2 .grass {
+  fill: var(--map-grass);
+}
+
+.item-map .map-v2 .door {
+  stroke: var(--map-paper);
+  stroke-linecap: butt;
+}
+
+.item-map .map-v2 .ink {
+  fill: var(--map-ink);
+}
+
+.item-map .map-v2 .stroke {
+  fill: none;
+  stroke: var(--map-ink);
+}
+
+.item-map .map-v2 .label.start {
+  text-anchor: start;
+}
+
+.item-map .map-v2 .label.end {
+  text-anchor: end;
+}
+
+.item-map .map-v2 .label.bold {
+  font-weight: 700;
+}
+
+.item-map .map-v2 .label.halo {
+  stroke: var(--map-paper);
+  paint-order: stroke;
+  stroke-linejoin: round;
+}
+
+.item-map .map-v2 .path-label {
+  fill: var(--map-faint);
+  font-style: italic;
+}
+
+.item-map .map-v2 .letter-box rect {
+  fill: var(--map-paper);
+  stroke: var(--map-ink);
+}
+
+.item-map .map-v2 .letter-box text {
+  font-weight: 700;
 }
 
 .questions {

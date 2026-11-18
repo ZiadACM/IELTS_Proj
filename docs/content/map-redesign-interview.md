@@ -3,7 +3,7 @@
 Source prompt: [prompts/redesign-map-section-interview.md](prompts/redesign-map-section-interview.md) (the owner used a short interview-only version of it).
 Purpose: record the owner's own answers. This file does not design anything. It is the record the design work starts from.
 
-Status: interview complete (owner with an external AI, 2026-11-18). Checked by the coding agent on 2026-11-18 against the spec, the validator and owner decisions D21 to D23. The owner said "adjust it as needed". Items marked **Proposed (agent)** are the agent's recommendations, **not decided**: the owner confirms or changes each one before design starts (see "Agent review").
+Status: interview complete (owner with an external AI, 2026-11-18). Checked by the coding agent on 2026-11-18 against the spec, the validator and owner decisions D21 to D23. The owner said "adjust it as needed". Items marked **Proposed (agent)** were the agent's recommendations. **The owner accepted all 8 as proposed on 2026-11-18** (see "Owner answers to the Agent review").
 
 ## Decisions (owner)
 - Voice: synthetic, using the best free text-to-speech engine, for drafts and prototypes. The owner will not record and does not want volunteers. The voice must be free (no paid services or voice actors).
@@ -43,6 +43,17 @@ Status: interview complete (owner with an external AI, 2026-11-18). Checked by t
    - **Outdoor map style.** Still open (see "Open questions").
    - **How many items per kind of place.** Open; it belongs in the content plan, not this file.
 
+## Owner answers to the Agent review (2026-11-18)
+The owner accepted every proposal as written, in the session that started the redesign:
+1. **Accepted:** a published item may use synthetic audio if the engine's licence allows use in the app, the owner has listened to it, and it passes the timing checks. Recorded as **D24**; the validator rule `audio-source` changes accordingly.
+2. **Accepted:** D23 rule 3 amended (eased replay). Recorded in D23's amendment line in `docs/product/owner-decisions.md`.
+3. **Accepted:** keep the spec; help is split by mode, not tier.
+4. **Accepted:** traps per tier as proposed. Recorded as **D25**.
+5. **Accepted:** a correction event carries a short wrong path along the corridors. Recorded as **D25**.
+6. **Accepted:** keep compass words; left/right pairs for self-corrections.
+7. **Accepted:** keep the spec's pace ranges; "calm, measured" within them.
+8. **Accepted:** the reduced-motion version as proposed, and Arabic explanations in every tier after answering.
+
 ## Voice candidates (all free)
 - **Kokoro** (current; `bf_emma`, speed 0.70). Code and model are Apache-2.0. The owner finds it robotic and flat, with odd pauses and joins. Some of the joins and pauses come from our own pipeline, which renders each sentence separately and caps pauses, so try fixing those before switching engine. It gives word times, which the replay needs.
 - **OmniVoice** (github.com/k2-fsa/OmniVoice; suggested by the owner on 2026-11-18). Checked by the agent on 2026-11-18 from the GitHub README and the Hugging Face model page:
@@ -59,7 +70,6 @@ Status: interview complete (owner with an external AI, 2026-11-18). Checked by t
 - Which accent counts as "clear": the owner decides when listening to samples.
 - Exact wording of a left/right self-correction, with a pause before the correction: still to be drafted.
 - Outdoor maps (parks, campuses): the indoor look needs nothing added; outdoor path maps have not been reviewed and may need their own look (a key, path styles).
-- Agent review items 1 to 8: owner to confirm or change.
 
 ## Topics
 

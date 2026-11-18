@@ -2,7 +2,7 @@
 
 Owner use: copy everything below the line into a new chat with the drafting AI, and bring its full answer back to the coding agent (ticket `.scratch/map-format-v2/issues/02-first-challenge-anchored.md`). The coding agent voices it with Kokoro, times it, validates it, and has it reviewed. The drafting AI never marks anything reviewed or published.
 
-Rules behind this prompt: owner decisions D21, D22 and D23 (`docs/product/owner-decisions.md`).
+Rules behind this prompt: owner decisions D21 to D26 (`docs/product/owner-decisions.md`) and the talk-writing guide (`docs/content/talk-writing-guide.md`). Updated 2026-11-18 for the map redesign (ticket 05): formal register, paragraphs per question, a left/right self-correction with a pause and a wrong path, traps per tier.
 
 ---
 
@@ -13,11 +13,16 @@ Do not copy or closely paraphrase any Cambridge or IELTS published test, script 
 ## The item
 
 - Purpose: the **first challenge**, the first task every new learner sees. Fair, clear, not easy. Tier 2 of 3.
-- Setting: **Riverside Community Centre**, an Open Day. One female volunteer guide speaks to visitors. She is standing at the main entrance.
+- Setting: **Riverside Community Centre**, an Open Day. One female guide speaks to a group of visitors. She is standing at the main entrance.
+- Register: **formal, like a real guide or announcer** in the IELTS exam. One short welcome, then straight to the places. No small talk, no jokes, no questions to the audience, no second speaker.
 - **Exactly 3 questions**, always these places with these answers: **Quiet Lounge = C**, **Craft Room = F**, **Table tennis room = H**. Ask them in this order.
 - One micro-skill per question, each used once: `spatial-language` (Quiet Lounge), `landmark-vs-answer` (Craft Room), `corrections-distractors` (Table tennis room).
-- Exactly **one self-correction** by the speaker, in the table tennis room question (she names a wrong direction or side, then corrects it), and no other distractor or correction.
-- Pace: natural, about 150 words per minute. Total talk about 170 to 200 words (about 65 to 80 seconds). Short sentences written for the ear; one speaker; no stage directions inside the spoken text.
+- Traps (tier 2: one or two, each type at most once):
+  - **Exactly one self-correction**, in the table tennis room question, as a **left/right pair**: she says the wrong side ("on your left"), then "...", then corrects it ("oh, sorry, I mean on your right" or similar; vary the wording, do not copy this example). Never a north/south correction. The "..." marks a real pause (the audio makes it at least 1.2 seconds). The wrong side must point at a real other door, which becomes the trap.
+  - **Optionally one decoy room** in the Craft Room question: a neighbouring lettered room that a careless listener could pick, told apart from the answer only by the relation words. A decoy needs no event; name it as the trap in the explanation.
+  - No other trap, and no preposition trick beyond these.
+- Pace: **calm and measured**, like the real exam: 140 to 160 words per minute overall. Total talk about 170 to 200 words (about 65 to 85 seconds). Short sentences written for the ear; no stage directions inside the spoken text.
+- **One paragraph per question.** The audio renders each question's cues as one passage, so the cues of a question should read on from each other (2 to 4 sentences in all).
 
 ## How the talk must work (the most important part)
 
@@ -25,7 +30,7 @@ Real IELTS map talks do not walk on from one answer to the next. So:
 
 1. **Every question starts again at the main entrance**, the only entrance of this building. Say so naturally each time ("Starting from the main entrance again, ..."). Never start a question from a room or from the previous answer.
 2. The guide **walks** the listener from the entrance along the corridors to the answer room. The route may only follow the corridors listed below and enter a room through its door. It never cuts through a room or a wall.
-3. To pin down the final room, she may use the rooms she passes and compass words, as real tests do: "on your left", "the second door on the right", "directly north of the staff office", "opposite the café", "at the far end". North is at the top of the map.
+3. To pin down the final room, she uses the rooms she passes and compass words, as real tests do (compass words stay; learners need them): "on your left", "the second door on the right", "directly north of the staff office", "opposite the café", "at the far end". North is at the top of the map.
 4. Name a few rooms she passes (the labelled rooms below), so the learner has landmarks. **Only labelled rooms may be named.** Lettered rooms have no names; never describe a lettered room by a name other than the place being asked.
 5. Every direction must be true on the coordinates below. Check each left or right against the walking direction (walking north, left is west; walking east, right is south; walking west, right is north).
 
@@ -71,7 +76,7 @@ List what happens along the talk, in audio order. Each question has its own **le
 - `move`: a corner or a point the route reaches along a corridor (for example the junction, the corridor corner (290, 560), or the corridor point in front of a door).
 - `landmark`: the speaker names a labelled room the route passes (needs `landmarkId`; `at` is the corridor point beside its door).
 - `turn`: the route turns at a landmark (needs `landmarkId`; `at` is the turning point).
-- `correction`: the speaker corrects herself (needs a `note` saying what she said first and what she meant; `at` is the corridor point beside the place she named by mistake).
+- `correction`: the speaker names the wrong side, before correcting herself. Needs a `note` saying what she said first and what she meant, and a `wrongPath`: 1 to 3 points (each on a corridor line or at a door point) going from the previous event's point to the **door of the room she wrongly named**. `at` equals the last `wrongPath` point. Its `word` is the words naming the wrong side (for example "the door on your left"). The replay draws this short wrong path, pauses, pulls it back, then draws the corrected direction from the next events.
 - `destination`: the route enters the answer room: `at` is that room's **letter point** exactly. Exactly one per question. Put a `move` at the room's door point just before it, so the line goes through the door.
 
 **Timing words.** Every event also has `"word"`: the exact words in its cue (copied character for character, including case) after which the line may reach that point. The app draws that part of the line only after those words have been spoken. Example: for "go straight up the main hall to the noticeboard, and turn right", the turn event has `"word": "turn right"`, and the move to the junction has `"word": "to the noticeboard"`. Every `word` must appear in its cue's text, and within a cue the events' words must appear in the order of the events.
@@ -96,7 +101,7 @@ Each answer must be the **only defensible letter** for a careful listener. For e
 - Plain text only: no HTML, no markdown inside strings, no `<` followed by a letter, no special Unicode direction characters.
 - Cue ids `c1`, `c2`, ... in order; each cue is one or two sentences. Set every cue's `start` and `end` to 0 (the coding agent times them against the real audio).
 - Event ids `e1`, `e2`, ... in route order; each event's `cueId` is the cue where its `word` is spoken; events are in audio order.
-- Every `at` point is on a corridor line, at a door point or at a letter point listed above.
+- Every `at` point and every `wrongPath` point is on a corridor line, at a door point or at a letter point listed above.
 - Open with one or two cues of welcome and orientation (where they are standing, that north is at the top of the map), and end with one short closing cue.
 
 ## Output format (exactly these four sections)
@@ -108,7 +113,7 @@ The full talk as plain text, one cue per line, each line starting with its cue i
 One JSON object with exactly these keys: `transcript` (`{"cues": [...]}`), `events` ([...]), `questions` ([...]). Nothing else (the map, audio and other fields stay as they are).
 
 ### 3. Self-check
-A table with one row per event: id, cue, word, at, the corridor or door it lies on. Then, for each question: every direction the talk gives, checked against the coordinates (walking direction, left or right, north or south), and the two most tempting wrong letters with why each is ruled out. Then the word count.
+A table with one row per event: id, cue, word, at, the corridor or door it lies on. Then the traps used (type and question). Then, for each question: every direction the talk gives, checked against the coordinates (walking direction, left or right, north or south), and the two most tempting wrong letters with why each is ruled out. Then the word count.
 
 ### 4. Notes for the reviewer
 Anything you were unsure about.

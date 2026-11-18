@@ -2,6 +2,7 @@
 // Checks: every `at` on a corridor line, a door point or a letter point; every leg starts with a move at a landmark
 // linked to an entrance; one destination per leg, exactly on a letter; every `word` in its cue, in event order;
 // every segment walkable (along a corridor, corridor to the door in front of it, door into its own room);
+// correction wrong paths (D25: 1 to 3 walkable points ending at `at`);
 // hints (level 1 a landmark/turn on the same leg before the destination, not the entrance; level 2 at or before it).
 // Usage: node .scratch/map-format-v2/scripts/check-route.mjs <item.json>
 import { readFileSync } from 'node:fs';
@@ -56,15 +57,29 @@ legs.forEach((leg, i) => {
   const walk = leg.filter((e) => e.kind !== 'correction');
   for (let k = 1; k < walk.length; k++) {
     const a = walk[k - 1].at, b = walk[k].at;
-    if (near(a, b)) continue;
-    const alongCorridor = segs.some((sg) => onSeg(a, sg) && onSeg(b, sg));
-    const dB = doorAt(b), dA = doorAt(a);
-    const toDoor = dB && corridorSeg(a) && (a.x === b.x || a.y === b.y) && !rooms.some((r) => r.id !== dB.room && segCrossesRoom(a, b, r));
-    const intoRoom = dA && inRoom(b, dA.room);
-    const viaDoor = corridorSeg(a) && doors.some((d) => onSeg(d, [[a.x, a.y], [b.x, b.y]]) && inRoom(b, d.room)) && (a.x === b.x || a.y === b.y);
-    if (!alongCorridor && !toDoor && !intoRoom && !viaDoor) bad.push(`leg ${i + 1}: segment ${walk[k - 1].id} (${a.x}, ${a.y}) to ${walk[k].id} (${b.x}, ${b.y}) is not walkable`);
+    if (!walkable(a, b)) bad.push(`leg ${i + 1}: segment ${walk[k - 1].id} (${a.x}, ${a.y}) to ${walk[k].id} (${b.x}, ${b.y}) is not walkable`);
   }
+  // Correction wrong paths (D25): 1 to 3 points on corridors or doors, from the previous walked point, ending at `at`.
+  leg.forEach((e, k) => {
+    if (e.kind !== 'correction') return;
+    const wp = e.wrongPath;
+    if (!Array.isArray(wp) || wp.length < 1 || wp.length > 3) { bad.push(`${e.id}: wrongPath needs 1 to 3 points`); return; }
+    if (!near(wp[wp.length - 1], e.at)) bad.push(`${e.id}: at is not the last wrongPath point`);
+    for (const p of wp) if (!corridorSeg(p) && !doorAt(p)) bad.push(`${e.id}: wrongPath point (${p.x}, ${p.y}) is not on a corridor or door`);
+    const prev = leg.slice(0, k).filter((x) => x.kind !== 'correction').pop();
+    const pts = [prev?.at, ...wp].filter(Boolean);
+    for (let j = 1; j < pts.length; j++) if (!walkable(pts[j - 1], pts[j])) bad.push(`${e.id}: wrongPath segment (${pts[j - 1].x}, ${pts[j - 1].y}) to (${pts[j].x}, ${pts[j].y}) is not walkable`);
+  });
 });
+function walkable(a, b) {
+  if (near(a, b)) return true;
+  const alongCorridor = segs.some((sg) => onSeg(a, sg) && onSeg(b, sg));
+  const dB = doorAt(b), dA = doorAt(a);
+  const toDoor = dB && corridorSeg(a) && (a.x === b.x || a.y === b.y) && !rooms.some((r) => r.id !== dB.room && segCrossesRoom(a, b, r));
+  const intoRoom = dA && inRoom(b, dA.room);
+  const viaDoor = corridorSeg(a) && doors.some((d) => onSeg(d, [[a.x, a.y], [b.x, b.y]]) && inRoom(b, d.room)) && (a.x === b.x || a.y === b.y);
+  return Boolean(alongCorridor || toDoor || intoRoom || viaDoor);
+}
 function segCrossesRoom(a, b, r) {
   const [x, y, w, h] = r.rect;
   for (let t = 0.02; t < 0.98; t += 0.02) { const px = a.x + (b.x - a.x) * t, py = a.y + (b.y - a.y) * t; if (px > x + TOL && px < x + w - TOL && py > y + TOL && py < y + h - TOL) return true; }

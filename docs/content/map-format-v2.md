@@ -66,6 +66,23 @@ Owner decisions D21 and D23. A route is split into **legs**, one per question, a
 - Open question for the owner: tier 1 **guided tour items** lead along one route past each answer place in order (D21). Under D23 their later legs would also start again at the entrance; whether a guided tour keeps one leg per question is not decided yet.
 - Why: in real recordings each question starts again from a fixed point (reference guide, section 6). The owner's review of the prototype (D23): lines that start at a room, or point straight to the answer, cut through walls and rooms; lines drawn before the words are spoken give the answer away.
 
+### Correction events (D25)
+
+A `correction` event carries a short **wrong path**: where the line goes when the speaker names the wrong side, before she corrects herself.
+
+```json
+{ "id": "e18", "cueId": "c10", "kind": "correction", "at": { "x": 265, "y": 92 },
+  "wrongPath": [ { "x": 290, "y": 92 }, { "x": 265, "y": 92 } ],
+  "word": "the door on your left", "note": "She first says the door on the left (G), then corrects it to the right (H)." }
+```
+
+- `wrongPath`: 1 to 3 points, each on a path or corridor or at a door, continuing from the previous event's point toward the place named by mistake. `at` is the last of them (the wrong door or place).
+- `word`: the words naming the wrong side. The wrong path is drawn as they are spoken and reaches `at` by their `atSec`.
+- Answer Replay draws the wrong path, holds it during the pause, pulls it back to the previous event's point, then carries on with the next events (the corrected direction). Reduced motion: the wrong path appears at once as a dashed line and stays dashed (Agent review item 8).
+- The voicing makes the pause after the correction's `word` at least 1.2 s (ticket 04).
+- Only correction events pull back. A decoy or preposition trap does not change the route (owner interview).
+- Planned validator rule (protected file, later): `v2-wrong-path`: a correction has no `wrongPath`, more than 3 points, a point off every path, corridor and door, or `at` not equal to its last point.
+
 Example (the second leg of an anchored item, "Starting from the main entrance again, ..."):
 
 ```json

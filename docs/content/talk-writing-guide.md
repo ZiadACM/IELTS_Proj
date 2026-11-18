@@ -20,7 +20,7 @@ This guide is for whoever writes a map talk: a person or a drafting AI. The draf
 4. The speaker **walks** the listener there along paths and corridors, then pins the place down with rooms passed and position words. The answer place has no name on the map; only labelled places may be named.
 5. **Closing, 1 cue.** Short.
 
-Number of questions: the spec (`.scratch/listening-map-prototype/spec.md`, content set) sets tier 1 at 3, tier 2 at 4 to 5, tier 3 at 5 to 6; the first challenge has 3. The interview's "keep 3 questions per talk" was said about the first challenge; **OPEN for the owner** whether it means every talk (ticket 05).
+Number of questions: the spec (`.scratch/listening-map-prototype/spec.md`, content set) sets tier 1 at 3, tier 2 at 4 to 5, tier 3 at 5 to 6; the first challenge has 3. The interview's "keep 3 questions per talk" applies to **the first challenge only** (owner, 2026-11-18); other items follow the spec.
 
 ## 3. Position language
 
@@ -35,7 +35,7 @@ Three trap types. Each type is used **at most once per talk**.
 
 | Trap | What it is | Fair when |
 |---|---|---|
-| **Decoy room** | A second unnamed room near the answer, told apart only by the relation (left/right of a landmark, before/after it, opposite). | The words rule the decoy out for a careful listener. |
+| **Decoy room** | A second unnamed room near the answer, told apart only by the relation (left/right of a landmark, before/after it, opposite). | The words rule the decoy out for a careful listener. A decoy has no route event; the explanation names it as the trap (owner, 2026-11-18). |
 | **Preposition trap** | The answer depends on one relation word: "opposite" versus "next to", "before" versus "just past". | The relation is said once, clearly, and the map makes the two readings point to different letters. |
 | **Self-correction** | The speaker names the wrong side, then corrects herself. | See below. |
 

@@ -4,7 +4,7 @@
 
 **Source:** `docs/content/map-redesign-interview.md`, `docs/product/owner-decisions.md` (D23a, D24, D25).
 
-**Status:** done (one open question for the owner, below)
+**Status:** done
 
 ## Comments
 
@@ -16,3 +16,7 @@
 - `docs/content/prompts/draft-map-item.md`: stale voice settings (bf_emma, sentence by sentence, "a published item needs a human recording") and the tier 2 trap rule brought in line with D24 to D26.
 - **OPEN for the owner:** the spec gives tier 2 items 4 to 5 questions and tier 3 items 5 to 6; the interview says "keep 3 questions per talk". Does that mean every talk, or only the first challenge? The guide follows the spec until the owner says.
 - Decoy rooms have no event (a lettered room is not a landmark, so the `distractor` kind cannot name it); the trap is named in the explanation. Say if the replay should mark decoys too.
+
+### 2026-11-18, owner answers
+- "Keep 3 questions per talk" means the first challenge only; other items follow the spec's counts. Guide updated.
+- Decoy rooms: as the agent recommended, no route event; the explanation names the decoy as the trap. Guide updated.

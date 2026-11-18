@@ -1,7 +1,7 @@
 {
   "id": "first-challenge-001",
   "type": "listening.map-labelling",
-  "version": 3,
+  "version": 4,
   "skills": [
     "spatial-language",
     "landmark-vs-answer",
@@ -11,7 +11,7 @@
   "purpose": "first-challenge",
   "difficulty": {
     "landmarks": 7,
-    "routeSteps": 6,
+    "routeSteps": 17,
     "distractors": 0,
     "selfCorrections": 1,
     "audioPace": "natural"
@@ -28,7 +28,7 @@
   },
   "audio": {
     "file": "audio/first-challenge-001-anchored.m4a",
-    "durationSec": 67.92,
+    "durationSec": 77.34,
     "source": "synthetic"
   },
   "map": {
@@ -486,75 +486,89 @@
       {
         "id": "c1",
         "start": 0.3,
-        "end": 6.48,
-        "text": "Hello, everyone, and welcome to our Open Day at Riverside Community Centre."
+        "end": 6.4,
+        "text": "Hello, everyone, and welcome to the Open Day at Riverside Community Centre."
       },
       {
         "id": "c2",
-        "start": 6.83,
-        "end": 12.77,
-        "text": "I'm one of the volunteers, and I'm going to show you where three of our activity rooms are."
+        "start": 6.75,
+        "end": 9.98,
+        "text": "Let me show you three of our activity rooms."
       },
       {
         "id": "c3",
-        "start": 13.12,
-        "end": 18.87,
-        "text": "Have a look at the map. We're at the main entrance, right at the bottom, and north is at the top."
+        "start": 10.33,
+        "end": 15.7,
+        "text": "Have a look at the map. We're at the main entrance, at the bottom, and north is at the top."
       },
       {
         "id": "c4",
-        "start": 19.22,
-        "end": 26.76,
+        "start": 16.05,
+        "end": 23.59,
         "text": "First, the Quiet Lounge. From the main entrance, go straight up the main hall to the noticeboard, and turn right."
       },
       {
         "id": "c5",
-        "start": 27.11,
-        "end": 34.76,
+        "start": 23.94,
+        "end": 31.59,
         "text": "You'll pass the meeting room on your right. The Quiet Lounge is at the far end of that corridor, also on your right."
       },
       {
         "id": "c6",
-        "start": 35.11,
-        "end": 40.6,
-        "text": "Next, the Craft Room. Find the staff office, over on the west side of the map."
+        "start": 31.94,
+        "end": 39.04,
+        "text": "Next, the Craft Room. Starting from the main entrance again, go up to the noticeboard and turn left."
       },
       {
         "id": "c7",
-        "start": 40.95,
-        "end": 46.18,
-        "text": "The Craft Room is directly north of the staff office, next door to it."
+        "start": 39.39,
+        "end": 45.46,
+        "text": "At the end, turn right and head north. The first door on your left is the staff office."
       },
       {
         "id": "c8",
-        "start": 46.53,
-        "end": 51.61,
-        "text": "And finally, the table tennis room. For this one, start at the café."
+        "start": 45.81,
+        "end": 51.68,
+        "text": "The Craft Room is the next door on your left, directly north of the staff office."
       },
       {
         "id": "c9",
-        "start": 51.96,
-        "end": 60.51,
-        "text": "The table tennis room is directly south of the café... oh, sorry, I mean north. It's just across the corridor from it."
+        "start": 52.03,
+        "end": 60.91,
+        "text": "And finally, the table tennis room. Start from the main entrance once more, turn left at the noticeboard, and right at the end."
       },
       {
         "id": "c10",
-        "start": 60.86,
-        "end": 67.42,
-        "text": "So that's the Quiet Lounge, the Craft Room and the table tennis room. Enjoy the Open Day!"
+        "start": 61.26,
+        "end": 70.12,
+        "text": "Walk north, past the café on your right. The table tennis room is directly south of the café... oh, sorry, I mean north."
+      },
+      {
+        "id": "c11",
+        "start": 70.47,
+        "end": 72.83,
+        "text": "You'll see its door on your right."
+      },
+      {
+        "id": "c12",
+        "start": 73.18,
+        "end": 76.84,
+        "text": "That's all three rooms. Enjoy the Open Day!"
       }
     ]
   },
   "events": [
     {
       "id": "e1",
-      "cueId": "c3",
+      "cueId": "c4",
       "kind": "move",
       "landmarkId": "main-entrance",
       "at": {
         "x": 500,
         "y": 840
-      }
+      },
+      "word": "From the main entrance",
+      "atSec": 19.38
     },
     {
       "id": "e2",
@@ -564,7 +578,9 @@
       "at": {
         "x": 500,
         "y": 560
-      }
+      },
+      "word": "to the noticeboard",
+      "atSec": 22.4
     },
     {
       "id": "e3",
@@ -574,77 +590,216 @@
       "at": {
         "x": 640,
         "y": 560
-      }
-    },
-    {
-      "id": "m1",
-      "cueId": "c5",
-      "kind": "move",
-      "at": {
-        "x": 933,
-        "y": 560
-      }
+      },
+      "word": "the meeting room on your right",
+      "atSec": 26.47
     },
     {
       "id": "e4",
+      "cueId": "c5",
+      "kind": "move",
+      "at": {
+        "x": 922,
+        "y": 560
+      },
+      "word": "is at the far end",
+      "atSec": 28.92
+    },
+    {
+      "id": "e5",
+      "cueId": "c5",
+      "kind": "move",
+      "at": {
+        "x": 922,
+        "y": 585
+      },
+      "word": "of that corridor",
+      "atSec": 30
+    },
+    {
+      "id": "e6",
       "cueId": "c5",
       "kind": "destination",
       "at": {
         "x": 933,
         "y": 702
-      }
+      },
+      "word": "also on your right",
+      "atSec": 31.59
     },
     {
-      "id": "e5",
+      "id": "e7",
       "cueId": "c6",
+      "kind": "move",
+      "landmarkId": "main-entrance",
+      "startsLeg": true,
+      "at": {
+        "x": 500,
+        "y": 840
+      },
+      "word": "Starting from the main entrance again",
+      "atSec": 36.19
+    },
+    {
+      "id": "e8",
+      "cueId": "c6",
+      "kind": "turn",
+      "landmarkId": "noticeboard",
+      "at": {
+        "x": 500,
+        "y": 560
+      },
+      "word": "go up to the noticeboard",
+      "atSec": 37.92
+    },
+    {
+      "id": "e9",
+      "cueId": "c7",
+      "kind": "move",
+      "at": {
+        "x": 290,
+        "y": 560
+      },
+      "word": "turn right",
+      "atSec": 41.24
+    },
+    {
+      "id": "e10",
+      "cueId": "c7",
       "kind": "landmark",
       "landmarkId": "staff-office",
       "at": {
-        "x": 182,
-        "y": 548
+        "x": 290,
+        "y": 492
       },
-      "startsLeg": true,
-      "how": "point"
+      "word": "is the staff office",
+      "atSec": 45.46
     },
     {
-      "id": "e6",
-      "cueId": "c7",
+      "id": "e11",
+      "cueId": "c8",
+      "kind": "move",
+      "at": {
+        "x": 290,
+        "y": 335
+      },
+      "word": "the next door on your left",
+      "atSec": 48.95
+    },
+    {
+      "id": "e12",
+      "cueId": "c8",
+      "kind": "move",
+      "at": {
+        "x": 265,
+        "y": 335
+      },
+      "word": "directly north",
+      "atSec": 50.22
+    },
+    {
+      "id": "e13",
+      "cueId": "c8",
       "kind": "destination",
       "at": {
         "x": 182,
         "y": 335
-      }
+      },
+      "word": "of the staff office",
+      "atSec": 51.68
     },
     {
-      "id": "e7",
-      "cueId": "c8",
+      "id": "e14",
+      "cueId": "c9",
+      "kind": "move",
+      "landmarkId": "main-entrance",
+      "startsLeg": true,
+      "at": {
+        "x": 500,
+        "y": 840
+      },
+      "word": "Start from the main entrance once more",
+      "atSec": 57.48
+    },
+    {
+      "id": "e15",
+      "cueId": "c9",
+      "kind": "turn",
+      "landmarkId": "noticeboard",
+      "at": {
+        "x": 500,
+        "y": 560
+      },
+      "word": "turn left at the noticeboard",
+      "atSec": 59.59
+    },
+    {
+      "id": "e16",
+      "cueId": "c9",
+      "kind": "move",
+      "at": {
+        "x": 290,
+        "y": 560
+      },
+      "word": "right at the end",
+      "atSec": 60.91
+    },
+    {
+      "id": "e17",
+      "cueId": "c10",
       "kind": "landmark",
       "landmarkId": "cafe",
       "at": {
-        "x": 392,
-        "y": 375
+        "x": 290,
+        "y": 307
       },
-      "startsLeg": true,
-      "how": "point"
+      "word": "past the café on your right",
+      "atSec": 64.2
     },
     {
-      "id": "e8",
-      "cueId": "c9",
+      "id": "e18",
+      "cueId": "c10",
       "kind": "correction",
+      "note": "The guide first says the table tennis room is directly south of the café (letter E), then corrects herself to north.",
       "at": {
         "x": 392,
         "y": 467
       },
-      "note": "The guide first says the table tennis room is directly south of the café (letter E), then corrects herself to north."
+      "word": "directly south of the café",
+      "atSec": 68.08
     },
     {
-      "id": "e9",
-      "cueId": "c9",
+      "id": "e19",
+      "cueId": "c11",
+      "kind": "move",
+      "at": {
+        "x": 290,
+        "y": 92
+      },
+      "word": "You'll see",
+      "atSec": 71.14
+    },
+    {
+      "id": "e20",
+      "cueId": "c11",
+      "kind": "move",
+      "at": {
+        "x": 315,
+        "y": 92
+      },
+      "word": "its door",
+      "atSec": 71.84
+    },
+    {
+      "id": "e21",
+      "cueId": "c11",
       "kind": "destination",
       "at": {
         "x": 392,
         "y": 92
-      }
+      },
+      "word": "on your right",
+      "atSec": 72.83
     }
   ],
   "questions": [
@@ -652,7 +807,7 @@
       "id": "q1",
       "prompt": "Quiet Lounge",
       "answerLabel": "C",
-      "eventId": "e4",
+      "eventId": "e6",
       "microSkill": "spatial-language",
       "hints": [
         {
@@ -665,15 +820,15 @@
         }
       ],
       "explanation": {
-        "en": "The guide starts from the main entrance: up the main hall, right at the noticeboard, past the meeting room. The Quiet Lounge is 'at the far end of that corridor', on your right. D is also on the right, but not at the far end, and A is on the left. Only C is at the far end, on the right.",
-        "ar": "تبدأ المرشدة من المدخل الرئيسي: تصعد في القاعة الرئيسية حتى لوحة الإعلانات، ثم تنعطف يميناً وتمرّ بغرفة الاجتماعات. وتقول إن غرفة الهدوء تقع «at the far end» من الممر، أي في آخره تماماً، وعلى يمينك. الحرف D على اليمين أيضاً لكنه ليس في آخر الممر، والحرف A على اليسار. لذلك فالحرف C وحده يقع في آخر الممر وعلى اليمين."
+        "en": "The guide goes up the main hall, turns right at the noticeboard and passes the meeting room; the Quiet Lounge is 'at the far end of that corridor, also on your right'. D is also on the right but not at the far end, and A is on the left. Only C is at the far end, on the right.",
+        "ar": "تبدأ المرشدة من المدخل الرئيسي، فتصعد في القاعة الرئيسية وتنعطف يميناً عند لوحة الإعلانات وتمرّ بغرفة الاجتماعات، ثم تقول إن غرفة الهدوء تقع «at the far end» من الممر، أي في آخره تماماً، وعلى يمينك. الحرف D على اليمين أيضاً لكنه ليس في آخر الممر، والحرف A على اليسار. لذلك فالحرف C وحده يقع في آخر الممر وعلى اليمين."
       }
     },
     {
       "id": "q2",
       "prompt": "Craft Room",
       "answerLabel": "F",
-      "eventId": "e6",
+      "eventId": "e13",
       "microSkill": "landmark-vs-answer",
       "hints": [
         {
@@ -682,19 +837,19 @@
         },
         {
           "level": 2,
-          "cueId": "c7"
+          "cueId": "c8"
         }
       ],
       "explanation": {
-        "en": "The staff office is only the reference point, not the answer. The guide says the Craft Room is 'directly north of the staff office, next door to it'. Don't confuse it with E, which is opposite the staff office, across the corridor, or with the store, which is further north but not next door. Only F is next door, to the north.",
-        "ar": "تذكر المرشدة مكتب الموظفين لتوجيهك فقط، وليس هو الإجابة. فهي تقول إن غرفة الأشغال اليدوية تقع شمال المكتب مباشرة، أي «next door to it» من جهة الشمال. فلا تخلط بينها وبين الحرف E الذي يقع مقابل المكتب على الجهة الأخرى من الممر، ولا المخزن الذي يقع أبعد نحو الشمال ولا يجاور المكتب. لذلك فالإجابة هي الحرف F."
+        "en": "The staff office is only the landmark, not the answer: the Craft Room is 'the next door on your left, directly north of the staff office'. E is across the corridor, on the right, and the Store comes after the Craft Room. Only F is the next door on the left.",
+        "ar": "تذكر المرشدة مكتب الموظفين لتوجيهك فقط، وليس هو الإجابة، فهي تقول إن غرفة الأشغال اليدوية هي «the next door» على يسارك، أي الباب الذي يلي المكتب مباشرة من جهة الشمال. أما الحرف E فيقع على اليمين في الجهة المقابلة من الممر، والمخزن يأتي بعد غرفة الأشغال اليدوية. لذلك فالإجابة هي الحرف F."
       }
     },
     {
       "id": "q3",
       "prompt": "Table tennis room",
       "answerLabel": "H",
-      "eventId": "e9",
+      "eventId": "e21",
       "microSkill": "corrections-distractors",
       "hints": [
         {
@@ -703,12 +858,12 @@
         },
         {
           "level": 2,
-          "cueId": "c9"
+          "cueId": "c10"
         }
       ],
       "explanation": {
-        "en": "The guide first says 'directly south of the café', then corrects herself: 'oh, sorry, I mean north'. Always trust the correction. South of the café is E, which she said by mistake; north of it, just across the corridor, is H.",
-        "ar": "تقول المرشدة أولاً إن غرفة تنس الطاولة تقع جنوب المقهى، ثم تعتذر وتصحّح كلامها قائلةً «I mean north» أي إنها شمال المقهى. عندما يصحّح المتحدث نفسه، اعتمد دائماً على التصحيح الأخير. فالحرف E جنوب المقهى هو ما قالته خطأً، والإجابة الصحيحة هي الحرف H شمال المقهى، بعد الممر."
+        "en": "The guide first says 'directly south of the café', then corrects herself: 'oh, sorry, I mean north'. Trust the correction: E is south of the café, the place her mistake points to, and G is at the top but on the left. H is directly north of the café, on the right.",
+        "ar": "تقول المرشدة أولاً إن غرفة تنس الطاولة تقع جنوب المقهى، ثم تعتذر وتصحّح كلامها قائلةً «I mean north» أي إنها شمال المقهى. اعتمد دائماً على التصحيح الأخير: فالحرف E الواقع جنوب المقهى هو ما يدلّ عليه كلامها الخاطئ، والحرف G في أعلى الممر لكنه على اليسار. لذلك فالإجابة الصحيحة هي الحرف H شمال المقهى، على يمينك."
       }
     }
   ],

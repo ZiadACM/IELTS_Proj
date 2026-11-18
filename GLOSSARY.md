@@ -87,16 +87,12 @@ A Listening map item in which the speaker leads along one route from a start poi
 _Avoid_: directions task, route item
 
 **Anchored item**:
-A Listening map item, as in the real exam, in which each question starts again from a fixed point (the start point or a named landmark) and the answer place is reached by a short walk or described by its position; used for difficulty tiers 2 and 3 (D21).
+A Listening map item, as in the real exam, in which each question starts again at an entrance (the start point, or another gate) and the speaker walks to the answer place, pinning it down with the rooms passed and compass words; used for difficulty tiers 2 and 3 (D21, D23).
 _Avoid_: real-exam item, description item
 
 **Leg**:
-The part of an authored route for one question, from its anchor to its answer place; Answer Replay draws each leg as a new line.
+The part of an authored route for one question: a walk along paths and corridors from an entrance (its anchor) to its answer place, never through a wall or a room; Answer Replay draws each leg as a new line, each part only after the speaker has said it (D23).
 _Avoid_: segment, section
-
-**Pointing leg**:
-A leg in which the speaker names an anchor and a relation ("directly north of the hall") instead of walking; Answer Replay draws a dashed pointer from the anchor to the answer place.
-_Avoid_: jump, shortcut
 
 **First listen**:
 The initial play of an item's audio, straight through without pausing or seeking.

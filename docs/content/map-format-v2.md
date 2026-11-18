@@ -54,19 +54,22 @@ Format v1 draws a map as small squares (landmarks) and lettered discs (targets) 
 
 ## Route legs
 
-A guided tour is not always one continuous walk. The speaker often goes back to a fixed point ("let's go back to the noticeboard", "starting from the entrance again") and sets off in a new direction. A route is therefore split into **legs**:
+Owner decisions D21 and D23. A route is split into **legs**, one per question, and every leg is a walk from an entrance:
 
-- **One leg per question** (owner decision D21). The first event starts leg 1; a `move` or `landmark` event with `"startsLeg": true` starts each later leg (`landmark` when the speaker names the anchor as a place to find). Each leg holds exactly one question's destination event.
-- A leg start names its **anchor**: `landmarkId` (the speaker goes back to a named place, the start point included), or, in tier 1 guided tours only, `"fromAnswer": "<question id>"` (the speaker carries on from the previous answer place).
-- `"how": "point"` on a leg start makes it a **pointing leg**: the speaker names the anchor and a relation instead of walking. A pointing leg has the anchor, the destination, and between them only `correction` or `distractor` events (the replay frames the place named by mistake). The default is `"walk"`.
-- Answer Replay starts the line over at each question: it never joins one leg to the next. Walked legs are a solid line along the route; pointing legs are a dashed arrow from the anchor to the answer place. During playback earlier legs fade, the current leg is bold, and each leg starts at a numbered ring. Each question can be replayed from the start of its own leg.
-- `startsLeg` is an extra field on an existing event kind, so the v1 validator still accepts the item.
-- Why: in real recordings each question starts again from the start point or a named landmark, and most are described, not walked (reference guide, section 6).
+- **One leg per question.** The first event starts leg 1; an event with `"startsLeg": true` starts each later leg. Each leg holds exactly one question's destination event.
+- **Every leg starts at an entrance** (D23). A leg's first event is kind `move` with `landmarkId` naming its **anchor**: a landmark linked to an entrance (`"entrance": "<entrance id>"`). It is never a room or another landmark, and it never continues from the previous answer place. A building with one entrance starts every leg there; a map with several gates (for example a park with a north gate and a south gate) may start legs at different gates.
+- **Every leg is walked** (D23). Each straight segment between two events stays on a path or corridor or goes through a room's door; no segment crosses a wall or a room. Authors add `move` events at corners and in front of doors. A destination is reached through its room's door. There are no pointing legs: the speaker may still describe the answer place with the rooms passed and compass words ("directly north of the staff office"), but the line walks there.
+- **Timing words** (D23). Every event has `word`: the exact words in its cue (character for character) after which the line may reach that point. Within a cue, the events' words appear in event order. The voicing script writes `atSec`, the time in the final audio at which that phrase ends.
+- **Answer Replay** starts the line over at each question; it never joins one leg to the next. During playback an event is drawn only once the audio reaches its `atSec` (without `atSec`, the end of its cue, never its start). Earlier legs fade, the current leg is bold, and each leg starts at a numbered ring. Each question can be replayed from the start of its own leg.
+- `startsLeg`, `word` and `atSec` are extra fields on existing event kinds, so the v1 validator still accepts the item.
+- Gone since D23: `fromAnswer` (a leg carrying on from the previous answer place) and `"how": "point"` (pointing legs).
+- Open question for the owner: tier 1 **guided tour items** lead along one route past each answer place in order (D21). Under D23 their later legs would also start again at the entrance; whether a guided tour keeps one leg per question is not decided yet.
+- Why: in real recordings each question starts again from a fixed point (reference guide, section 6). The owner's review of the prototype (D23): lines that start at a room, or point straight to the answer, cut through walls and rooms; lines drawn before the words are spoken give the answer away.
 
-Example (first-challenge-001, event e8 for cue c10, "OK, let's go back to the noticeboard"):
+Example (the second leg of an anchored item, "Starting from the main entrance again, ..."):
 
 ```json
-{ "id": "e8", "cueId": "c10", "kind": "move", "at": { "x": 510, "y": 560 }, "landmarkId": "noticeboard", "startsLeg": true }
+{ "id": "e6", "cueId": "c6", "kind": "move", "landmarkId": "main-entrance", "at": { "x": 500, "y": 840 }, "startsLeg": true, "word": "Starting from the main entrance again", "atSec": 38.12 }
 ```
 
 ## Validator rules for v2 (to add later, protected file, owner approval needed)
@@ -79,17 +82,20 @@ New codes, each with a failing fixture:
 - `v2-label-fit`: a label at 11 px does not fit its area with 4 px padding (two lines allowed) when the map is 326 px wide (D22).
 - `v2-compass`: a transcript cue says north, south, east or west and the map has no compass.
 - `v2-start`: a `youAreHere` entrance is more than 20 map units from the first route event.
-- `v2-leg-start`: a `startsLeg` event is not kind `move` or `landmark`; names neither `landmarkId` nor `fromAnswer` (or both); uses `fromAnswer` on a tier 2 or 3 item; or is more than 20 map units from its anchor.
+- `v2-leg-start`: a leg's first event is not kind `move`; has no `landmarkId`; its anchor is not a landmark linked to an entrance; it has `fromAnswer` or `how`; or it is more than 20 map units from its anchor (D23).
 - `v2-leg-question`: a leg holds no destination, or more than one.
-- `v2-point-leg`: a pointing leg has events other than its anchor, its destination, and `correction` or `distractor` events.
-- `v2-hint-leg`: a level 1 hint landmark is not on the same leg as the answer place, before it (for a pointing leg, the anchor itself).
-- `v2-route-walkable` (warning at first): a straight route segment between two events leaves every path and crosses a room wall. Authors fix it by adding `move` events at corners.
+- `v2-hint-leg`: a level 1 hint landmark is not on the same leg as the answer place, before it.
+- `v2-word`: an event has no `word`; its `word` is not in its cue's text; or, within a cue, the events' words are not in event order (D23).
+- `v2-at-time`: an event's `atSec` is outside its cue's `start` to `end`, or goes down from the previous event's (D23).
+- `v2-route-walkable` (error, D23): a straight route segment between two events leaves every path and corridor without going through a room's door, or crosses a wall or a room. Authors fix it by adding `move` events at corners and doors.
 
 The v1 rules all still apply, including `target-spacing`.
 
 ## Redraw of first-challenge-001 (worked example)
 
-`.scratch/map-format-v2/first-challenge-001.v2.json` is the first-challenge item redrawn as a community-centre floor plan: 16 rooms, 4 corridors, the main entrance with "You are here", a noticeboard, trees in a side garden, and a north arrow.
+`.scratch/map-format-v2/first-challenge-001.v2.json` is a **historical redraw of the old recording**: it does not follow D23 (its legs start at the noticeboard and at an answer place, and it has no `word` times). The anchored draft that follows D23 is `.scratch/map-format-v2/first-challenge-001.anchored.json` (ticket 03).
+
+It is the first-challenge item redrawn as a community-centre floor plan: 16 rooms, 4 corridors, the main entrance with "You are here", a noticeboard, trees in a side garden, and a north arrow.
 
 Kept exactly (checked by script): audio, transcript cues and times, the 3 questions with answers C, F and H, hints, English and Arabic explanations, and every v1 event's id, kind, cue and order. Every direction in the recording still holds (reception to the right on entry, toilets opposite on the left, right at the noticeboard then the meeting room on the right, the Quiet Lounge at the far end on the right, left then right to head north, staff office on the left, Craft Room just past it, E opposite it, H on the east side after the junction).
 

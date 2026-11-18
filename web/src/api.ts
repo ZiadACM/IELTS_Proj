@@ -95,3 +95,45 @@ export const importItem = (item: object) =>
   call<{ itemId: string; status: ItemStatus }>('POST', '/admin/items', { item });
 export const publishItem = (itemId: string) =>
   call<{ itemId: string; status: ItemStatus }>('POST', `/admin/items/${encodeURIComponent(itemId)}/publish`, {});
+
+// Learner catalogue and practice (ticket 07). The server sends no answers, route, transcript, hints or explanations
+// before submit; these types hold only what it does send.
+export const MICRO_SKILLS = [
+  'spatial-language',
+  'following-sequence',
+  'landmark-vs-answer',
+  'corrections-distractors',
+  'orientation',
+] as const;
+export type MicroSkill = (typeof MICRO_SKILLS)[number];
+export type Tier = 1 | 2 | 3;
+export type CatalogueItem = {
+  itemId: string;
+  tier: Tier;
+  purpose: string;
+  focusSkill: MicroSkill | null;
+  questionCount: number;
+};
+export type Point = { x: number; y: number };
+export type MapData = {
+  width: number;
+  height: number;
+  landmarks: (Point & { id: string; label: string })[];
+  targets: (Point & { label: string })[];
+};
+export type DeliveredItem = {
+  itemId: string;
+  tier: Tier;
+  purpose: string;
+  focusSkill: MicroSkill | null;
+  readingTimeSec: number;
+  audio: { durationSec: number };
+  map: MapData;
+  questions: { id: string; prompt: string }[];
+};
+export type Attempt = { id: string; itemId: string; mode: 'guided' | 'exam'; status: 'open' | 'submitted' };
+
+export const listItems = () => call<{ items: CatalogueItem[] }>('GET', '/items');
+export const getItem = (itemId: string) => call<DeliveredItem>('GET', `/items/${encodeURIComponent(itemId)}`);
+export const startGuidedPractice = (itemId: string) => call<Attempt>('POST', '/attempts', { itemId, mode: 'guided' });
+export const attemptAudioUrl = (attemptId: string) => `/attempts/${encodeURIComponent(attemptId)}/audio`;

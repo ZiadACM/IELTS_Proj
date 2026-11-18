@@ -298,6 +298,7 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
   // ATTEMPTS
   route('POST', '/attempts', (req, res, body) => {
     const c = requireUser(req, res); if (!c) return;
+    if (c.user.role === 'admin') return err(res, 403, 'forbidden'); // D7, D20
     if (!vuln('AUTHZ-07') && !onlyKeys(body, ['itemId', 'mode'])) return err(res, 400, 'unexpected field');
     if (!['guided', 'exam'].includes(body.mode)) return err(res, 400, 'mode must be guided or exam');
     const r = visibleItem(body.itemId, c); if (!r) return err(res, 404, 'not found');

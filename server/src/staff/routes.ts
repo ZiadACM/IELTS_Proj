@@ -11,7 +11,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function staffRoutes(
   fastify: FastifyInstance,
-  { auth, db, clock }: { auth: Auth; db: Pool; clock: Clock },
+  { auth, db, clock, contentDir }: { auth: Auth; db: Pool; clock: Clock; contentDir: string },
 ) {
   const contentStaffOnly = requireStaffRole(auth, db, ['content_author', 'content_reviewer']);
   const reviewerOnly = requireStaffRole(auth, db, ['content_reviewer']);
@@ -37,7 +37,7 @@ export async function staffRoutes(
       },
     },
     async (request, reply) => {
-      const result = await importItem(db, request.body.item, callerId(request), clock.now());
+      const result = await importItem(db, contentDir, request.body.item, callerId(request), clock.now());
       if (result.kind === 'invalid') return reply.code(400).send({ error: 'item_invalid', problems: result.problems });
       if (result.kind === 'published') return reply.code(409).send({ error: 'item_published' });
       return reply.code(result.kind === 'created' ? 201 : 200).send({ itemId: result.itemId, status: 'draft' });
@@ -54,7 +54,7 @@ export async function staffRoutes(
     async (request, reply) => {
       const { itemId } = request.params;
       if (!UUID.test(itemId)) return reply.code(404).send({ error: 'not_found' });
-      const result = await publishItem(db, itemId, callerId(request), clock.now());
+      const result = await publishItem(db, contentDir, itemId, callerId(request), clock.now());
       if (result.kind === 'not_found') return reply.code(404).send({ error: 'not_found' });
       if (result.kind === 'already_published') return reply.code(409).send({ error: 'item_published' });
       if (result.kind === 'invalid') return reply.code(400).send({ error: 'item_invalid', problems: result.problems });

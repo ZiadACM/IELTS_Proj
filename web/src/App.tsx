@@ -11,6 +11,8 @@ import {
   type TargetBand,
   updateSettings,
 } from './api.ts';
+import { Browse, type ChosenItem } from './Browse.tsx';
+import { Player } from './Player.tsx';
 import { StaffItems } from './Staff.tsx';
 import { STRINGS, type Strings } from './strings.ts';
 
@@ -25,7 +27,9 @@ type Screen =
   | 'target-band'
   | 'home'
   | 'settings'
-  | 'staff';
+  | 'staff'
+  | 'browse'
+  | 'player';
 type SessionKind = 'guest' | 'account';
 
 // Per-browser hint of what the last session here was, so an ended session gets the right message (spec: Failure &
@@ -81,9 +85,10 @@ export function App() {
   const [settingsError, setSettingsError] = useState<Failure | null>(null);
   // Whether the server lets this account see the staff list. Only decides whether Home offers it.
   const [isStaff, setIsStaff] = useState(false);
+  const [chosenItem, setChosenItem] = useState<ChosenItem | null>(null);
   const language = settings.interfaceLanguage;
   const t = STRINGS[language];
-  const signedIn = screen === 'target-band' || screen === 'home' || screen === 'settings' || screen === 'staff';
+  const signedIn = ['target-band', 'home', 'settings', 'staff', 'browse', 'player'].includes(screen);
 
   const startedSession = (kind: SessionKind) => {
     setSessionEnded(null);
@@ -225,6 +230,9 @@ export function App() {
           <section className="panel">
             <h1>{t.homeTitle}</h1>
             <p>{t.homeEmpty}</p>
+            <button type="button" className="primary" onClick={() => setScreen('browse')}>
+              {t.browseMaps}
+            </button>
             <button type="button" onClick={() => setScreen('settings')}>
               {t.settings}
             </button>
@@ -234,6 +242,26 @@ export function App() {
               </button>
             )}
           </section>
+        )}
+        {screen === 'browse' && (
+          <Browse
+            t={t}
+            onOpen={(item) => {
+              setChosenItem(item);
+              setScreen('player');
+            }}
+            onBack={() => setScreen('home')}
+            onSessionGone={sessionGone}
+          />
+        )}
+        {screen === 'player' && chosenItem && (
+          <Player
+            t={t}
+            itemId={chosenItem.itemId}
+            mapNumber={chosenItem.mapNumber}
+            onBack={() => setScreen('browse')}
+            onSessionGone={sessionGone}
+          />
         )}
         {screen === 'staff' && <StaffItems t={t} onBack={() => setScreen('home')} onSessionGone={sessionGone} />}
         {screen === 'settings' && (

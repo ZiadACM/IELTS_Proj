@@ -1,9 +1,39 @@
-/* Placeholder frame only; the real layout is planned with `impeccable shape` before UI tickets (spec, Screens).
+/* Masar's visual world: Boarding Pass (ticket 07; surface brief web/.impeccable/surfaces/src-player-tsx.md).
+   Night-teal stub for identity, light pass stock for the work, saffron for time only, teal-green for done.
    Logical properties only (CODING_STANDARDS 4.2). */
+
+@font-face {
+  /* Barlow Condensed 600, Latin only (SIL Open Font License, fonts/OFL.txt): numerals and map codes. Arabic text falls
+     back to the system face glyph by glyph. */
+  font-family: "Barlow Condensed";
+  font-weight: 600;
+  font-display: swap;
+  src: url("./fonts/barlow-condensed-600-latin.woff2") format("woff2");
+}
+
 :root {
-  font-family: system-ui, "Segoe UI", "Noto Sans Arabic", sans-serif;
-  color: #1a1a1a;
-  background: #ffffff;
+  --night: #0e2a3b;
+  --night-soft: #2c4a5c;
+  --on-night: #f4f6f8;
+  --on-night-muted: #b7c6d0;
+  --stock: #f4f6f8;
+  --panel: #ffffff;
+  --ink: #0e2a3b;
+  --ink-muted: #41596a;
+  --hairline: #d5dde3;
+  --saffron: #e8a33d;
+  --saffron-track: #e3e8ec;
+  --done: #1f6f5c;
+  --error: #a3271c;
+  --focus: #0b5cad;
+  --font-ui: system-ui, "Segoe UI", "Noto Sans Arabic", "Geeza Pro", sans-serif;
+  --font-code: "Barlow Condensed", var(--font-ui);
+  --radius: 8px;
+
+  font-family: var(--font-ui);
+  color: var(--ink);
+  background: var(--stock);
+  accent-color: var(--night);
 }
 
 * {
@@ -14,6 +44,26 @@ body {
   margin: 0;
 }
 
+::selection {
+  background: #f6d9a8;
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* App header: the top of the night-teal stub. */
 .app-header {
   display: flex;
   align-items: center;
@@ -21,7 +71,8 @@ body {
   gap: 1rem;
   padding-block: 0.5rem;
   padding-inline: 1rem;
-  border-block-end: 1px solid #d0d0d0;
+  color: var(--on-night);
+  background: var(--night);
 }
 
 .app-name {
@@ -34,24 +85,27 @@ body {
   min-inline-size: 44px;
   padding-inline: 1rem;
   font: inherit;
-  color: inherit;
-  background: #ffffff;
-  border: 1px solid #5c5c5c;
-  border-radius: 6px;
+  color: var(--on-night);
+  background: transparent;
+  border: 1px solid #5d7686;
+  border-radius: var(--radius);
   cursor: pointer;
 }
 
-.app-header button:focus-visible {
-  outline: 3px solid #0b57d0;
-  outline-offset: 2px;
+.app-header button:hover {
+  background: var(--night-soft);
+}
+
+.app-header :focus-visible {
+  outline-color: var(--saffron);
 }
 
 .app-main {
-  padding: 1rem;
+  padding-block: 1rem 2.5rem;
+  padding-inline: 1rem;
 }
 
-/* Ticket 04 screens: onboarding, target band, Home placeholder, Settings. Plain and accessible; the design pass
-   (impeccable shape, critique, audit) comes with ticket 07. */
+/* Shared form screens (onboarding, sign-in, settings, staff). */
 .panel {
   display: flex;
   flex-direction: column;
@@ -59,11 +113,17 @@ body {
   gap: 1rem;
   max-inline-size: 32rem;
   margin-inline: auto;
+  padding: 1.25rem;
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
 }
 
-.panel h1 {
+.panel h1,
+.page-head h1 {
   margin: 0;
   font-size: 1.5rem;
+  line-height: 1.3;
 }
 
 .panel p {
@@ -93,13 +153,13 @@ body {
   padding-inline: 0.75rem;
   font: inherit;
   color: inherit;
-  background: #ffffff;
-  border: 1px solid #5c5c5c;
-  border-radius: 6px;
+  background: var(--panel);
+  border: 1px solid #6b7f8c;
+  border-radius: var(--radius);
 }
 
 .hint {
-  color: #4a4a4a;
+  color: var(--ink-muted);
   font-size: 0.875rem;
   min-block-size: 1.4em;
 }
@@ -121,42 +181,63 @@ body {
 
 .notice {
   padding: 0.75rem;
-  border-inline-start: 4px solid #0b57d0;
-  background: #eef3fc;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--stock);
 }
 
 .error {
-  color: #a50e0e;
+  color: var(--error);
   font-weight: 600;
 }
 
-.panel button,
-.band-choices button {
+button {
   min-block-size: 44px;
   min-inline-size: 44px;
   padding-inline: 1rem;
   font: inherit;
-  color: inherit;
-  background: #ffffff;
-  border: 1px solid #5c5c5c;
-  border-radius: 6px;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid #6b7f8c;
+  border-radius: var(--radius);
   cursor: pointer;
 }
 
-.panel button.primary {
-  color: #ffffff;
-  background: #0b57d0;
-  border-color: #0b57d0;
+button:hover {
+  background: #e9eef2;
 }
 
-.panel button:disabled {
+button.primary {
+  font-weight: 600;
+  color: var(--on-night);
+  background: var(--night);
+  border-color: var(--night);
+}
+
+button.primary:hover {
+  background: var(--night-soft);
+}
+
+button:disabled {
   cursor: not-allowed;
-  opacity: 0.7;
+  opacity: 0.6;
 }
 
-.panel button.link {
+button.link,
+button.quiet {
+  background: transparent;
   border-color: transparent;
+}
+
+button.link {
   text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+button.quiet {
+  color: var(--ink-muted);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
 }
 
 .band-choices {
@@ -170,16 +251,10 @@ body {
 }
 
 .band-choices button {
-  font-size: 1.125rem;
+  font-family: var(--font-code);
+  font-size: 1.375rem;
 }
 
-.panel :focus-visible,
-.check input:focus-visible {
-  outline: 3px solid #0b57d0;
-  outline-offset: 2px;
-}
-
-/* Settings: account section (ticket 05) */
 .account {
   gap: 1rem;
   align-items: flex-start;
@@ -198,7 +273,7 @@ body {
   inline-size: 100%;
 }
 
-/* Staff item list (ticket 06). Plain on purpose: the design pass is ticket 07. */
+/* Staff item list (ticket 06). */
 .staff .problems {
   margin: 0.5rem 0 0;
   padding-inline-start: 1.25rem;
@@ -212,7 +287,6 @@ body {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
   inline-size: 100%;
 }
 
@@ -222,7 +296,7 @@ body {
   align-items: center;
   gap: 0.25rem 0.75rem;
   padding-block: 0.75rem;
-  border-block-end: 1px solid currentColor;
+  border-block-end: 1px dashed var(--hairline);
 }
 
 .item-id {
@@ -232,8 +306,418 @@ body {
 
 .item-meta {
   inline-size: 100%;
+  color: var(--ink-muted);
 }
 
 .item-status {
   font-weight: 600;
+}
+
+.item-status.published {
+  color: var(--done);
+}
+
+/* Browse: maps grouped by difficulty tier, each one a pass stub. */
+.browse {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  max-inline-size: 60rem;
+  margin-inline: auto;
+}
+
+.page-head p {
+  margin: 0.5rem 0 0;
+  max-inline-size: 38rem;
+  line-height: 1.6;
+  color: var(--ink-muted);
+}
+
+.tier h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.0625rem;
+}
+
+.tier-empty {
+  margin: 0;
+  padding: 0.875rem 1rem;
+  color: var(--ink-muted);
+  border: 1px dashed #a9b7c1;
+  border-radius: var(--radius);
+}
+
+.stubs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.75rem;
+}
+
+.stub-card {
+  display: flex;
+  align-items: stretch;
+  inline-size: 100%;
+  min-block-size: 4.75rem;
+  padding: 0;
+  text-align: start;
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  overflow: hidden;
+  transition:
+    transform 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stub-card:hover {
+  background: var(--panel);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgb(14 42 59 / 0.12);
+}
+
+.stub-number {
+  display: grid;
+  place-items: center;
+  flex: 0 0 4.5rem;
+  font-family: var(--font-code);
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--on-night);
+  background: var(--night);
+  border-inline-end: 2px dashed var(--stock);
+}
+
+.stub-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.125rem;
+  padding: 0.625rem 0.875rem;
+  color: var(--ink-muted);
+  font-size: 0.9375rem;
+}
+
+.stub-name {
+  font-weight: 700;
+  font-size: 1.0625rem;
+  color: var(--ink);
+}
+
+/* Player: stub, perforation, status strip, map, questions. */
+.app-main:has(.player) {
+  padding-block-start: 0;
+  padding-inline: 0;
+}
+
+.player {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "stub"
+    "perforation"
+    "unofficial"
+    "status"
+    "map"
+    "questions"
+    "back";
+  max-inline-size: 72rem;
+  margin-inline: auto;
+}
+
+.stub {
+  grid-area: stub;
+  padding-block: 0.25rem 0.875rem;
+  padding-inline: 1rem;
+  color: var(--on-night);
+  background: var(--night);
+}
+
+.stub h1 {
+  margin: 0;
+  font-family: var(--font-code);
+  font-size: 2.25rem;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.stub-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+  margin: 0.375rem 0 0;
+}
+
+.stub-facts div {
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+}
+
+.stub-facts dt {
+  font-size: 0.8125rem;
+  color: var(--on-night-muted);
+}
+
+.stub-facts dd {
+  margin: 0;
+  font-family: var(--font-code);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.stub-facts dd.stub-mode {
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+}
+
+.perforation {
+  grid-area: perforation;
+  block-size: 10px;
+  background: radial-gradient(circle at 50% 100%, var(--stock) 4px, var(--night) 4.5px) 0 0 / 16px 10px repeat-x;
+}
+
+.unofficial {
+  grid-area: unofficial;
+  margin: 0;
+  padding-block: 0.5rem 0;
+  padding-inline: 1rem;
+  font-size: 0.8125rem;
+  color: var(--ink-muted);
+}
+
+.status-strip {
+  grid-area: status;
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-block: 0.5rem;
+  margin-inline: 1rem;
+  padding: 0.75rem 0.875rem;
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  box-shadow: 0 2px 8px rgb(14 42 59 / 0.08);
+}
+
+.status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.status-text {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.status-note {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ink-muted);
+}
+
+/* Saffron means time: reading time empties, the first listen fills. */
+.time-line {
+  block-size: 4px;
+  background: var(--saffron-track);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.time-line span {
+  display: block;
+  block-size: 100%;
+  background: var(--saffron);
+  transform: scaleX(var(--share, 0));
+  transition: transform 250ms linear;
+}
+
+[dir="rtl"] .time-line span {
+  transform-origin: right;
+}
+
+[dir="ltr"] .time-line span {
+  transform-origin: left;
+}
+
+.done {
+  justify-content: flex-start;
+}
+
+.done-mark {
+  inline-size: 2rem;
+  block-size: 2rem;
+  flex-shrink: 0;
+}
+
+.done-mark circle {
+  fill: var(--done);
+}
+
+.done-mark path {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.map-frame {
+  grid-area: map;
+  margin-inline: 1rem;
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.item-map {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+}
+
+.item-map .landmark-mark {
+  fill: var(--ink-muted);
+}
+
+.item-map .landmark-label {
+  fill: var(--ink-muted);
+  stroke: var(--panel);
+  stroke-linejoin: round;
+  paint-order: stroke;
+  font-family: system-ui, "Segoe UI", sans-serif;
+}
+
+.item-map .target circle {
+  fill: var(--panel);
+  stroke: var(--night);
+}
+
+.item-map .target text {
+  fill: var(--night);
+  text-anchor: middle;
+  font-family: var(--font-code);
+  font-weight: 600;
+}
+
+.questions {
+  grid-area: questions;
+  margin-block: 1rem 0;
+  margin-inline: 1rem;
+}
+
+.questions h2 {
+  margin: 0;
+  font-size: 1.0625rem;
+}
+
+.questions p {
+  margin: 0.25rem 0 0.75rem;
+  color: var(--ink-muted);
+}
+
+.questions ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+}
+
+.questions li {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  min-block-size: 3.25rem;
+  padding-inline: 1rem;
+  border-block-end: 1px dashed var(--hairline);
+}
+
+.questions li:last-child {
+  border-block-end: 0;
+}
+
+.question-number {
+  font-family: var(--font-code);
+  font-size: 1.375rem;
+  font-weight: 600;
+  min-inline-size: 1.25rem;
+}
+
+.question-prompt {
+  flex: 1;
+  font-size: 1rem;
+}
+
+.player .back {
+  grid-area: back;
+  justify-self: start;
+  margin: 1rem;
+}
+
+@media (min-width: 56rem) {
+  .app-header {
+    padding-inline: max(1rem, calc((100% - 67.5rem) / 2));
+  }
+
+  .player {
+    max-inline-size: none;
+    grid-template-columns: minmax(1.25rem, 1fr) minmax(0, 44rem) 22rem minmax(1.25rem, 1fr);
+    grid-template-areas:
+      "stub stub stub stub"
+      "perforation perforation perforation perforation"
+      ". unofficial unofficial ."
+      ". map status ."
+      ". map questions ."
+      ". back back .";
+    grid-template-rows: auto auto auto auto 1fr auto;
+    column-gap: 1.25rem;
+  }
+
+  /* The stub runs full width under the header; its text lines up with the content column. */
+  .stub {
+    padding-inline: max(1rem, calc((100% - 67.5rem) / 2));
+  }
+
+  .map-frame,
+  .status-strip,
+  .questions,
+  .unofficial {
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+
+  .status-strip {
+    position: static;
+    padding-inline: 0.875rem;
+  }
+
+  .map-frame {
+    margin-block-start: 0.5rem;
+    align-self: start;
+  }
+
+  .player .back {
+    margin-inline: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stub-card,
+  .time-line span {
+    transition: none;
+  }
+
+  .stub-card:hover {
+    transform: none;
+  }
 }

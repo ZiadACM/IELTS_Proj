@@ -1,0 +1,20 @@
+
+Running 15 tests using 1 worker
+
+  ✓   1 [phone-chromium] › e2e/browse-player.spec.ts:56:1 › Browse shows the three tiers; a tier with no maps says so (440ms)
+  ✓   2 [phone-chromium] › e2e/browse-player.spec.ts:72:1 › reading time counts down, can be skipped, and the first listen cannot be paused or sought (5.9s)
+  ✓   3 [phone-chromium] › e2e/browse-player.spec.ts:121:1 › switching language during the first listen keeps the audio playing (3.5s)
+  ✓   4 [phone-chromium] › e2e/browse-player.spec.ts:137:1 › audio that cannot load shows a message and a retry (450ms)
+  ✓   5 [phone-chromium] › e2e/browse-player.spec.ts:146:1 › a map that is no longer published says so and leads back to Browse (492ms)
+  ✓   6 [phone-webkit] › e2e/browse-player.spec.ts:56:1 › Browse shows the three tiers; a tier with no maps says so (616ms)
+  ✓   7 [phone-webkit] › e2e/browse-player.spec.ts:72:1 › reading time counts down, can be skipped, and the first listen cannot be paused or sought (5.9s)
+  ✓   8 [phone-webkit] › e2e/browse-player.spec.ts:121:1 › switching language during the first listen keeps the audio playing (3.6s)
+  ✓   9 [phone-webkit] › e2e/browse-player.spec.ts:137:1 › audio that cannot load shows a message and a retry (469ms)
+  ✓  10 [phone-webkit] › e2e/browse-player.spec.ts:146:1 › a map that is no longer published says so and leads back to Browse (523ms)
+  ✓  11 [desktop-chromium] › e2e/browse-player.spec.ts:56:1 › Browse shows the three tiers; a tier with no maps says so (385ms)
+  ✓  12 [desktop-chromium] › e2e/browse-player.spec.ts:72:1 › reading time counts down, can be skipped, and the first listen cannot be paused or sought (5.9s)
+  ✓  13 [desktop-chromium] › e2e/browse-player.spec.ts:121:1 › switching language during the first listen keeps the audio playing (3.5s)
+  ✓  14 [desktop-chromium] › e2e/browse-player.spec.ts:137:1 › audio that cannot load shows a message and a retry (419ms)
+  ✓  15 [desktop-chromium] › e2e/browse-player.spec.ts:146:1 › a map that is no longer published says so and leads back to Browse (439ms)
+
+  15 passed (33.6s)

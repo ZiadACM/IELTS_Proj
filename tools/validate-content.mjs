@@ -8,6 +8,11 @@ import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 
 const TOL = 20; // map units: how close the destination event must be to its answer target
+// Letter discs must not touch on the smallest supported phone (owner decision 2026-11-18, ticket 07). The player draws
+// each disc 15 px in radius with a 1 px half-stroke (web/src/ItemMap.tsx) and fits the map plus 40 map units of margin
+// on each side into 326 px at a 360 px wide screen; a 4 px gap keeps neighbouring letters readable as separate places.
+const PHONE_MAP_PX = 326, MAP_MARGIN = 40, MIN_DISC_GAP_PX = 2 * (15 + 1) + 4;
+export const minTargetDistance = (mapWidth) => (MIN_DISC_GAP_PX * (mapWidth + 2 * MAP_MARGIN)) / PHONE_MAP_PX;
 // The five prototype micro-skills (spec: .scratch/listening-map-prototype/spec.md).
 export const MICRO_SKILLS = Object.freeze(['spatial-language', 'following-sequence', 'landmark-vs-answer', 'corrections-distractors', 'orientation']);
 const PURPOSES = new Set(['standard', 'first-challenge', 'skill-challenge', 'pilot-transfer']);
@@ -56,6 +61,12 @@ export function validateItem(item, { assetsDir = null, requirePublished = false 
   dup(map.landmarks, 'id', 'landmark id'); dup(map.targets, 'label', 'target label');
   for (const l of map.landmarks) if (!isStr(l.id) || !isStr(l.label) || !inBounds(l)) err('landmark', `landmark ${JSON.stringify(l?.id)} needs id, label and x/y inside the ${map.width}x${map.height} map`);
   for (const t of map.targets) if (!isStr(t.label) || !inBounds(t)) err('target', `target ${JSON.stringify(t?.label)} needs a label and x/y inside the map`);
+  const minGap = minTargetDistance(map.width);
+  const placed = map.targets.filter((t) => isStr(t?.label) && inBounds(t));
+  for (let i = 0; i < placed.length; i++) for (let j = i + 1; j < placed.length; j++) {
+    const [a, b] = [placed[i], placed[j]], d = Math.hypot(a.x - b.x, a.y - b.y);
+    if (d < minGap) err('target-spacing', `targets ${a.label} and ${b.label} are ${Math.round(d)} map units apart; at least ${Math.ceil(minGap)} keeps their letters apart on a 360 px phone`);
+  }
   const landmarks = new Map(map.landmarks.map((l) => [l.id, l]));
   const targets = new Map(map.targets.map((t) => [t.label, t]));
 

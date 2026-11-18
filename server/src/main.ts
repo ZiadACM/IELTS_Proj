@@ -11,6 +11,7 @@ const WEB_ROOT = path.resolve(import.meta.dirname, '../../web/dist');
 const config = loadConfig(process.env);
 if (!existsSync(path.join(WEB_ROOT, 'index.html')))
   throw new Error(`web app not built: ${WEB_ROOT} (run npm run build)`);
+if (!existsSync(config.contentDir)) throw new Error(`CONTENT_DIR does not exist: ${config.contentDir}`);
 
 const db = new pg.Pool({ connectionString: config.databaseUrl });
 const applied = await migrate(db);

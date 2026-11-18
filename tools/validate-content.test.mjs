@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { validateItem } from './validate-content.mjs';
+import { minTargetDistance, validateItem } from './validate-content.mjs';
 
 const base = () => JSON.parse(readFileSync(new URL('./fixtures/map-001.valid.json', import.meta.url), 'utf8'));
 const codes = (item, opts) => validateItem(item, opts).map((e) => e.code);
@@ -55,6 +55,8 @@ const cases = [
   ['purpose', (i) => { i.purpose = 'first-challenge'; }],
   ['purpose', (i) => { i.purpose = 'pilot-transfer'; }],
   ['audio-source', (i) => { delete i.audio.source; }],
+  // letter discs too close to read apart on a 360 px phone (owner decision 2026-11-18, ticket 07)
+  ['target-spacing', (i) => { i.map.targets[1].x = i.map.targets[0].x; i.map.targets[1].y = i.map.targets[0].y + 50; }],
   ['audio-source', (i) => { i.validation = { status: 'published', reviewer: 'A. Reviewer', reviewedOn: '2026-11-15' }; }],
 ];
 for (const [code, mutate] of cases) {
@@ -99,3 +101,10 @@ test('a skill challenge naming one of its skills passes', () => { const i = base
 test('a tier 2 first challenge with 3 questions passes', () => { const i = base(); i.tier = 2; i.purpose = 'first-challenge'; assert.deepEqual(codes(i), []); });
 test('a tier 2 pilot transfer item passes', () => { const i = base(); i.tier = 2; i.purpose = 'pilot-transfer'; assert.deepEqual(codes(i), []); });
 test('markup in an Arabic explanation is rejected', () => { const i = base(); i.questions[0].explanation.ar = 'شرح <b>عريض</b>'; assert.ok(codes(i).includes('markup')); });
+
+// Letter spacing (ticket 07): the limit itself, not just a far-off case.
+test('two letters exactly at the minimum distance pass; one unit closer fails', () => {
+  const at = (gap) => { const i = base(); const [a, b] = i.map.targets; b.x = a.x; b.y = a.y + gap; return codes(i).includes('target-spacing'); };
+  const min = Math.ceil(minTargetDistance(base().map.width));
+  assert.equal(at(min), false); assert.equal(at(min - 1), true);
+});

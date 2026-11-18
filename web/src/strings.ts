@@ -1,6 +1,10 @@
 // Interface text. Arabic needs a fluent reader's check before the pilot (CODING_STANDARDS 3.5).
 // Placeholder product name (spec: "Masar" until the owner picks the final name).
-import type { InterfaceLanguage } from './api.ts';
+import type { InterfaceLanguage, MicroSkill } from './api.ts';
+
+// A map's code: its difficulty tier and its number within the tier, "2·01" (owner decision 2026-11-18, ticket 07).
+// Wrapped in a left-to-right isolate, so Arabic text keeps it as "2·01" and does not reorder it to "01·2".
+export const mapCode = (tier: number, n: number) => `\u2066${tier}·${String(n).padStart(2, '0')}\u2069`;
 
 const en = {
   appName: 'Masar',
@@ -29,7 +33,7 @@ const en = {
   skip: 'Skip for now',
 
   homeTitle: 'Home',
-  homeEmpty: 'Your first challenge will appear here soon.',
+  homeEmpty: 'Your recommended next step will appear here. For now, choose any map.',
   settings: 'Settings',
   backHome: 'Back to Home',
 
@@ -104,6 +108,43 @@ const en = {
   itemTier: 'Difficulty tier',
   itemQuestions: 'Questions',
   staffNotAllowed: 'Your account does not have a staff role.',
+
+  browseMaps: 'Browse maps',
+  browseTitle: 'Maps',
+  browseIntro:
+    'Choose any map. You get 30 seconds to read the questions, then the first listen plays straight through.',
+  tierHeading: (tier: number) => `Difficulty tier ${tier}`,
+  tierEmpty: 'No maps at this difficulty tier yet.',
+  mapName: (tier: number, n: number) => `Map ${mapCode(tier, n)}`,
+  questionCount: (n: number) => (n === 1 ? '1 question' : `${n} questions`),
+  skillChallenge: 'Skill challenge',
+  microSkills: {
+    'spatial-language': 'Spatial language',
+    'following-sequence': 'Following a sequence',
+    'landmark-vs-answer': 'Landmark vs answer place',
+    'corrections-distractors': 'Corrections and distractors',
+    orientation: 'Orientation',
+  } as Record<MicroSkill, string>,
+  guidedPractice: 'Guided practice',
+  unofficial: 'Unofficial IELTS-style practice',
+  backToMaps: 'Back to maps',
+  itemNotFound: 'This map is not available any more.',
+  readingCountdown: (seconds: number) => `Audio starts in ${seconds} s`,
+  readingAnnounce: (seconds: number) =>
+    `Reading time: ${seconds} seconds. Read the questions; the audio starts by itself.`,
+  startNow: 'Start now',
+  firstListenRule: 'The first listen plays straight through. It cannot be paused.',
+  playing: (position: string, duration: string) => `Playing · ${position} of ${duration}`,
+  playingAnnounce: 'First listen playing.',
+  audioLoading: 'Loading audio…',
+  audioBlocked: 'Your browser needs a tap before it plays audio.',
+  startAudio: 'Start the audio',
+  audioFailed: 'The audio stopped. Check your connection, then try again: it continues where it stopped.',
+  audioNotLoaded: 'The audio could not load. Check your connection, then try again.',
+  firstListenDone: 'First listen finished.',
+  answeringLater: 'Answering is not available in this version yet.',
+  mapLabel: 'Map with lettered places',
+  questionsIntro: 'Which letter on the map is each place?',
 };
 
 const ar: typeof en = {
@@ -133,7 +174,7 @@ const ar: typeof en = {
   skip: 'تخطَّ الآن',
 
   homeTitle: 'الرئيسية',
-  homeEmpty: 'سيظهر تحدّيك الأول هنا قريبًا.',
+  homeEmpty: 'ستظهر هنا خطوتك التالية المقترحة. اختر الآن أي خريطة.',
   settings: 'الإعدادات',
   backHome: 'العودة إلى الرئيسية',
 
@@ -205,6 +246,41 @@ const ar: typeof en = {
   itemTier: 'فئة الصعوبة',
   itemQuestions: 'الأسئلة',
   staffNotAllowed: 'حسابك لا يملك دور موظف.',
+
+  browseMaps: 'تصفّح الخرائط',
+  browseTitle: 'الخرائط',
+  browseIntro: 'اختر أي خريطة. لديك 30 ثانية لقراءة الأسئلة، ثم يُشغَّل الاستماع الأول دون توقف.',
+  tierHeading: (tier: number) => `فئة الصعوبة ${tier}`,
+  tierEmpty: 'لا توجد خرائط في فئة الصعوبة هذه بعد.',
+  mapName: (tier: number, n: number) => `خريطة ${mapCode(tier, n)}`,
+  questionCount: (n: number) => (n === 1 ? 'سؤال واحد' : n === 2 ? 'سؤالان' : n <= 10 ? `${n} أسئلة` : `${n} سؤالًا`),
+  skillChallenge: 'تحدّي مهارة',
+  microSkills: {
+    'spatial-language': 'لغة المكان والاتجاه',
+    'following-sequence': 'تتبّع التسلسل',
+    'landmark-vs-answer': 'المَعلم أم مكان الإجابة',
+    'corrections-distractors': 'التصحيحات والمشتّتات',
+    orientation: 'تحديد الاتجاه',
+  },
+  guidedPractice: 'تدريب موجّه',
+  unofficial: 'تدريب غير رسمي بأسلوب IELTS',
+  backToMaps: 'العودة إلى الخرائط',
+  itemNotFound: 'هذه الخريطة لم تعد متاحة.',
+  readingCountdown: (seconds: number) => `يبدأ الصوت بعد ${seconds} ث`,
+  readingAnnounce: (seconds: number) => `وقت القراءة: ${seconds} ثانية. اقرأ الأسئلة، وسيبدأ الصوت تلقائيًا.`,
+  startNow: 'ابدأ الآن',
+  firstListenRule: 'يُشغَّل الاستماع الأول دون توقف، ولا يمكن إيقافه مؤقتًا.',
+  playing: (position: string, duration: string) => `قيد التشغيل · ${position} من ${duration}`,
+  playingAnnounce: 'بدأ الاستماع الأول.',
+  audioLoading: 'جارٍ تحميل الصوت…',
+  audioBlocked: 'يحتاج متصفحك إلى لمسة قبل تشغيل الصوت.',
+  startAudio: 'ابدأ الصوت',
+  audioFailed: 'توقّف الصوت. تحقّق من اتصالك ثم حاول مرة أخرى، وسيُكمل من حيث توقّف.',
+  audioNotLoaded: 'تعذّر تحميل الصوت. تحقّق من اتصالك ثم حاول مرة أخرى.',
+  firstListenDone: 'انتهى الاستماع الأول.',
+  answeringLater: 'الإجابة غير متاحة في هذه النسخة بعد.',
+  mapLabel: 'خريطة عليها أماكن مرقّمة بأحرف',
+  questionsIntro: 'ما الحرف على الخريطة لكل مكان؟',
 };
 
 export const STRINGS = { ar, en } as const satisfies Record<InterfaceLanguage, typeof en>;

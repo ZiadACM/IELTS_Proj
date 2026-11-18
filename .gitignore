@@ -30,3 +30,9 @@ Desktop.ini
 
 # Build output
 dist/
+
+# Playwright results and traces (browser tests)
+web/e2e/.results/
+
+# Real IELTS map examples kept for reference only (third-party copyright; never committed)
+docs/content/images/

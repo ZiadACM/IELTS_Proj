@@ -316,7 +316,7 @@
         "learner": "allow",
         "content_author": "allow",
         "content_reviewer": "allow",
-        "admin": "allow"
+        "admin": "deny"
       }
     },
     {

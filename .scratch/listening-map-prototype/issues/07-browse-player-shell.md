@@ -151,3 +151,6 @@ Answers to the open questions (the agent's recommendations): (1) maps are named 
 **NOT VERIFIED:**
 - The PR needs the `protected-change-approved` label (agents do not set labels).
 - The live AUTHZ-06 suite was not rerun for the admin cell (it stops at ticket 08).
+
+### 2026-11-18, agent (follow-up: first challenge spacing, owner instruction)
+The owner asked for this. `first-challenge-001.json` now has target C at x=840 (it was 820), and its destination event `e7` is at the same point. C and D are now 120 apart, which meets `target-spacing`. Cue c9 still matches: "at the far end of that corridor, on your right, past the meeting room". Result: `node tools/validate-content.mjs docs/content/items/first-challenge-001.json --assets docs/content` says OK. **NOT VERIFIED:** the owner should look at the moved map on a phone and re-confirm the review (`validation.reviewedOn` is unchanged). The dev database still holds copies seeded before this change.

@@ -30,3 +30,4 @@ Protected files changed with the owner's approval (D24, given in this session): 
   - `npm run typecheck`: clean;
   - biome on the changed files: clean;
   - `check-protected-files.mjs` result in the comment below.
+- `check-protected-files.mjs --branch agent/map-format-v2` on commit f3ad339: FAIL, as expected (lists `tools/validate-content.mjs` and `tools/validate-content.test.mjs`). The owner approved the change in this session (D24); on GitHub the owner adds the `protected-change-approved` label to the pull request.

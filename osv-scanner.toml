@@ -1,0 +1,7 @@
+# OSV-Scanner exceptions. Each entry needs the owner's approval, a reason, and an expiry date.
+# Recorded in docs/security/test-plan.md, row DEP-01. Only the listed advisory is ignored; everything else still fails CI.
+
+[[IgnoredVulns]]
+id = "GHSA-fc5q-39xc-vjpf"
+ignoreUntil = 2026-12-18T00:00:00Z
+reason = "picomatch <=4.0.7 ReDoS via repeated extglobs; no patched release exists (4.0.7 is the latest, checked 2026-11-18). Reached only through vite (web dev/build tool): glob patterns come from our own config, never from users; the server does not depend on picomatch. Owner-approved 2026-11-18 (prototype, no release planned). On expiry: upgrade if a fix exists, otherwise ask the owner again."

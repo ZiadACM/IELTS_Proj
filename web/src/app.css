@@ -425,6 +425,7 @@ button.quiet {
     "status"
     "map"
     "questions"
+    "transcript"
     "back";
   max-inline-size: 72rem;
   margin-inline: auto;
@@ -817,6 +818,232 @@ button.question-number:disabled {
   fill: var(--map-paper);
 }
 
+/* Ticket 09: review. Right and wrong are told apart by a drawn mark and a word, never by colour alone (CS 4.4).
+   Teal-green is for right; a wrong answer stays in ink. Saffron stays for time. */
+.review-head {
+  position: static;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.review-head h2 {
+  margin: 0;
+  font-size: 1.0625rem;
+}
+
+.review-score {
+  margin: 0;
+  font-family: var(--font-code);
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.review-questions li {
+  display: block;
+  padding: 0;
+}
+
+.review-questions li.open {
+  background: var(--stock);
+}
+
+button.review-row {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  inline-size: 100%;
+  min-block-size: 3.5rem;
+  padding-block: 0.5rem;
+  padding-inline: 1rem;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.review-questions li.open .question-number {
+  color: var(--on-night);
+  background: var(--night);
+  border-radius: 4px;
+  text-align: center;
+}
+
+.review-row-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-inline-size: 0;
+}
+
+.verdict {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--ink-muted);
+}
+
+.verdict-word {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.verdict.right .verdict-word {
+  color: var(--done);
+}
+
+.verdict-mark {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  margin-inline-end: -0.375rem;
+}
+
+.verdict.wrong .verdict-mark circle {
+  fill: var(--panel);
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.verdict.right .verdict-mark circle {
+  fill: var(--done);
+  stroke: var(--done);
+}
+
+.verdict.wrong .verdict-mark path,
+.verdict.right .verdict-mark path {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.verdict.right .verdict-mark path {
+  stroke: #ffffff;
+}
+
+.verdict .letter {
+  font-family: var(--font-code);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.why {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding-block: 0 1rem;
+  padding-inline: 1rem;
+}
+
+.questions .why p {
+  margin: 0;
+  max-inline-size: 65ch;
+  color: var(--ink);
+  line-height: 1.55;
+}
+
+.questions .why p[dir="ltr"] {
+  text-align: left;
+}
+
+.questions .why .why-ar {
+  font-size: 1.0625rem;
+  line-height: 1.8;
+}
+
+.transcript {
+  grid-area: transcript;
+  margin-block: 1rem 0;
+  margin-inline: 1rem;
+}
+
+.transcript h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.0625rem;
+}
+
+.transcript ol {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0;
+  text-align: left;
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+}
+
+.transcript li {
+  padding-block: 0.375rem;
+  padding-inline: 1rem;
+  line-height: 1.55;
+  max-inline-size: 75ch;
+}
+
+.transcript li.named {
+  max-inline-size: none;
+  background: var(--stock);
+  box-shadow:
+    inset 0 1px 0 var(--hairline),
+    inset 0 -1px 0 var(--hairline);
+}
+
+.named-tag {
+  display: inline-block;
+  margin-inline-end: 0.5rem;
+  padding-inline: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--on-night);
+  background: var(--night);
+  border-radius: 4px;
+}
+
+/* Map marks: the correct letter framed solid with a tick; the learner's letter framed dashed with a tag. */
+.item-map .review-marks .correct-frame {
+  fill: none;
+  stroke: var(--done);
+}
+
+.item-map .review-marks .yours-frame {
+  fill: none;
+  stroke: var(--ink);
+  stroke-dasharray: 4 3;
+}
+
+.item-map .review-marks .tick circle {
+  fill: var(--done);
+  stroke: var(--panel);
+}
+
+.item-map .review-marks .tick path {
+  fill: none;
+  stroke: #ffffff;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.item-map .review-marks .yours-tag rect.tag {
+  fill: var(--night);
+  stroke: none;
+}
+
+.item-map .review-marks .yours-tag text.tag {
+  fill: var(--on-night);
+  stroke: none;
+  text-anchor: middle;
+  font-family: var(--font-ui);
+  font-weight: 700;
+}
+
 .player .back {
   grid-area: back;
   justify-self: start;
@@ -837,8 +1064,9 @@ button.question-number:disabled {
       ". unofficial unofficial ."
       ". map status ."
       ". map questions ."
+      ". transcript questions ."
       ". back back .";
-    grid-template-rows: auto auto auto auto 1fr auto;
+    grid-template-rows: auto auto auto auto auto 1fr auto;
     column-gap: 1.25rem;
   }
 
@@ -850,6 +1078,7 @@ button.question-number:disabled {
   .map-frame,
   .status-strip,
   .questions,
+  .transcript,
   .unofficial {
     margin-inline: 0;
     padding-inline: 0;

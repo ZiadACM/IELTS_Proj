@@ -1,0 +1,86 @@
+✔ LEAK-02: guided attempt, every deliveryPayload endpoint before submit carries no answer data (254.64875ms)
+✖ LEAK-03: exam attempt, no answer data or transcript before submit, including after answers are saved and after the deadline (97.520292ms)
+✖ LEAK-04: review endpoints before submit are refused in both modes and carry no canary (173.399958ms)
+✔ LEAK-05: page assets carry no canary and no source map is served (3.046833ms)
+ℹ scanned 2 asset(s) linked from /. A canary only appears in a bundle built with the content bank: for the real app, also run this after a build that includes seeded items (otherwise this part is NOT VERIFIED).
+✔ LEAK-06: attempt ids are random (>=122 bits) and guessed review URLs return 404 (197.367625ms)
+✖ LEAK-07: error responses (bad answer format, wrong mode, unknown question) carry no answer data (90.970834ms)
+✖ LEAK-08 (positive control): after submit, review carries the authored route and transcript (192.193666ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 3
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1043.243167
+
+✖ failing tests:
+
+test at tests/security/lib/live.mjs:27:3
+✖ LEAK-03: exam attempt, no answer data or transcript before submit, including after answers are saved and after the deadline (97.520292ms)
+  AssertionError [ERR_ASSERTION]: learner-a could not start a exam attempt on p1: 501 {"error":"not_implemented","ticket":"13-independent-check"}
+      at env.startAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/answer-key-leakage.test.mjs:31:15
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ LEAK-04: review endpoints before submit are refused in both modes and carry no canary (173.399958ms)
+  AssertionError [ERR_ASSERTION]: learner-exam could not start a exam attempt on p1: 501 {"error":"not_implemented","ticket":"13-independent-check"}
+      at env.startAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/answer-key-leakage.test.mjs:48:17
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ LEAK-07: error responses (bad answer format, wrong mode, unknown question) carry no answer data (90.970834ms)
+  AssertionError [ERR_ASSERTION]: learner-a could not start a exam attempt on p1: 501 {"error":"not_implemented","ticket":"13-independent-check"}
+      at env.startAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/answer-key-leakage.test.mjs:101:16
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ LEAK-08 (positive control): after submit, review carries the authored route and transcript (192.193666ms)
+  AssertionError [ERR_ASSERTION]: learner-exam could not start a exam attempt on p1: 501 {"error":"not_implemented","ticket":"13-independent-check"}
+      at env.startAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/answer-key-leakage.test.mjs:130:17
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

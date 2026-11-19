@@ -1,7 +1,8 @@
 // The item player shell (ticket 07; spec stories 14 to 16, 20, 21, 30): reading time (skippable in guided practice),
 // the map and question list, and the first listen, which plays straight through with no pause or seek. The
 // uninterrupted first listen is an interaction rule in the client (spec: Audio delivery). Ticket 08 adds answering
-// (a tap on the map or a letter from the list, spec stories 17 to 19), saving as the learner goes, and submit.
+// (a tap on the map or a letter from the list, spec stories 17 to 19), saving as the learner goes, and submit. Ticket
+// 09 opens the review in place after submit.
 import { type CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import {
   type Attempt,
@@ -12,6 +13,7 @@ import {
   submitAttempt,
 } from './api.ts';
 import { ItemMap } from './ItemMap.tsx';
+import { Review } from './Review.tsx';
 import { type SaveState, stateAfter, useSavedAnswers } from './saved-answers.ts';
 import type { Strings } from './strings.ts';
 
@@ -114,6 +116,7 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
     'idle',
   );
   const [result, setResult] = useState<Attempt | null>(null);
+  const [reviewing, setReviewing] = useState(false);
 
   const play = useCallback(async () => {
     const audio = audioRef.current;
@@ -257,174 +260,182 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
       <div className="perforation" aria-hidden="true" />
       <p className="unofficial">{t.unofficial}</p>
 
-      <div className="status-strip" ref={strip} tabIndex={-1}>
-        {submitted && (
-          <div className="status-row done">
-            <svg className="done-mark" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="11" />
-              <path d="M7 12.5l3.2 3.2L17 9" />
-            </svg>
-            <div>
-              <p className="status-text">{t.submitted}</p>
-              <p className="status-note">{t.reviewLater}</p>
-            </div>
-          </div>
-        )}
-        {ended && (
-          <div className="status-row">
-            <p className="status-text error" role="alert">
-              {ended === 'closed' ? t.saveClosed : t.saveRejected}
-            </p>
-            <button type="button" className="primary" onClick={onBack}>
-              {t.backToMaps}
-            </button>
-          </div>
-        )}
-        {!locked && phase === 'reading' && (
-          <>
-            <div className="status-row">
-              <p className="status-text">{t.readingCountdown(secondsLeft)}</p>
-              <button type="button" className="primary" onClick={beginListening}>
-                {t.startNow}
-              </button>
-            </div>
-            <div className="time-line" aria-hidden="true">
-              <span style={lineShare(share(secondsLeft, item.readingTimeSec))} />
-            </div>
-          </>
-        )}
-        {!locked && phase === 'listening' && audioState === 'blocked' && (
-          <div className="status-row">
-            <p className="status-text">{t.audioBlocked}</p>
-            <button type="button" className="primary" onClick={play}>
-              {t.startAudio}
-            </button>
-          </div>
-        )}
-        {!locked && phase === 'listening' && audioState === 'failed' && (
-          <div className="status-row">
-            <p className="status-text error" role="alert">
-              {furthest.current > 0 ? t.audioFailed : t.audioNotLoaded}
-            </p>
-            <button type="button" className="primary" onClick={retry}>
-              {t.retry}
-            </button>
-          </div>
-        )}
-        {!locked && phase === 'listening' && audioState !== 'blocked' && audioState !== 'failed' && (
-          <>
-            <p className="status-text">
-              {audioState === 'playing'
-                ? t.playing(minutesSeconds(position), minutesSeconds(duration))
-                : t.audioLoading}
-            </p>
-            <div className="time-line" aria-hidden="true">
-              <span style={lineShare(share(position, duration))} />
-            </div>
-            <p className="status-note">{t.firstListenRule}</p>
-          </>
-        )}
-        {!locked && phase === 'finished' && (
-          <div className="status-row done">
-            <svg className="done-mark" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="11" />
-              <path d="M7 12.5l3.2 3.2L17 9" />
-            </svg>
-            <div>
-              <p className="status-text">{t.firstListenDone}</p>
-              <p className="status-note">{t.checkThenSubmit}</p>
-            </div>
-          </div>
-        )}
-      </div>
-      <p className="visually-hidden" role="status">
-        {announcement}
-      </p>
-
-      <div className="map-frame">
-        {!locked && activeIndex >= 0 && (
-          <p className="map-prompt" aria-hidden="true">
-            {t.tapToAnswer(activeIndex + 1)}
-          </p>
-        )}
-        <ItemMap
-          map={item.map}
-          label={t.mapLabel}
-          picked={!locked && activeQuestion ? answers[activeQuestion] : undefined}
-          onPick={locked ? undefined : pickOnMap}
-        />
-      </div>
-
-      <section className="questions" aria-labelledby="questions-title">
-        <h2 id="questions-title">{t.itemQuestions}</h2>
-        <p>{t.questionsIntro}</p>
-        <ol>
-          {item.questions.map((q, index) => {
-            const active = !locked && q.id === activeQuestion;
-            return (
-              <li key={q.id} className={active ? 'active' : undefined}>
-                {/* Picks which question a tap on the map answers. */}
-                <button
-                  type="button"
-                  className="question-number"
-                  aria-pressed={active}
-                  aria-label={t.answerOnMap(index + 1)}
-                  disabled={locked}
-                  onClick={() => setActiveQuestion(q.id)}
-                >
-                  {index + 1}
+      {reviewing ? (
+        <Review t={t} item={item} attemptId={attempt.id} onSessionGone={onSessionGone} />
+      ) : (
+        <>
+          <div className="status-strip" ref={strip} tabIndex={-1}>
+            {submitted && (
+              <div className="status-row done">
+                <svg className="done-mark" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="11" />
+                  <path d="M7 12.5l3.2 3.2L17 9" />
+                </svg>
+                <div>
+                  <p className="status-text">{t.submitted}</p>
+                </div>
+                <button type="button" className="primary" onClick={() => setReviewing(true)}>
+                  {t.seeReview}
                 </button>
-                <span className="question-prompt" dir="ltr" lang="en" id={`prompt-${q.id}`}>
-                  {q.prompt}
-                </span>
-                <select
-                  className="answer-choice"
-                  aria-label={t.answerFor(index + 1)}
-                  aria-describedby={`prompt-${q.id}`}
-                  value={answers[q.id] ?? ''}
-                  disabled={locked}
-                  onFocus={() => setActiveQuestion(q.id)}
-                  onChange={(e) => setAnswer(q.id, e.target.value || null)}
-                >
-                  <option value="">{t.noAnswer}</option>
-                  {item.map.targets.map((target) => (
-                    <option key={target.label} value={target.label}>
-                      {target.label}
-                    </option>
-                  ))}
-                </select>
-              </li>
-            );
-          })}
-        </ol>
-        {!locked && (
-          <div className="submit-area">
-            {/* Quiet while saving works (no announcement on every answer); a save that fails is announced. */}
-            {saveState === 'saved' || saveState === 'saving' ? (
-              <p className="save-line">{saveLine(t, saveState)}</p>
-            ) : (
-              <p className="save-line error" role="alert">
-                {saveLine(t, saveState)}
-              </p>
+              </div>
             )}
-            {unanswered > 0 && <p className="status-note">{t.unanswered(unanswered)}</p>}
-            {(submitState === 'offline' || submitState === 'failed') && (
-              <p className="error" role="alert">
-                {submitState === 'offline' ? t.submitOffline : t.submitFailed}
-              </p>
+            {ended && (
+              <div className="status-row">
+                <p className="status-text error" role="alert">
+                  {ended === 'closed' ? t.saveClosed : t.saveRejected}
+                </p>
+                <button type="button" className="primary" onClick={onBack}>
+                  {t.backToMaps}
+                </button>
+              </div>
             )}
-            {/* Submit waits for the end of the first listen, so a stray tap cannot end the attempt early (owner,
-                2026-11-19). */}
-            {phase === 'finished' ? (
-              <button type="button" className="primary" disabled={submitState === 'submitting'} onClick={submit}>
-                {submitState === 'submitting' ? t.submitting : t.submitAnswers}
-              </button>
-            ) : (
-              <p className="status-note">{t.submitAfterListen}</p>
+            {!locked && phase === 'reading' && (
+              <>
+                <div className="status-row">
+                  <p className="status-text">{t.readingCountdown(secondsLeft)}</p>
+                  <button type="button" className="primary" onClick={beginListening}>
+                    {t.startNow}
+                  </button>
+                </div>
+                <div className="time-line" aria-hidden="true">
+                  <span style={lineShare(share(secondsLeft, item.readingTimeSec))} />
+                </div>
+              </>
+            )}
+            {!locked && phase === 'listening' && audioState === 'blocked' && (
+              <div className="status-row">
+                <p className="status-text">{t.audioBlocked}</p>
+                <button type="button" className="primary" onClick={play}>
+                  {t.startAudio}
+                </button>
+              </div>
+            )}
+            {!locked && phase === 'listening' && audioState === 'failed' && (
+              <div className="status-row">
+                <p className="status-text error" role="alert">
+                  {furthest.current > 0 ? t.audioFailed : t.audioNotLoaded}
+                </p>
+                <button type="button" className="primary" onClick={retry}>
+                  {t.retry}
+                </button>
+              </div>
+            )}
+            {!locked && phase === 'listening' && audioState !== 'blocked' && audioState !== 'failed' && (
+              <>
+                <p className="status-text">
+                  {audioState === 'playing'
+                    ? t.playing(minutesSeconds(position), minutesSeconds(duration))
+                    : t.audioLoading}
+                </p>
+                <div className="time-line" aria-hidden="true">
+                  <span style={lineShare(share(position, duration))} />
+                </div>
+                <p className="status-note">{t.firstListenRule}</p>
+              </>
+            )}
+            {!locked && phase === 'finished' && (
+              <div className="status-row done">
+                <svg className="done-mark" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="11" />
+                  <path d="M7 12.5l3.2 3.2L17 9" />
+                </svg>
+                <div>
+                  <p className="status-text">{t.firstListenDone}</p>
+                  <p className="status-note">{t.checkThenSubmit}</p>
+                </div>
+              </div>
             )}
           </div>
-        )}
-      </section>
+          <p className="visually-hidden" role="status">
+            {announcement}
+          </p>
+
+          <div className="map-frame">
+            {!locked && activeIndex >= 0 && (
+              <p className="map-prompt" aria-hidden="true">
+                {t.tapToAnswer(activeIndex + 1)}
+              </p>
+            )}
+            <ItemMap
+              map={item.map}
+              label={t.mapLabel}
+              picked={!locked && activeQuestion ? answers[activeQuestion] : undefined}
+              onPick={locked ? undefined : pickOnMap}
+            />
+          </div>
+
+          <section className="questions" aria-labelledby="questions-title">
+            <h2 id="questions-title">{t.itemQuestions}</h2>
+            <p>{t.questionsIntro}</p>
+            <ol>
+              {item.questions.map((q, index) => {
+                const active = !locked && q.id === activeQuestion;
+                return (
+                  <li key={q.id} className={active ? 'active' : undefined}>
+                    {/* Picks which question a tap on the map answers. */}
+                    <button
+                      type="button"
+                      className="question-number"
+                      aria-pressed={active}
+                      aria-label={t.answerOnMap(index + 1)}
+                      disabled={locked}
+                      onClick={() => setActiveQuestion(q.id)}
+                    >
+                      {index + 1}
+                    </button>
+                    <span className="question-prompt" dir="ltr" lang="en" id={`prompt-${q.id}`}>
+                      {q.prompt}
+                    </span>
+                    <select
+                      className="answer-choice"
+                      aria-label={t.answerFor(index + 1)}
+                      aria-describedby={`prompt-${q.id}`}
+                      value={answers[q.id] ?? ''}
+                      disabled={locked}
+                      onFocus={() => setActiveQuestion(q.id)}
+                      onChange={(e) => setAnswer(q.id, e.target.value || null)}
+                    >
+                      <option value="">{t.noAnswer}</option>
+                      {item.map.targets.map((target) => (
+                        <option key={target.label} value={target.label}>
+                          {target.label}
+                        </option>
+                      ))}
+                    </select>
+                  </li>
+                );
+              })}
+            </ol>
+            {!locked && (
+              <div className="submit-area">
+                {/* Quiet while saving works (no announcement on every answer); a save that fails is announced. */}
+                {saveState === 'saved' || saveState === 'saving' ? (
+                  <p className="save-line">{saveLine(t, saveState)}</p>
+                ) : (
+                  <p className="save-line error" role="alert">
+                    {saveLine(t, saveState)}
+                  </p>
+                )}
+                {unanswered > 0 && <p className="status-note">{t.unanswered(unanswered)}</p>}
+                {(submitState === 'offline' || submitState === 'failed') && (
+                  <p className="error" role="alert">
+                    {submitState === 'offline' ? t.submitOffline : t.submitFailed}
+                  </p>
+                )}
+                {/* Submit waits for the end of the first listen, so a stray tap cannot end the attempt early (owner,
+                2026-11-19). */}
+                {phase === 'finished' ? (
+                  <button type="button" className="primary" disabled={submitState === 'submitting'} onClick={submit}>
+                    {submitState === 'submitting' ? t.submitting : t.submitAnswers}
+                  </button>
+                ) : (
+                  <p className="status-note">{t.submitAfterListen}</p>
+                )}
+              </div>
+            )}
+          </section>
+        </>
+      )}
 
       <button type="button" className="quiet back" onClick={onBack}>
         {t.backToMaps}

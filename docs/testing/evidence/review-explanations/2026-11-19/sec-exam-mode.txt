@@ -1,0 +1,120 @@
+✖ EXAM-02: replay requested directly in an exam attempt is refused; support usage unchanged; no audio (215.433916ms)
+✖ EXAM-03: hint requested directly in an exam attempt is refused; no hint content returned (181.860791ms)
+✖ EXAM-04: exam audio is one forward-only stream per attempt (D9) (188.803083ms)
+✖ EXAM-05: late writes are refused (or marked late) and client time fields are ignored (88.71425ms)
+✖ EXAM-06: attempt mode is immutable and no guided attempt can be opened beside an open exam (D10) (98.501208ms)
+✖ EXAM-07: no parallel exam attempts; an exam after a seen item is flagged seenBefore and not counted (D10) (183.011125ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 0
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 987.28925
+
+✖ failing tests:
+
+test at tests/security/lib/live.mjs:27:3
+✖ EXAM-02: replay requested directly in an exam attempt is refused; support usage unchanged; no audio (215.433916ms)
+  AssertionError [ERR_ASSERTION]: learner-a could not start a exam attempt on p1: 501 {"error":"not_implemented","ticket":"13-independent-check"}
+      at env.startAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async examForbiddenCase (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/exam-mode.test.mjs:27:17)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/exam-mode.test.mjs:40:20
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ EXAM-03: hint requested directly in an exam attempt is refused; no hint content returned (181.860791ms)
+  AssertionError [ERR_ASSERTION]: learner-a could not start a exam attempt on p1: 501 {"error":"not_implemented","ticket":"13-independent-check"}
+      at env.startAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async examForbiddenCase (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/exam-mode.test.mjs:27:17)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/exam-mode.test.mjs:44:20
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ EXAM-04: exam audio is one forward-only stream per attempt (D9) (188.803083ms)
+  AssertionError [ERR_ASSERTION]: learner-a could not start a exam attempt on p1: 501 {"error":"not_implemented","ticket":"13-independent-check"}
+      at env.startAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/exam-mode.test.mjs:59:17
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ EXAM-05: late writes are refused (or marked late) and client time fields are ignored (88.71425ms)
+  AssertionError [ERR_ASSERTION]: learner-a could not start a exam attempt on p1: 501 {"error":"not_implemented","ticket":"13-independent-check"}
+      at env.startAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/exam-mode.test.mjs:89:15
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ EXAM-06: attempt mode is immutable and no guided attempt can be opened beside an open exam (D10) (98.501208ms)
+  AssertionError [ERR_ASSERTION]: learner-a could not start a exam attempt on p1: 501 {"error":"not_implemented","ticket":"13-independent-check"}
+      at env.startAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/exam-mode.test.mjs:116:15
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ EXAM-07: no parallel exam attempts; an exam after a seen item is flagged seenBefore and not counted (D10) (183.011125ms)
+  AssertionError [ERR_ASSERTION]: learner-c could not start a exam attempt on p2: 501 {"error":"not_implemented","ticket":"13-independent-check"}
+      at env.startAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/exam-mode.test.mjs:142:17
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

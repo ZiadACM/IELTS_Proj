@@ -3,6 +3,7 @@
 // ATT-06; admin deny on attempt reads), D10 (one open attempt per user per item) and the owner's ticket 07 decisions
 // (07 starts guided attempts only; the independent check is ticket 13; audio comes from the content folder).
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { after, describe, test } from 'node:test';
 import { createTestApps, FIXTURE_AUDIO_BYTES } from '../test-app.ts';
 import { call, newItem, seedItem, signedIn } from '../test-callers.ts';
@@ -296,5 +297,84 @@ describe('ATT-05 POST /attempts/{attemptId}/submit', () => {
     assert.equal(next.statusCode, 201, next.body);
     assert.notEqual(next.json().id, id);
     assert.equal(next.json().seenBefore, true);
+  });
+});
+
+// Ticket 09: review (ATT-09, D6). Expected content comes from the validator fixture the test item is made from
+// (tools/fixtures/map-001.valid.json): answer key q1 C, q2 E, q3 B; answer events e5, e6, e7 named in cues c5, c6, c7;
+// its explanations, events and transcript.
+const fixture = JSON.parse(
+  readFileSync(new URL('../../../tools/fixtures/map-001.valid.json', import.meta.url), 'utf8'),
+) as {
+  events: unknown[];
+  transcript: { cues: unknown[] };
+  questions: { id: string; explanation: { en: string; ar: string } }[];
+};
+const review = (app: App, cookie: string | undefined, id: string) =>
+  call(app, 'GET', `/attempts/${id}/review`, { cookie });
+
+describe('ATT-09 GET /attempts/{attemptId}/review', () => {
+  test('after submit the owner reads the score, each answer with the correct letter, explanations, route and transcript', async () => {
+    const { app, cookie, id, itemId } = await openAttempt('guest');
+    await save(app, cookie, id, { answers: { q1: 'C', q2: 'A' } });
+    await submit(app, cookie, id);
+    const res = await review(app, cookie, id);
+    assert.equal(res.statusCode, 200, res.body);
+    const explanation = (q: string) => fixture.questions.find((x) => x.id === q)?.explanation;
+    assert.deepEqual(res.json(), {
+      attemptId: id,
+      itemId,
+      mode: 'guided',
+      score: 1,
+      questions: [
+        {
+          id: 'q1',
+          cueId: 'c5',
+          prompt: 'Reading room',
+          yourAnswer: 'C',
+          correctAnswer: 'C',
+          correct: true,
+          explanation: explanation('q1'),
+        },
+        {
+          id: 'q2',
+          cueId: 'c6',
+          prompt: 'Sports hall',
+          yourAnswer: 'A',
+          correctAnswer: 'E',
+          correct: false,
+          explanation: explanation('q2'),
+        },
+        {
+          id: 'q3',
+          cueId: 'c7',
+          prompt: 'Gift shop',
+          yourAnswer: null,
+          correctAnswer: 'B',
+          correct: false,
+          explanation: explanation('q3'),
+        },
+      ],
+      route: fixture.events,
+      transcript: fixture.transcript,
+    });
+  });
+
+  test('before submit it is refused (409) and carries no answer data (D6)', async () => {
+    const { app, cookie, id } = await openAttempt();
+    await save(app, cookie, id, { answers: { q1: 'A' } });
+    const res = await review(app, cookie, id);
+    assert.equal(res.statusCode, 409, res.body);
+    assert.deepEqual(res.json(), { error: 'attempt_open' });
+  });
+
+  test('anonymous 401; another learner 404; an admin is denied; an unknown id 404', async () => {
+    const { app, cookie, id } = await openAttempt();
+    await submit(app, cookie, id);
+    assert.equal((await review(app, undefined, id)).statusCode, 401);
+    assert.equal((await review(app, await signedIn(app, apps.db, 'learner'), id)).statusCode, 404);
+    assert.equal((await review(app, await signedIn(app, apps.db, 'admin'), id)).statusCode, 403);
+    for (const bad of ['not-an-attempt', '7b0c1a52-8f2e-4c4b-9d35-2f8a7c1e0b11'])
+      assert.equal((await review(app, cookie, bad)).statusCode, 404, bad);
   });
 });

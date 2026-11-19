@@ -92,6 +92,64 @@ function placeLabels(map: MapData, unit: number): Placed[] {
   });
 }
 
+// Review marks for one question (ticket 09). The correct letter gets a heavy frame and a tick; the learner's letter a
+// dashed frame and a tag naming it. Shape and words carry the difference, not colour alone (CS 4.4). When the learner
+// was right, one letter carries both.
+export type ReviewMarks = { yours: string | null; correct: string; yoursTag: string };
+const V1_HALF_PX = DISC_PX; // half the size of a letter: disc radius (v1) or half the box (v2, 26 px box)
+const V2_HALF_PX = 13;
+
+function Marks({ map, unit, marks }: { map: MapData; unit: number; marks: ReviewMarks }) {
+  const u = (px: number) => px * unit;
+  const at = (label: string | null) => map.targets.find((t) => t.label === label);
+  const correct = at(marks.correct);
+  const yours = at(marks.yours);
+  const half = u(map.format === 2 ? V2_HALF_PX : V1_HALF_PX);
+  const frame = (x: number, y: number, pad: number, className: string) =>
+    map.format === 2 ? (
+      <rect
+        className={className}
+        x={x - half - pad}
+        y={y - half - pad}
+        width={2 * (half + pad)}
+        height={2 * (half + pad)}
+      />
+    ) : (
+      <circle className={className} cx={x} cy={y} r={half + pad} />
+    );
+  return (
+    <g className="review-marks" strokeWidth={u(3)}>
+      {yours && yours !== correct && frame(yours.x, yours.y, u(6), 'yours-frame')}
+      {correct && (
+        <>
+          {frame(correct.x, correct.y, u(4), 'correct-frame')}
+          <g className="tick" transform={`translate(${correct.x + half + u(4)} ${correct.y - half - u(4)})`}>
+            <circle r={u(9)} strokeWidth={u(2)} />
+            <path d={`M${-u(4)} ${u(0.5)}l${u(2.8)} ${u(2.8)}l${u(5.2)} ${-u(5.6)}`} strokeWidth={u(2)} />
+          </g>
+        </>
+      )}
+      {yours && (
+        <YoursTag x={yours.x} y={yours.y + half + u(yours === correct ? 16 : 18)} unit={unit} text={marks.yoursTag} />
+      )}
+    </g>
+  );
+}
+
+// The tag naming the learner's letter: a solid label below it, so it stays readable over a landmark name.
+function YoursTag({ x, y, unit, text }: { x: number; y: number; unit: number; text: string }) {
+  const u = (px: number) => px * unit;
+  const width = u(text.length * 7 + 12);
+  return (
+    <g className="yours-tag">
+      <rect className="tag" x={x - width / 2} y={y - u(9)} width={width} height={u(18)} rx={u(3)} />
+      <text className="tag" x={x} y={y} dy="0.35em" fontSize={u(LABEL_PX)}>
+        {text}
+      </text>
+    </g>
+  );
+}
+
 // `picked` is the letter shown as chosen. With `onPick`, a tap or click near a letter picks it. Tapping is for
 // pointers only: the question list's letter choice is the keyboard and screen reader path (spec: Accessibility).
 export function ItemMap({
@@ -99,11 +157,13 @@ export function ItemMap({
   label,
   picked,
   onPick,
+  marks,
 }: {
   map: MapData;
   label: string;
   picked?: string;
   onPick?: (letter: string) => void;
+  marks?: ReviewMarks;
 }) {
   const ref = useRef<SVGSVGElement>(null);
   const [width, setWidth] = useState(0);
@@ -159,6 +219,7 @@ export function ItemMap({
         ) : (
           <V1Map map={map} unit={unit} labels={labels} picked={picked} />
         )}
+        {marks && <Marks map={map} unit={unit} marks={marks} />}
       </svg>
     </>
   );

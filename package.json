@@ -10,7 +10,7 @@
     "build": "npm run build -w web",
     "lint": "biome check .",
     "typecheck": "tsc -p server && tsc -p web",
-    "test": "npm test -w server",
+    "test": "npm test -w server && npm test -w web",
     "test:browser": "playwright test -c web/playwright.config.ts"
   },
   "devDependencies": {

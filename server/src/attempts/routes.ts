@@ -1,5 +1,5 @@
-// Attempts (spec: Attempts, Audio delivery; matrix ATT-01, ATT-03 to ATT-06). Ticket 07 starts guided practice and
-// serves its audio; ticket 08 saves answers and submits, scored here. Replays and hints are ticket 11, the independent
+// Attempts (spec: Attempts, Audio delivery, Review; matrix ATT-01, ATT-03 to ATT-06, ATT-09). Ticket 07 starts guided
+// practice and serves its audio; ticket 08 saves answers and submits, scored here; ticket 09 serves the review. Replays and hints are ticket 11, the independent
 // check (mode `exam`) 13.
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { Pool } from 'pg';
@@ -42,9 +42,20 @@ const attemptOf = (r: Row) => ({
   ...(r.status === 'submitted' ? { score: r.score } : {}),
 });
 
-// The parts of an item's content that check and score answers: its questions with their answer letters, and its map
-// letters.
-type ItemContent = { questions: { id: string; answerLabel: string }[]; map: { targets: { label: string }[] } };
+// The parts of an item's content that check and score answers (its questions with their answer letters, and its map
+// letters), and what review shows besides (prompts, explanations, the authored route and the transcript).
+type ItemContent = {
+  questions: {
+    id: string;
+    prompt: string;
+    answerLabel: string;
+    eventId: string;
+    explanation: { en: string; ar: string };
+  }[];
+  map: { targets: { label: string }[] };
+  events: { id: string; cueId: string }[];
+  transcript: { cues: unknown[] };
+};
 
 // The item content behind an attempt. Read by id, not through the published-only lookup: the attempt was started on a
 // published item and is scored against the same content. Null if the item row is gone.
@@ -198,6 +209,41 @@ export async function attemptRoutes(
       );
       if (!rows[0]) return reply.code(409).send({ error: 'attempt_submitted' });
       return attemptOf(rows[0]);
+    },
+  );
+
+  // ATT-09: the review of the caller's own submitted attempt (D6: never before submit, in any mode). It is the only
+  // learner route that carries the answer key, route, transcript and explanations (CS 2.2).
+  fastify.get<{ Params: { attemptId: string } }>(
+    '/attempts/:attemptId/review',
+    { preValidation: attemptUser },
+    async (request, reply) => {
+      const attempt = await ownAttempt(request);
+      if (!attempt) return reply.code(404).send({ error: 'not_found' });
+      if (attempt.status !== 'submitted') return reply.code(409).send({ error: 'attempt_open' });
+      const content = await itemContentOf(db, attempt.itemId);
+      if (!content) return reply.code(404).send({ error: 'not_found' });
+      return {
+        attemptId: attempt.id,
+        itemId: attempt.itemId,
+        mode: attempt.mode,
+        score: attempt.score,
+        questions: content.questions.map((q) => {
+          const yourAnswer = attempt.answers[q.id] ?? null;
+          return {
+            id: q.id,
+            // The transcript line where the answer place is named (its answer event's cue).
+            cueId: content.events.find((e) => e.id === q.eventId)?.cueId ?? null,
+            prompt: q.prompt,
+            yourAnswer,
+            correctAnswer: q.answerLabel,
+            correct: yourAnswer === q.answerLabel,
+            explanation: { en: q.explanation.en, ar: q.explanation.ar },
+          };
+        }),
+        route: content.events,
+        transcript: content.transcript,
+      };
     },
   );
 

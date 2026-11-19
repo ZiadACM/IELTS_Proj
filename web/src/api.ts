@@ -178,3 +178,27 @@ export const saveAnswers = (attemptId: string, answers: Answers) =>
   call<Attempt>('PUT', `/attempts/${encodeURIComponent(attemptId)}/answers`, { answers });
 export const submitAttempt = (attemptId: string) =>
   call<Attempt>('POST', `/attempts/${encodeURIComponent(attemptId)}/submit`, {});
+
+// Ticket 09: the review of the caller's own submitted attempt (D6). The only learner reply that carries the answer key,
+// route, transcript and explanations.
+export type ReviewQuestion = {
+  id: string;
+  cueId: string | null; // the transcript line where the answer place is named
+  prompt: string;
+  yourAnswer: string | null;
+  correctAnswer: string;
+  correct: boolean;
+  explanation: { en: string; ar: string };
+};
+export type TranscriptCue = { id: string; start: number; end: number; text: string };
+export type Review = {
+  attemptId: string;
+  itemId: string;
+  mode: 'guided' | 'exam';
+  score: number;
+  questions: ReviewQuestion[];
+  route: unknown[]; // Answer Replay, ticket 10
+  transcript: { cues: TranscriptCue[] };
+};
+export const getReview = (attemptId: string) =>
+  call<Review>('GET', `/attempts/${encodeURIComponent(attemptId)}/review`);

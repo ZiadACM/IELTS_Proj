@@ -189,7 +189,6 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
         ? submitState
         : null;
   const locked = submitted || ended !== null;
-  const resultLine = (score: number | undefined) => `${t.submitted} ${t.scoreOf(score ?? 0, item.questions.length)}`;
   const unanswered = item.questions.filter((q) => !answers[q.id]).length;
   const activeIndex = item.questions.findIndex((q) => q.id === activeQuestion);
 
@@ -217,7 +216,8 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
     stopListening();
     setResult(res.value);
     setSubmitState('idle');
-    setAnnouncement(resultLine(res.value.score));
+    // The score waits for Review (spec story 31, ticket 09); submit only confirms the answers were sent (owner, 2026-11-19).
+    setAnnouncement(t.submitted);
     strip.current?.focus();
   };
   // An attempt that is closed (submitted or refused for good) ends the listen: the audio stops, reading time cannot start
@@ -265,7 +265,7 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
               <path d="M7 12.5l3.2 3.2L17 9" />
             </svg>
             <div>
-              <p className="status-text">{resultLine(result.score)}</p>
+              <p className="status-text">{t.submitted}</p>
               <p className="status-note">{t.reviewLater}</p>
             </div>
           </div>
@@ -413,9 +413,15 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
                 {submitState === 'offline' ? t.submitOffline : t.submitFailed}
               </p>
             )}
-            <button type="button" className="primary" disabled={submitState === 'submitting'} onClick={submit}>
-              {submitState === 'submitting' ? t.submitting : t.submitAnswers}
-            </button>
+            {/* Submit waits for the end of the first listen, so a stray tap cannot end the attempt early (owner,
+                2026-11-19). */}
+            {phase === 'finished' ? (
+              <button type="button" className="primary" disabled={submitState === 'submitting'} onClick={submit}>
+                {submitState === 'submitting' ? t.submitting : t.submitAnswers}
+              </button>
+            ) : (
+              <p className="status-note">{t.submitAfterListen}</p>
+            )}
           </div>
         )}
       </section>

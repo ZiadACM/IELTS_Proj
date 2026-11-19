@@ -2,7 +2,7 @@
 // v1: landmarks as small labelled squares, lettered places as large discs (size carries the hierarchy, not
 // colour). Map content is English and stays left-to-right inside the Arabic frame. Text is sized in screen pixels, so
 // labels stay readable on a 360 px phone without pinch-zoom.
-import { useEffect, useRef, useState } from 'react';
+import { type MouseEvent, useEffect, useRef, useState } from 'react';
 import type { MapData } from './api.ts';
 import { MapV2 } from './MapV2.tsx';
 
@@ -10,6 +10,7 @@ const LABEL_PX = 12;
 const LETTER_PX = 15;
 const DISC_PX = 15; // radius: a 30 px disc
 const SQUARE_PX = 8;
+const PICK_RADIUS_PX = 22; // a tap this close to a letter picks it: a 44 px target (CS 4.3) unless letters are closer
 const MARGIN = 40; // map units around the edge, so labels near it are not cut
 const LABEL_FONT = `${LABEL_PX}px system-ui, "Segoe UI", sans-serif`; // matches .item-map .landmark text
 
@@ -91,7 +92,19 @@ function placeLabels(map: MapData, unit: number): Placed[] {
   });
 }
 
-export function ItemMap({ map, label }: { map: MapData; label: string }) {
+// `picked` is the letter shown as chosen. With `onPick`, a tap or click near a letter picks it. Tapping is for
+// pointers only: the question list's letter choice is the keyboard and screen reader path (spec: Accessibility).
+export function ItemMap({
+  map,
+  label,
+  picked,
+  onPick,
+}: {
+  map: MapData;
+  label: string;
+  picked?: string;
+  onPick?: (letter: string) => void;
+}) {
   const ref = useRef<SVGSVGElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -109,6 +122,20 @@ export function ItemMap({ map, label }: { map: MapData; label: string }) {
   const v2 = map.format === 2;
   const labels = v2 ? [] : placeLabels(map, unit);
 
+  // The letter nearest the tap, if it is within reach. Nearest wins, so two close letters never both claim a tap.
+  const pick = (event: MouseEvent<SVGSVGElement>) => {
+    const toMap = ref.current?.getScreenCTM()?.inverse();
+    if (!onPick || !toMap) return;
+    const at = new DOMPoint(event.clientX, event.clientY).matrixTransform(toMap);
+    const reach = PICK_RADIUS_PX * unit;
+    let nearest: { label: string; distance: number } | null = null;
+    for (const t of map.targets) {
+      const distance = Math.hypot(t.x - at.x, t.y - at.y);
+      if (distance <= reach && (!nearest || distance < nearest.distance)) nearest = { label: t.label, distance };
+    }
+    if (nearest) onPick(nearest.label);
+  };
+
   return (
     <>
       {v2 && map.title && (
@@ -116,22 +143,28 @@ export function ItemMap({ map, label }: { map: MapData; label: string }) {
           {map.title}
         </p>
       )}
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: tapping the map is a pointer shortcut; the keyboard answers with each question's letter list (spec: Accessibility). */}
       <svg
         ref={ref}
-        className="item-map"
+        className={onPick ? 'item-map pickable' : 'item-map'}
         viewBox={`${-MARGIN} ${-MARGIN} ${viewWidth} ${map.height + 2 * MARGIN}`}
         role="img"
         aria-label={label}
         direction="ltr"
         lang="en"
+        onClick={onPick && pick}
       >
-        {v2 ? <MapV2 map={map} unit={unit} /> : <V1Map map={map} unit={unit} labels={labels} />}
+        {v2 ? (
+          <MapV2 map={map} unit={unit} picked={picked} />
+        ) : (
+          <V1Map map={map} unit={unit} labels={labels} picked={picked} />
+        )}
       </svg>
     </>
   );
 }
 
-function V1Map({ map, unit, labels }: { map: MapData; unit: number; labels: Placed[] }) {
+function V1Map({ map, unit, labels, picked }: { map: MapData; unit: number; labels: Placed[]; picked?: string }) {
   return (
     <>
       {map.landmarks.map((l) => (
@@ -145,7 +178,7 @@ function V1Map({ map, unit, labels }: { map: MapData; unit: number; labels: Plac
         />
       ))}
       {map.targets.map((t) => (
-        <g key={t.label} className="target">
+        <g key={t.label} className={t.label === picked ? 'target picked' : 'target'}>
           <circle cx={t.x} cy={t.y} r={DISC_PX * unit} strokeWidth={2 * unit} />
           <text x={t.x} y={t.y} dy="0.35em" fontSize={LETTER_PX * unit}>
             {t.label}

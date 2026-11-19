@@ -733,6 +733,90 @@ button.quiet {
   font-size: 1rem;
 }
 
+/* Ticket 08: answering. The number button picks the question a map tap answers; the list is the keyboard path. */
+.questions li.active {
+  /* The filled number button marks the active question; saffron stays for time only (surface brief). */
+  background: var(--stock);
+}
+
+button.question-number {
+  min-inline-size: 44px;
+  padding: 0;
+  color: var(--ink);
+  background: transparent;
+  border-color: var(--hairline);
+}
+
+button.question-number[aria-pressed="true"] {
+  color: var(--on-night);
+  background: var(--night);
+  border-color: var(--night);
+}
+
+/* Once answering is over the number is printed, not pressed: no button edge, muted ink (7.3:1 on white). */
+button.question-number:disabled {
+  opacity: 1;
+  color: var(--ink-muted);
+  border-color: transparent;
+  cursor: default;
+}
+
+.answer-choice {
+  min-block-size: 44px;
+  min-inline-size: 5.5rem;
+  padding-inline: 0.5rem;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  background: var(--panel);
+  border: 1px solid #6b7f8c;
+  border-radius: var(--radius);
+}
+
+.submit-area {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+  margin-block-start: 0.75rem;
+}
+
+.submit-area p {
+  margin: 0;
+}
+
+.save-line {
+  color: var(--ink-muted);
+  font-size: 0.875rem;
+}
+
+.save-line.error {
+  color: var(--error);
+}
+
+.map-prompt {
+  margin: 0;
+  padding: 0.5rem 0.75rem 0;
+  font-size: 0.875rem;
+  color: var(--ink-muted);
+}
+
+.item-map.pickable {
+  cursor: pointer;
+}
+
+/* The chosen letter is inverted: a shape change, not only a colour (CS 4.4). */
+.item-map .target.picked circle,
+.item-map .map-v2 .letter-box.picked rect {
+  fill: var(--map-ink);
+  stroke: var(--map-ink);
+}
+
+.item-map .target.picked text,
+.item-map .map-v2 .letter-box.picked text {
+  fill: var(--map-paper);
+}
+
 .player .back {
   grid-area: back;
   justify-self: start;

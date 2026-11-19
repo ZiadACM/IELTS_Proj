@@ -58,7 +58,7 @@ function doorLine(r: Rect, door: NonNullable<MapArea['door']>, half: number) {
   return { x1: x, y1: y - half, x2: x, y2: y + half };
 }
 
-export function MapV2({ map, unit }: { map: MapData; unit: number }) {
+export function MapV2({ map, unit, picked }: { map: MapData; unit: number; picked?: string }) {
   const areas = map.areas ?? [];
   const byId = new Map(areas.map((a) => [a.id, a]));
   const ofKind = (kind: string) =>
@@ -181,7 +181,7 @@ export function MapV2({ map, unit }: { map: MapData; unit: number }) {
       )}
 
       {map.targets.map((t) => (
-        <g key={t.label} className="letter-box">
+        <g key={t.label} className={t.label === picked ? 'letter-box picked' : 'letter-box'}>
           <rect
             x={t.x - u(BOX_PX) / 2}
             y={t.y - u(BOX_PX) / 2}

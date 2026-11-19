@@ -19,8 +19,10 @@ export type Failure =
   | 'item_invalid'
   | 'item_published'
   | 'not_found'
+  | 'attempt_submitted'
   | 'offline'
-  | 'error';
+  | 'rejected' // any other 4xx: the request itself is wrong, so sending it again cannot help
+  | 'error'; // 5xx or an unreadable reply: worth trying again
 // A content-checker finding (code and English message from tools/validate-content.mjs), shown to staff as is.
 export type ItemProblem = { code: string; msg: string };
 export type Result<T> = { ok: true; value: T } | { ok: false; failure: Failure; problems?: ItemProblem[] };
@@ -49,8 +51,10 @@ async function call<T>(method: string, url: string, body?: object): Promise<Resu
   if (json?.error === 'already_signed_in') return { ok: false, failure: 'already_signed_in' };
   if (json?.error === 'item_invalid') return { ok: false, failure: 'item_invalid', problems: json.problems ?? [] };
   if (json?.error === 'item_published') return { ok: false, failure: 'item_published' };
+  if (json?.error === 'attempt_submitted') return { ok: false, failure: 'attempt_submitted' };
   if (res.status === 403) return { ok: false, failure: 'forbidden' };
   if (res.status === 404) return { ok: false, failure: 'not_found' };
+  if (res.status >= 400 && res.status < 500) return { ok: false, failure: 'rejected' };
   return { ok: false, failure: 'error' };
 }
 
@@ -154,9 +158,23 @@ export type DeliveredItem = {
   map: MapData;
   questions: { id: string; prompt: string }[];
 };
-export type Attempt = { id: string; itemId: string; mode: 'guided' | 'exam'; status: 'open' | 'submitted' };
+// A question id and the map letter chosen for it.
+export type Answers = Record<string, string>;
+export type Attempt = {
+  id: string;
+  itemId: string;
+  mode: 'guided' | 'exam';
+  status: 'open' | 'submitted';
+  answers: Answers;
+  score?: number; // only once submitted; the server computes it
+};
 
 export const listItems = () => call<{ items: CatalogueItem[] }>('GET', '/items');
 export const getItem = (itemId: string) => call<DeliveredItem>('GET', `/items/${encodeURIComponent(itemId)}`);
 export const startGuidedPractice = (itemId: string) => call<Attempt>('POST', '/attempts', { itemId, mode: 'guided' });
 export const attemptAudioUrl = (attemptId: string) => `/attempts/${encodeURIComponent(attemptId)}/audio`;
+// Ticket 08: the whole answer set replaces the saved one; submit sends nothing and the server scores.
+export const saveAnswers = (attemptId: string, answers: Answers) =>
+  call<Attempt>('PUT', `/attempts/${encodeURIComponent(attemptId)}/answers`, { answers });
+export const submitAttempt = (attemptId: string) =>
+  call<Attempt>('POST', `/attempts/${encodeURIComponent(attemptId)}/submit`, {});

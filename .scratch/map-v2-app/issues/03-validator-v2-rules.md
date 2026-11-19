@@ -4,7 +4,7 @@
 
 **Blocked by:** none. **Protected files** (`tools/validate-content.mjs`, its tests, `tools/fixtures/**`): needs the owner's explicit approval in the session that builds it.
 
-**Status:** ready-for-human (built on `agent/map-v2-app`; owner reviews the protected-file change)
+**Status:** done (merged to `main` in PR #20; status line updated 2026-11-19)
 
 Spec: `../spec.md`
 

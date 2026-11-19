@@ -1,0 +1,49 @@
+
+> test:browser
+> playwright test -c web/playwright.config.ts
+
+
+Running 39 tests using 1 worker
+
+  ✓   1 [phone-chromium] › web/e2e/answer-submit.spec.ts:32:1 › a tap on the map and the letter list answer, change and save; offline answers are re-sent; submit is scored on the server (826ms)
+  ✓   2 [phone-chromium] › web/e2e/answer-submit.spec.ts:95:1 › a score the browser sends with submit is refused; the stored score is the server’s own (521ms)
+  ✓   3 [phone-chromium] › web/e2e/answer-submit.spec.ts:116:1 › submit while offline says so and keeps the answers; it works once back online (568ms)
+  ✓   4 [phone-chromium] › web/e2e/answer-submit.spec.ts:134:3 › a save refused with 409 stops saving and says why (6.5s)
+  ✓   5 [phone-chromium] › web/e2e/answer-submit.spec.ts:134:3 › a save refused with 400 stops saving and says why (6.5s)
+  ✓   6 [phone-chromium] › web/e2e/answer-submit.spec.ts:156:1 › a submit refused because the attempt was already submitted says so, not "try again" (531ms)
+  ✓   7 [phone-chromium] › web/e2e/browse-player.spec.ts:9:1 › Browse shows the three tiers; a tier with no maps says so (454ms)
+  ✓   8 [phone-chromium] › web/e2e/browse-player.spec.ts:25:1 › reading time counts down, can be skipped, and the first listen cannot be paused or sought (5.9s)
+  ✓   9 [phone-chromium] › web/e2e/browse-player.spec.ts:75:1 › switching language during the first listen keeps the audio playing (3.6s)
+  ✓  10 [phone-chromium] › web/e2e/browse-player.spec.ts:91:1 › audio that cannot load shows a message and a retry (466ms)
+  ✓  11 [phone-chromium] › web/e2e/browse-player.spec.ts:100:1 › a map that is no longer published says so and leads back to Browse (522ms)
+  ✓  12 [phone-chromium] › web/e2e/map-v2.spec.ts:65:1 › a v2 map is drawn as a floor plan, left to right inside the Arabic frame, with no sideways scroll (545ms)
+  ✓  13 [phone-chromium] › web/e2e/map-v2.spec.ts:111:1 › at 360 px the v2 map is 326 px wide (D22) and its letters stay readable (513ms)
+  ✓  14 [phone-webkit] › web/e2e/answer-submit.spec.ts:32:1 › a tap on the map and the letter list answer, change and save; offline answers are re-sent; submit is scored on the server (1.1s)
+  ✓  15 [phone-webkit] › web/e2e/answer-submit.spec.ts:95:1 › a score the browser sends with submit is refused; the stored score is the server’s own (598ms)
+  ✓  16 [phone-webkit] › web/e2e/answer-submit.spec.ts:116:1 › submit while offline says so and keeps the answers; it works once back online (616ms)
+  ✓  17 [phone-webkit] › web/e2e/answer-submit.spec.ts:134:3 › a save refused with 409 stops saving and says why (6.5s)
+  ✓  18 [phone-webkit] › web/e2e/answer-submit.spec.ts:134:3 › a save refused with 400 stops saving and says why (6.6s)
+  ✓  19 [phone-webkit] › web/e2e/answer-submit.spec.ts:156:1 › a submit refused because the attempt was already submitted says so, not "try again" (593ms)
+  ✓  20 [phone-webkit] › web/e2e/browse-player.spec.ts:9:1 › Browse shows the three tiers; a tier with no maps says so (529ms)
+  ✓  21 [phone-webkit] › web/e2e/browse-player.spec.ts:25:1 › reading time counts down, can be skipped, and the first listen cannot be paused or sought (6.0s)
+  ✓  22 [phone-webkit] › web/e2e/browse-player.spec.ts:75:1 › switching language during the first listen keeps the audio playing (3.6s)
+  ✓  23 [phone-webkit] › web/e2e/browse-player.spec.ts:91:1 › audio that cannot load shows a message and a retry (490ms)
+  ✓  24 [phone-webkit] › web/e2e/browse-player.spec.ts:100:1 › a map that is no longer published says so and leads back to Browse (558ms)
+  ✓  25 [phone-webkit] › web/e2e/map-v2.spec.ts:65:1 › a v2 map is drawn as a floor plan, left to right inside the Arabic frame, with no sideways scroll (565ms)
+  -  26 [phone-webkit] › web/e2e/map-v2.spec.ts:111:1 › at 360 px the v2 map is 326 px wide (D22) and its letters stay readable
+  ✓  27 [desktop-chromium] › web/e2e/answer-submit.spec.ts:32:1 › a tap on the map and the letter list answer, change and save; offline answers are re-sent; submit is scored on the server (742ms)
+  ✓  28 [desktop-chromium] › web/e2e/answer-submit.spec.ts:95:1 › a score the browser sends with submit is refused; the stored score is the server’s own (488ms)
+  ✓  29 [desktop-chromium] › web/e2e/answer-submit.spec.ts:116:1 › submit while offline says so and keeps the answers; it works once back online (555ms)
+  ✓  30 [desktop-chromium] › web/e2e/answer-submit.spec.ts:134:3 › a save refused with 409 stops saving and says why (6.5s)
+  ✓  31 [desktop-chromium] › web/e2e/answer-submit.spec.ts:134:3 › a save refused with 400 stops saving and says why (6.5s)
+  ✓  32 [desktop-chromium] › web/e2e/answer-submit.spec.ts:156:1 › a submit refused because the attempt was already submitted says so, not "try again" (522ms)
+  ✓  33 [desktop-chromium] › web/e2e/browse-player.spec.ts:9:1 › Browse shows the three tiers; a tier with no maps says so (467ms)
+  ✓  34 [desktop-chromium] › web/e2e/browse-player.spec.ts:25:1 › reading time counts down, can be skipped, and the first listen cannot be paused or sought (5.9s)
+  ✓  35 [desktop-chromium] › web/e2e/browse-player.spec.ts:75:1 › switching language during the first listen keeps the audio playing (3.6s)
+  ✓  36 [desktop-chromium] › web/e2e/browse-player.spec.ts:91:1 › audio that cannot load shows a message and a retry (476ms)
+  ✓  37 [desktop-chromium] › web/e2e/browse-player.spec.ts:100:1 › a map that is no longer published says so and leads back to Browse (513ms)
+  ✓  38 [desktop-chromium] › web/e2e/map-v2.spec.ts:65:1 › a v2 map is drawn as a floor plan, left to right inside the Arabic frame, with no sideways scroll (520ms)
+  -  39 [desktop-chromium] › web/e2e/map-v2.spec.ts:111:1 › at 360 px the v2 map is 326 px wide (D22) and its letters stay readable
+
+  2 skipped
+  37 passed (1.4m)

@@ -162,7 +162,7 @@ const en = {
   submitOffline: 'You cannot submit without a connection. Your answers are kept; try again when you are online.',
   submitFailed: 'Your answers could not be submitted. Try again.',
   submitted: 'Answers submitted.',
-  scoreOf: (score: number, total: number) => `You got ${score} of ${total} right.`,
+  submitAfterListen: 'You can submit once the first listen ends.',
   reviewLater: 'Review with Answer Replay is not available in this version yet.',
 };
 
@@ -318,7 +318,7 @@ const ar: typeof en = {
   submitOffline: 'لا يمكنك الإرسال دون اتصال. إجاباتك محفوظة؛ حاول مرة أخرى عند عودة الاتصال.',
   submitFailed: 'تعذّر إرسال إجاباتك. حاول مرة أخرى.',
   submitted: 'أُرسلت الإجابات.',
-  scoreOf: (score: number, total: number) => `أجبت إجابة صحيحة عن ${score} من ${total}.`,
+  submitAfterListen: 'يمكنك الإرسال بعد انتهاء الاستماع الأول.',
   reviewLater: 'المراجعة مع إعادة عرض الإجابة غير متاحة في هذه النسخة بعد.',
 };
 

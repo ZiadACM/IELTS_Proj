@@ -4,13 +4,13 @@
 
 **Blocked by:** 07 Browse and player shell
 
-**Status:** ready-for-human (built on `agent/answer-submit`; code-review and Impeccable critique/audit run 2026-11-19, fixes in; owner decisions open, see last comment)
+**Status:** ready-for-human (built on `agent/answer-submit`; code-review and Impeccable critique/audit run 2026-11-19, fixes in; owner decisions answered 2026-11-19 and built, see last comment)
 
 Spec: `../spec.md`
 
 - [x] Answer by map tap and by keyboard-operable list; both store the same answer
 - [x] Answers saved to the server as they change; unsaved state shown when offline and re-sent
-- [x] Submit scores on the server; client-sent scores are ignored
+- [x] Submit scores on the server; client-sent scores are refused (400) and only the server's score is stored (wording changed by the owner, 2026-11-19)
 - [ ] Attempt fields follow the harness contract; cross-user access cases pass for attempts
 
 ## Comments
@@ -82,3 +82,22 @@ Built on `agent/answer-submit` (from `main` after PR #20).
 - **Still open from critique:**
   - Answers already given are not shown on the map; only the active question's letter is (suggested `/impeccable shape`).
   - The submit area stacks three grey lines.
+
+### 2026-11-19, owner decisions (answered in the session) and agent
+- **1. Submit after the first listen.** Submit appears only when the first listen has ended. Until then the submit area says "You can submit once the first listen ends." (new string `submitAfterListen`, English and Arabic).
+  - Known edge: if the audio never loads, the learner cannot submit. They see the audio error with its retry, and "Back to maps".
+- **2. No score at submit.** The submit screen says only "Answers submitted." and the review-later note. The score waits for Review (spec story 31, ticket 09). It is still computed and stored on the server. The `scoreOf` string is removed.
+- **3. Wording.** The checkbox now says client-sent scores are refused. No code change.
+- **4. Two devices.** Left for ticket 12, where it is recorded.
+- **Tests:**
+  - Browser tests now finish the first listen before submitting (`finishFirstListen`: it starts the audio and marks it ended), and they check that Submit is hidden before then.
+  - Score checks read the stored attempt, not the screen.
+- **Ran:**
+  - type check clean;
+  - lint 4 warnings (from before this change);
+  - build OK;
+  - `npx playwright test`: 37 passed, 2 skipped (log `playwright-run-owner-decisions.txt`). Screenshots re-taken.
+- **NOT VERIFIED:**
+  - the new Arabic string, which needs a fluent reader;
+  - the server tests, which did not change and were not re-run for this commit;
+  - CI.

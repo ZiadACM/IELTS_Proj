@@ -14,3 +14,7 @@ Spec: `../spec.md`
 - [ ] Browse marks seen items
 
 ## Comments
+
+### 2026-11-19, from ticket 08 (owner: fix here, not in 08)
+- **Known issue:** answers that could not be sent stay on the device (`web/src/saved-answers.ts`) and win over the server's copy when the attempt is opened again. If the learner answered later on another device, the older device copy overwrites those newer answers.
+- **Fix here:** when resuming, keep the newest copy. For example, store a change time with the device copy, and have the server return when it last saved the answers.

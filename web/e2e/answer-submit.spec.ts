@@ -23,8 +23,22 @@ async function openPlayer(page: Page) {
   return { attemptId, questions: item.questions };
 }
 
-// The result line on screen (the same words also go to a hidden screen-reader announcement).
-const resultLine = (page: Page, text: string) => page.locator('.status-text', { hasText: text });
+// Submit appears only once the first listen ends. The recording is 83 s long, so the test starts it and then marks it
+// ended, as the browser does at the end of the audio.
+async function finishFirstListen(page: Page) {
+  await expect(page.getByRole('button', { name: 'أرسل الإجابات' })).toHaveCount(0);
+  await expect(page.getByText('يمكنك الإرسال بعد انتهاء الاستماع الأول.')).toBeVisible();
+  await page.getByRole('button', { name: 'ابدأ الآن' }).click();
+  await page.locator('audio').evaluate((audio: HTMLAudioElement) => {
+    audio.dispatchEvent(new Event('ended'));
+    audio.pause();
+  });
+  await expect(page.getByRole('button', { name: 'أرسل الإجابات' })).toBeVisible();
+}
+
+// The submitted line on screen (the same words also go to a hidden screen-reader announcement). No score: it waits for
+// Review (ticket 09).
+const submittedLine = (page: Page) => page.locator('.status-text', { hasText: 'أُرسلت الإجابات.' });
 
 const letterOnMap = (page: Page, letter: string) =>
   page.locator('svg.item-map g.target').filter({ has: page.locator('text', { hasText: new RegExp(`^${letter}$`) }) });
@@ -74,10 +88,12 @@ test('a tap on the map and the letter list answer, change and save; offline answ
   expect((await stored(page, attemptId)).answers).toEqual({ q1: 'C', q2: 'E', q3: 'D' });
   await page.screenshot({ path: `${EVIDENCE}answered-${testInfo.project.name}.png`, fullPage: true });
 
-  // Submit: q1 and q2 right, q3 wrong. The page shows the server's score; the attempt is closed.
+  // Submit after the first listen: q1 and q2 right, q3 wrong. The server scores 2; the page shows no score yet.
+  await finishFirstListen(page);
   await page.getByRole('button', { name: 'أرسل الإجابات' }).click();
-  await expect(resultLine(page, 'أُرسلت الإجابات. أجبت إجابة صحيحة عن 2 من 3.')).toBeVisible();
-  await expect(page.getByRole('status')).toHaveText('أُرسلت الإجابات. أجبت إجابة صحيحة عن 2 من 3.');
+  await expect(submittedLine(page)).toBeVisible();
+  await expect(page.getByRole('status')).toHaveText('أُرسلت الإجابات.');
+  await expect(page.getByText(/من 3/)).toHaveCount(0);
   const done = await stored(page, attemptId);
   expect(done.status).toBe('submitted');
   expect(done.score).toBe(2);
@@ -108,22 +124,25 @@ test('a score the browser sends with submit is refused; the stored score is the 
     attemptId,
   );
   expect(forged).toBe(400);
+  await finishFirstListen(page);
   await page.getByRole('button', { name: 'أرسل الإجابات' }).click();
-  await expect(resultLine(page, 'أجبت إجابة صحيحة عن 0 من 3.')).toBeVisible();
+  await expect(submittedLine(page)).toBeVisible();
   expect((await stored(page, attemptId)).score).toBe(0);
 });
 
 test('submit while offline says so and keeps the answers; it works once back online', async ({ page, context }) => {
-  await openPlayer(page);
+  const { attemptId } = await openPlayer(page);
   await page.getByRole('combobox', { name: 'إجابة السؤال 1' }).selectOption('C');
   await expect(page.getByText('حُفظت كل الإجابات.')).toBeVisible();
+  await finishFirstListen(page);
   await context.setOffline(true);
   await page.getByRole('button', { name: 'أرسل الإجابات' }).click();
   await expect(page.getByText(/لا يمكنك الإرسال دون اتصال/)).toBeVisible();
   await expect(page.getByRole('combobox', { name: 'إجابة السؤال 1' })).toHaveValue('C');
   await context.setOffline(false);
   await page.getByRole('button', { name: 'أرسل الإجابات' }).click();
-  await expect(resultLine(page, 'أجبت إجابة صحيحة عن 1 من 3.')).toBeVisible();
+  await expect(submittedLine(page)).toBeVisible();
+  expect((await stored(page, attemptId)).score).toBe(1);
 });
 
 // A save the server refuses for good is not re-sent and does not promise a retry; answering and submit stop.
@@ -157,6 +176,7 @@ test('a submit refused because the attempt was already submitted says so, not "t
   const { attemptId } = await openPlayer(page);
   await page.getByRole('combobox', { name: 'إجابة السؤال 1' }).selectOption('C');
   await expect(page.getByText('حُفظت كل الإجابات.')).toBeVisible();
+  await finishFirstListen(page);
   // Submitted elsewhere (another tab or device) before this one.
   expect(
     await page.evaluate(

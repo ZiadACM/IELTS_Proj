@@ -952,7 +952,11 @@ button.review-row {
 }
 
 .questions .why p[dir="ltr"] {
-  text-align: left;
+  text-align: start;
+}
+
+.why > button {
+  min-block-size: 44px;
 }
 
 .questions .why .why-ar {
@@ -975,7 +979,7 @@ button.review-row {
   list-style: none;
   margin: 0;
   padding: 0.25rem 0;
-  text-align: left;
+  text-align: start;
   background: var(--panel);
   border: 1px solid var(--hairline);
   border-radius: var(--radius);
@@ -1096,6 +1100,10 @@ button.review-row {
 
   .player .back {
     margin-inline: 0;
+  }
+
+  .see-on-map {
+    display: none;
   }
 }
 

@@ -15,6 +15,7 @@ export function Review({ t, item, attemptId, onSessionGone }: Props) {
   const [selected, setSelected] = useState(0);
   const [arabicOpen, setArabicOpen] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
+  const mapFrame = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     setReview('loading');
@@ -55,7 +56,6 @@ export function Review({ t, item, attemptId, onSessionGone }: Props) {
     );
 
   const question = review.questions[selected];
-  const named = new Map(review.questions.map((q, i) => [q.cueId, i]));
 
   return (
     <>
@@ -66,7 +66,7 @@ export function Review({ t, item, attemptId, onSessionGone }: Props) {
         <p className="review-score">{t.reviewScore(review.score, review.questions.length)}</p>
       </div>
 
-      <div className="map-frame">
+      <div className="map-frame" ref={mapFrame}>
         <ItemMap
           map={item.map}
           label={t.reviewMapLabel(selected + 1, question.yourAnswer, question.correctAnswer)}
@@ -102,6 +102,10 @@ export function Review({ t, item, attemptId, onSessionGone }: Props) {
                     <p dir="ltr" lang="en">
                       {q.explanation.en}
                     </p>
+                    {/* On a phone the map is out of view below the open row; desktop shows both side by side. */}
+                    <button type="button" className="see-on-map" onClick={() => showMap(mapFrame.current)}>
+                      {t.seeOnMap}
+                    </button>
                     <button type="button" aria-expanded={arabicOpen} onClick={() => setArabicOpen(!arabicOpen)}>
                       {arabicOpen ? t.hideArabic : t.readArabic}
                     </button>
@@ -131,15 +135,15 @@ export function Review({ t, item, attemptId, onSessionGone }: Props) {
         <h2 id="transcript-title">{t.transcriptTitle}</h2>
         <ol dir="ltr" lang="en">
           {review.transcript.cues.map((cue) => {
-            const n = named.get(cue.id);
-            const here = n === selected;
+            // The selected question's line; two questions named in one line each mark it when selected.
+            const here = cue.id === question.cueId;
             return (
               <li key={cue.id} className={here ? 'named' : undefined}>
                 {here && (
                   <span className="named-tag">
-                    <span aria-hidden="true">Q{n + 1}</span>
-                    <span className="visually-hidden" dir="auto">
-                      {t.answerNamedHere(n + 1)}
+                    <span aria-hidden="true">Q{selected + 1}</span>
+                    <span className="visually-hidden" dir={t.lang === 'ar' ? 'rtl' : 'ltr'} lang={t.lang}>
+                      {t.answerNamedHere(selected + 1)}
                     </span>
                   </span>
                 )}
@@ -151,6 +155,12 @@ export function Review({ t, item, attemptId, onSessionGone }: Props) {
       </section>
     </>
   );
+}
+
+// Scrolls the map into view, without animation for a learner who asked for reduced motion.
+function showMap(frame: HTMLElement | null) {
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  frame?.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' });
 }
 
 // "Right" or "Wrong" with a drawn mark, then the learner's letter and the correct one in words.

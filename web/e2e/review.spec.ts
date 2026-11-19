@@ -48,6 +48,28 @@ async function submitted(page: Page) {
   await expect(page.locator('.status-text', { hasText: 'أُرسلت الإجابات.' })).toBeVisible();
 }
 
+// Landmark names the review marks cover, by the boxes the browser drew.
+const markOverlaps = (page: Page) =>
+  page.evaluate(() => {
+    const box = (e: SVGGraphicsElement) => {
+      const b = e.getBBox();
+      return { x1: b.x, y1: b.y, x2: b.x + b.width, y2: b.y + b.height };
+    };
+    const marks = [
+      ...document.querySelectorAll<SVGGraphicsElement>('.review-marks .tick, .review-marks .yours-tag'),
+    ].map(box);
+    const tick = document.querySelector<SVGGElement>('.review-marks .tick');
+    const t = tick?.transform.baseVal.consolidate()?.matrix;
+    if (t && marks[0])
+      marks[0] = { x1: marks[0].x1 + t.e, y1: marks[0].y1 + t.f, x2: marks[0].x2 + t.e, y2: marks[0].y2 + t.f };
+    return [...document.querySelectorAll<SVGTextElement>('svg.item-map text:not(.tag)')]
+      .filter((text) => {
+        const l = box(text);
+        return marks.some((m) => m.x1 < l.x2 && l.x1 < m.x2 && m.y1 < l.y2 && l.y1 < m.y2);
+      })
+      .map((text) => text.textContent);
+  });
+
 const row = (page: Page, n: number) => page.locator('.review-questions li').nth(n - 1);
 const marks = (page: Page) => page.locator('svg.item-map .review-marks');
 
@@ -87,6 +109,14 @@ test('review shows the score, each letter against the correct one on the list an
   await expect(page.getByRole('img', { name: 'خريطة السؤال 2: الحرف الصحيح F، وإجابتك E.' })).toBeVisible();
   await expect(page.locator('.transcript li.named')).toHaveText(/^Q2.*staff office/);
   await expect(page.locator('.transcript ol')).toHaveAttribute('dir', 'ltr');
+  // The tick and the tag cover no landmark name (critique 2026-11-19: they hid "Corridor junction" and "Noticeboard").
+  expect(await markOverlaps(page)).toEqual([]);
+  // On a phone the map is out of view below the open row; one tap brings it back. Desktop shows both side by side.
+  const seeOnMap = row(page, 2).getByRole('button', { name: 'اعرضه على الخريطة' });
+  if ((page.viewportSize()?.width ?? 0) < 896) {
+    await seeOnMap.click();
+    await expect(page.locator('.map-frame')).toBeInViewport({ ratio: 0.9 });
+  } else await expect(seeOnMap).toBeHidden();
 
   // The Arabic explanation opens on request, right to left, with every English run isolated.
   const arabic = row(page, 2).locator('p.why-ar');

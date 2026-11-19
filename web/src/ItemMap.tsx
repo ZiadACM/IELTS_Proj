@@ -2,7 +2,7 @@
 // v1: landmarks as small labelled squares, lettered places as large discs (size carries the hierarchy, not
 // colour). Map content is English and stays left-to-right inside the Arabic frame. Text is sized in screen pixels, so
 // labels stay readable on a 360 px phone without pinch-zoom.
-import { type MouseEvent, useEffect, useRef, useState } from 'react';
+import { type MouseEvent, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { MapData } from './api.ts';
 import { MapV2 } from './MapV2.tsx';
 
@@ -13,6 +13,8 @@ const SQUARE_PX = 8;
 const PICK_RADIUS_PX = 22; // a tap this close to a letter picks it: a 44 px target (CS 4.3) unless letters are closer
 const MARGIN = 40; // map units around the edge, so labels near it are not cut
 const LABEL_FONT = `${LABEL_PX}px system-ui, "Segoe UI", sans-serif`; // matches .item-map .landmark text
+// matches .review-marks .yours-tag text (the UI face, which has Arabic)
+const TAG_FONT = `700 ${LABEL_PX}px system-ui, "Segoe UI", "Noto Sans Arabic", "Geeza Pro", sans-serif`;
 
 type Box = { x1: number; y1: number; x2: number; y2: number };
 type Anchor = 'start' | 'middle' | 'end';
@@ -22,10 +24,10 @@ const overlapArea = (a: Box, b: Box) =>
 
 // A label's width in screen pixels, measured with the font it is drawn in (an estimate where canvas is missing).
 let measureContext: CanvasRenderingContext2D | null | undefined;
-function labelWidthPx(text: string) {
+function labelWidthPx(text: string, font = LABEL_FONT) {
   measureContext ??= document.createElement('canvas').getContext('2d');
-  if (!measureContext) return text.length * 0.56 * LABEL_PX;
-  measureContext.font = LABEL_FONT;
+  if (!measureContext) return text.length * 0.6 * LABEL_PX;
+  measureContext.font = font;
   return measureContext.measureText(text).width;
 }
 
@@ -60,7 +62,7 @@ function placeLabels(map: MapData, unit: number): Placed[] {
   return map.landmarks.map((l, index) => {
     const otherSquares = squares.filter((_, i) => i !== index);
     const options = layouts(l.label).flatMap((lines) => {
-      const width = Math.max(...lines.map(labelWidthPx)) * unit;
+      const width = Math.max(...lines.map((line) => labelWidthPx(line))) * unit;
       const height = lines.length * lineHeight;
       const below = l.y + half + gap;
       const above = l.y - half - gap - height;
@@ -99,12 +101,83 @@ export type ReviewMarks = { yours: string | null; correct: string; yoursTag: str
 const V1_HALF_PX = DISC_PX; // half the size of a letter: disc radius (v1) or half the box (v2, 26 px box)
 const V2_HALF_PX = 13;
 
+const boxAt = (cx: number, cy: number, w: number, h: number): Box => ({
+  x1: cx - w / 2,
+  y1: cy - h / 2,
+  x2: cx + w / 2,
+  y2: cy + h / 2,
+});
+// The candidate with the least weighted overlap with what is already drawn; the first that touches nothing wins.
+type Drawn = Box & { weight: number };
+const leastCovering = (candidates: Box[], drawn: Drawn[]) =>
+  candidates.reduce(
+    (best, box, i) => {
+      const cost = drawn.reduce((sum, d) => sum + d.weight * overlapArea(box, d), 0);
+      return cost < best.cost ? { i, cost } : best;
+    },
+    { i: 0, cost: Number.POSITIVE_INFINITY },
+  ).i;
+
 function Marks({ map, unit, marks }: { map: MapData; unit: number; marks: ReviewMarks }) {
   const u = (px: number) => px * unit;
   const at = (label: string | null) => map.targets.find((t) => t.label === label);
   const correct = at(marks.correct);
   const yours = at(marks.yours);
   const half = u(map.format === 2 ? V2_HALF_PX : V1_HALF_PX);
+  const group = useRef<SVGGElement>(null);
+
+  // The tick sits on a corner of the correct letter and the tag on a side of the learner's letter: the first corner and
+  // side that cover no landmark name and no other letter, read from what the map actually drew (critique, 2026-11-19).
+  const tickR = u(9);
+  const tickAt = correct
+    ? [
+        [1, -1],
+        [-1, -1],
+        [1, 1],
+        [-1, 1],
+      ].map(([dx, dy]) => ({ x: correct.x + dx * (half + u(4)), y: correct.y + dy * (half + u(4)) }))
+    : [];
+  const tagW = labelWidthPx(marks.yoursTag, TAG_FONT) * unit + u(12);
+  const tagH = u(18);
+  const gap = u(yours === correct ? 16 : 18);
+  const tagAt = yours
+    ? [
+        { x: yours.x, y: yours.y + half + gap },
+        { x: yours.x, y: yours.y - half - gap },
+        { x: yours.x + half + u(10) + tagW / 2, y: yours.y },
+        { x: yours.x - half - u(10) - tagW / 2, y: yours.y },
+      ]
+    : [];
+  const [place, setPlace] = useState({ tick: 0, tag: 0 });
+  const placeKey = `${marks.correct}|${marks.yours}|${unit}|${marks.yoursTag}`;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: placeKey names every input of the candidate positions
+  useLayoutEffect(() => {
+    const svg = group.current?.ownerSVGElement;
+    if (!svg) return;
+    // Covering a landmark name or a letter hides content (weight 10); standing close to a marked letter's frame only
+    // risks the tag reading as naming that letter (weight 1).
+    const drawn: Drawn[] = [];
+    for (const text of svg.querySelectorAll<SVGTextElement>('text')) {
+      if (group.current?.contains(text)) continue;
+      const b = text.getBBox();
+      drawn.push({ x1: b.x, y1: b.y, x2: b.x + b.width, y2: b.y + b.height, weight: 10 });
+    }
+    for (const t of map.targets) drawn.push({ ...boxAt(t.x, t.y, 2 * half, 2 * half), weight: 10 });
+    // The marked letters' frames, with a margin, so the tag cannot read as naming the other letter.
+    for (const t of [correct, yours])
+      if (t) drawn.push({ ...boxAt(t.x, t.y, 2 * (half + u(12)), 2 * (half + u(12))), weight: 1 });
+    const tick = leastCovering(
+      tickAt.map((p) => boxAt(p.x, p.y, 2 * tickR, 2 * tickR)),
+      drawn,
+    );
+    if (tickAt[tick]) drawn.push({ ...boxAt(tickAt[tick].x, tickAt[tick].y, 2 * tickR, 2 * tickR), weight: 10 });
+    const tag = leastCovering(
+      tagAt.map((p) => boxAt(p.x, p.y, tagW, tagH)),
+      drawn,
+    );
+    setPlace((now) => (now.tick === tick && now.tag === tag ? now : { tick, tag }));
+  }, [placeKey]);
+
   const frame = (x: number, y: number, pad: number, className: string) =>
     map.format === 2 ? (
       <rect
@@ -117,35 +190,28 @@ function Marks({ map, unit, marks }: { map: MapData; unit: number; marks: Review
     ) : (
       <circle className={className} cx={x} cy={y} r={half + pad} />
     );
+  const tick = tickAt[place.tick] ?? tickAt[0];
+  const tag = tagAt[place.tag] ?? tagAt[0];
   return (
-    <g className="review-marks" strokeWidth={u(3)}>
+    <g ref={group} className="review-marks" strokeWidth={u(3)}>
       {yours && yours !== correct && frame(yours.x, yours.y, u(6), 'yours-frame')}
-      {correct && (
+      {correct && tick && (
         <>
           {frame(correct.x, correct.y, u(4), 'correct-frame')}
-          <g className="tick" transform={`translate(${correct.x + half + u(4)} ${correct.y - half - u(4)})`}>
-            <circle r={u(9)} strokeWidth={u(2)} />
+          <g className="tick" transform={`translate(${tick.x} ${tick.y})`}>
+            <circle r={tickR} strokeWidth={u(2)} />
             <path d={`M${-u(4)} ${u(0.5)}l${u(2.8)} ${u(2.8)}l${u(5.2)} ${-u(5.6)}`} strokeWidth={u(2)} />
           </g>
         </>
       )}
-      {yours && (
-        <YoursTag x={yours.x} y={yours.y + half + u(yours === correct ? 16 : 18)} unit={unit} text={marks.yoursTag} />
+      {yours && tag && (
+        <g className="yours-tag">
+          <rect className="tag" x={tag.x - tagW / 2} y={tag.y - tagH / 2} width={tagW} height={tagH} rx={u(3)} />
+          <text className="tag" x={tag.x} y={tag.y} dy="0.35em" fontSize={u(LABEL_PX)}>
+            {marks.yoursTag}
+          </text>
+        </g>
       )}
-    </g>
-  );
-}
-
-// The tag naming the learner's letter: a solid label below it, so it stays readable over a landmark name.
-function YoursTag({ x, y, unit, text }: { x: number; y: number; unit: number; text: string }) {
-  const u = (px: number) => px * unit;
-  const width = u(text.length * 7 + 12);
-  return (
-    <g className="yours-tag">
-      <rect className="tag" x={x - width / 2} y={y - u(9)} width={width} height={u(18)} rx={u(3)} />
-      <text className="tag" x={x} y={y} dy="0.35em" fontSize={u(LABEL_PX)}>
-        {text}
-      </text>
     </g>
   );
 }

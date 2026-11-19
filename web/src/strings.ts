@@ -176,10 +176,12 @@ const en = {
   correctLetter: 'Correct',
   right: 'Right',
   wrong: 'Wrong',
+  seeOnMap: 'See it on the map',
   readArabic: 'Read in Arabic',
   hideArabic: 'Hide the Arabic',
   transcriptTitle: 'Transcript',
   answerNamedHere: (n: number) => `Question ${n} answer named here`,
+  lang: 'en',
 };
 
 const ar: typeof en = {
@@ -348,10 +350,12 @@ const ar: typeof en = {
   correctLetter: 'الصحيح',
   right: 'صحيحة',
   wrong: 'خاطئة',
+  seeOnMap: 'اعرضه على الخريطة',
   readArabic: 'اقرأ الشرح بالعربية',
   hideArabic: 'أخفِ الشرح العربي',
   transcriptTitle: 'نص التسجيل',
   answerNamedHere: (n: number) => `هنا ذُكرت إجابة السؤال ${n}`,
+  lang: 'ar',
 };
 
 export const STRINGS = { ar, en } as const satisfies Record<InterfaceLanguage, typeof en>;

@@ -42,13 +42,15 @@ const attemptOf = (r: Row) => ({
   ...(r.status === 'submitted' ? { score: r.score } : {}),
 });
 
-type AnswerKey = { questions: { id: string; answerLabel: string }[]; map: { targets: { label: string }[] } };
+// The parts of an item's content that check and score answers: its questions with their answer letters, and its map
+// letters.
+type ItemContent = { questions: { id: string; answerLabel: string }[]; map: { targets: { label: string }[] } };
 
-// The item content behind an attempt, for checking and scoring answers. Read by id, not through the published-only
-// lookup: the attempt was started on a published item and is scored against the same content.
-async function answerKeyOf(db: Pool, itemId: string) {
-  const { rows } = await db.query<{ content: AnswerKey }>('select content from items where id = $1', [itemId]);
-  return rows[0].content;
+// The item content behind an attempt. Read by id, not through the published-only lookup: the attempt was started on a
+// published item and is scored against the same content. Null if the item row is gone.
+async function itemContentOf(db: Pool, itemId: string) {
+  const { rows } = await db.query<{ content: ItemContent }>('select content from items where id = $1', [itemId]);
+  return rows[0]?.content ?? null;
 }
 
 const ANSWERS_BODY = {
@@ -89,6 +91,20 @@ export async function attemptRoutes(
       callerId(request),
     ]);
     return rows[0] ?? null;
+  };
+
+  // The caller's own open attempt and its item content, for saving and submitting. Otherwise sends the refusal (404
+  // missing or someone else's, 409 already submitted) and returns null.
+  const openAttemptWithContent = async (
+    request: FastifyRequest<{ Params: { attemptId: string } }>,
+    reply: FastifyReply,
+  ) => {
+    const attempt = await ownAttempt(request);
+    if (!attempt) return void reply.code(404).send({ error: 'not_found' });
+    if (attempt.status !== 'open') return void reply.code(409).send({ error: 'attempt_submitted' });
+    const content = await itemContentOf(db, attempt.itemId);
+    if (!content) return void reply.code(404).send({ error: 'not_found' });
+    return { attempt, content };
   };
 
   // ATT-01: start practice on a published item. An open attempt on the same item is resumed instead (D10).
@@ -143,12 +159,11 @@ export async function attemptRoutes(
     '/attempts/:attemptId/answers',
     { preValidation: attemptUser, schema: { body: ANSWERS_BODY } },
     async (request, reply) => {
-      const attempt = await ownAttempt(request);
-      if (!attempt) return reply.code(404).send({ error: 'not_found' });
-      if (attempt.status !== 'open') return reply.code(409).send({ error: 'attempt_submitted' });
-      const key = await answerKeyOf(db, attempt.itemId);
-      const questions = new Set(key.questions.map((q) => q.id));
-      const letters = new Set(key.map.targets.map((t) => t.label));
+      const open = await openAttemptWithContent(request, reply);
+      if (!open) return;
+      const { attempt, content } = open;
+      const questions = new Set(content.questions.map((q) => q.id));
+      const letters = new Set(content.map.targets.map((t) => t.label));
       const { answers } = request.body;
       if (
         Object.entries(answers).some(
@@ -171,11 +186,10 @@ export async function attemptRoutes(
     '/attempts/:attemptId/submit',
     { preValidation: attemptUser, schema: { body: { type: 'object', additionalProperties: false } } },
     async (request, reply) => {
-      const attempt = await ownAttempt(request);
-      if (!attempt) return reply.code(404).send({ error: 'not_found' });
-      if (attempt.status !== 'open') return reply.code(409).send({ error: 'attempt_submitted' });
-      const key = await answerKeyOf(db, attempt.itemId);
-      const score = key.questions.filter((q) => attempt.answers[q.id] === q.answerLabel).length;
+      const open = await openAttemptWithContent(request, reply);
+      if (!open) return;
+      const { attempt, content } = open;
+      const score = content.questions.filter((q) => attempt.answers[q.id] === q.answerLabel).length;
       // `status = 'open'` makes two racing submits score once; the loser gets 409.
       const { rows } = await db.query<Row>(
         `update attempts set status = 'submitted', submitted_at = $2, score = $3

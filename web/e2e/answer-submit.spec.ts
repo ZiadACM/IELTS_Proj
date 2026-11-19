@@ -125,3 +125,54 @@ test('submit while offline says so and keeps the answers; it works once back onl
   await page.getByRole('button', { name: 'أرسل الإجابات' }).click();
   await expect(resultLine(page, 'أجبت إجابة صحيحة عن 1 من 3.')).toBeVisible();
 });
+
+// A save the server refuses for good is not re-sent and does not promise a retry; answering and submit stop.
+for (const [status, error, message] of [
+  [409, 'attempt_submitted', /أُرسل هذا التدريب من قبل أو لم يعد مفتوحًا/],
+  [400, 'answers_not_valid', /تعذّر حفظ هذه الإجابات/],
+] as const) {
+  test(`a save refused with ${status} stops saving and says why`, async ({ page }, testInfo) => {
+    const { attemptId } = await openPlayer(page);
+    let saves = 0;
+    await page.route(`**/attempts/${attemptId}/answers`, (route) => {
+      saves += 1;
+      return route.fulfill({ status, contentType: 'application/json', body: JSON.stringify({ error }) });
+    });
+    await page.getByRole('combobox', { name: 'إجابة السؤال 1' }).selectOption('C');
+    await expect(page.getByRole('alert')).toHaveText(message);
+    await expect(page.getByText(/سنحاول مرة أخرى/)).toHaveCount(0);
+    await expect(page.getByRole('combobox', { name: 'إجابة السؤال 1' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'أرسل الإجابات' })).toHaveCount(0);
+    // The reading countdown stops; the status strip leads back to the maps instead.
+    await expect(page.getByRole('button', { name: 'ابدأ الآن' })).toHaveCount(0);
+    await expect(page.locator('.status-strip').getByRole('button', { name: 'العودة إلى الخرائط' })).toBeVisible();
+    await page.screenshot({ path: `${EVIDENCE}refused-${status}-${testInfo.project.name}.png`, fullPage: true });
+    expect(await page.evaluate((id) => localStorage.getItem(`masar.unsaved-answers.${id}`), attemptId)).toBeNull();
+    await page.waitForTimeout(6_000); // longer than the 5 s retry
+    expect(saves).toBe(1);
+  });
+}
+
+test('a submit refused because the attempt was already submitted says so, not "try again"', async ({ page }) => {
+  const { attemptId } = await openPlayer(page);
+  await page.getByRole('combobox', { name: 'إجابة السؤال 1' }).selectOption('C');
+  await expect(page.getByText('حُفظت كل الإجابات.')).toBeVisible();
+  // Submitted elsewhere (another tab or device) before this one.
+  expect(
+    await page.evaluate(
+      async (id) =>
+        (
+          await fetch(`/attempts/${id}/submit`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: '{}',
+          })
+        ).status,
+      attemptId,
+    ),
+  ).toBe(200);
+  await page.getByRole('button', { name: 'أرسل الإجابات' }).click();
+  await expect(page.getByRole('alert')).toHaveText(/أُرسل هذا التدريب من قبل أو لم يعد مفتوحًا/);
+  await expect(page.getByText(/حاول مرة أخرى/)).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'أرسل الإجابات' })).toHaveCount(0);
+});

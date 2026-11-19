@@ -21,7 +21,8 @@ export type Failure =
   | 'not_found'
   | 'attempt_submitted'
   | 'offline'
-  | 'error';
+  | 'rejected' // any other 4xx: the request itself is wrong, so sending it again cannot help
+  | 'error'; // 5xx or an unreadable reply: worth trying again
 // A content-checker finding (code and English message from tools/validate-content.mjs), shown to staff as is.
 export type ItemProblem = { code: string; msg: string };
 export type Result<T> = { ok: true; value: T } | { ok: false; failure: Failure; problems?: ItemProblem[] };
@@ -53,6 +54,7 @@ async function call<T>(method: string, url: string, body?: object): Promise<Resu
   if (json?.error === 'attempt_submitted') return { ok: false, failure: 'attempt_submitted' };
   if (res.status === 403) return { ok: false, failure: 'forbidden' };
   if (res.status === 404) return { ok: false, failure: 'not_found' };
+  if (res.status >= 400 && res.status < 500) return { ok: false, failure: 'rejected' };
   return { ok: false, failure: 'error' };
 }
 

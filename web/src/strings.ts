@@ -153,6 +153,9 @@ const en = {
   saveSaving: 'Saving…',
   saveOffline: 'Not saved yet: no connection. Your answers are kept on this device and sent when you are back online.',
   saveFailed: 'Not saved yet. Your answers are kept on this device; we will try again.',
+  saveClosed:
+    'This practice was already submitted or is no longer open, so these answers cannot be saved. Go back to the maps to start it again.',
+  saveRejected: 'These answers could not be saved. Go back to the maps and open this practice again.',
   unanswered: (n: number) => (n === 1 ? '1 question has no answer.' : `${n} questions have no answer.`),
   submitAnswers: 'Submit answers',
   submitting: 'Submitting…',
@@ -305,6 +308,9 @@ const ar: typeof en = {
   saveSaving: 'جارٍ الحفظ…',
   saveOffline: 'لم تُحفظ بعد: لا يوجد اتصال. إجاباتك محفوظة على هذا الجهاز وستُرسَل عند عودة الاتصال.',
   saveFailed: 'لم تُحفظ بعد. إجاباتك محفوظة على هذا الجهاز وسنحاول مرة أخرى.',
+  saveClosed:
+    'أُرسل هذا التدريب من قبل أو لم يعد مفتوحًا، لذلك لا يمكن حفظ هذه الإجابات. ارجع إلى الخرائط لتبدأه من جديد.',
+  saveRejected: 'تعذّر حفظ هذه الإجابات. ارجع إلى الخرائط وافتح هذا التدريب من جديد.',
   unanswered: (n: number) =>
     n === 1 ? 'سؤال واحد بلا إجابة.' : n === 2 ? 'سؤالان بلا إجابة.' : `${n} أسئلة بلا إجابة.`,
   submitAnswers: 'أرسل الإجابات',

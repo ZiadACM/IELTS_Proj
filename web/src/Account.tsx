@@ -11,6 +11,7 @@ import {
   signIn,
   signOut,
 } from './api.ts';
+import { forgetUnsavedAnswers } from './saved-answers.ts';
 import type { Strings } from './strings.ts';
 
 export function accountFailureMessage(t: Strings, failure: Failure) {
@@ -325,8 +326,10 @@ export function AccountSection({
     setBusy(true);
     const res = await signOut();
     setBusy(false);
-    if (res.ok || res.failure === 'unauthenticated') onSignedOut();
-    else setError(accountFailureMessage(t, res.failure));
+    if (res.ok || res.failure === 'unauthenticated') {
+      forgetUnsavedAnswers();
+      onSignedOut();
+    } else setError(accountFailureMessage(t, res.failure));
   };
 
   return (

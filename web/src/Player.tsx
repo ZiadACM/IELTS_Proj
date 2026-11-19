@@ -12,7 +12,7 @@ import {
   submitAttempt,
 } from './api.ts';
 import { ItemMap } from './ItemMap.tsx';
-import { type SaveState, useSavedAnswers } from './saved-answers.ts';
+import { type SaveState, stateAfter, useSavedAnswers } from './saved-answers.ts';
 import type { Strings } from './strings.ts';
 
 type Loaded = { item: DeliveredItem; attempt: Attempt };
@@ -110,7 +110,9 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
 
   const { answers, saveState, setAnswer, flush } = useSavedAnswers(attempt.id, attempt.answers, onSessionGone);
   const [activeQuestion, setActiveQuestion] = useState(item.questions[0]?.id);
-  const [submitState, setSubmitState] = useState<'idle' | 'submitting' | 'offline' | 'failed'>('idle');
+  const [submitState, setSubmitState] = useState<'idle' | 'submitting' | 'offline' | 'failed' | 'closed' | 'rejected'>(
+    'idle',
+  );
   const [result, setResult] = useState<Attempt | null>(null);
 
   const play = useCallback(async () => {
@@ -179,12 +181,21 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
 
   const duration = item.audio.durationSec;
   const submitted = result !== null;
+  // The server refused for good (attempt submitted elsewhere or gone, or answers refused): answering and submit stop.
+  const ended =
+    saveState === 'closed' || saveState === 'rejected'
+      ? saveState
+      : submitState === 'closed' || submitState === 'rejected'
+        ? submitState
+        : null;
+  const locked = submitted || ended !== null;
+  const resultLine = (score: number | undefined) => `${t.submitted} ${t.scoreOf(score ?? 0, item.questions.length)}`;
   const unanswered = item.questions.filter((q) => !answers[q.id]).length;
   const activeIndex = item.questions.findIndex((q) => q.id === activeQuestion);
 
   // A letter picked on the map answers the active question, then moves on to the next question without an answer.
   const pickOnMap = (letter: string) => {
-    if (submitted || !activeQuestion) return;
+    if (locked || !activeQuestion) return;
     setAnswer(activeQuestion, letter);
     const after = [...item.questions.slice(activeIndex + 1), ...item.questions.slice(0, activeIndex)];
     const next = after.find((q) => !answers[q.id]);
@@ -193,22 +204,33 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
 
   const submit = async () => {
     setSubmitState('submitting');
-    if (!(await flush())) return setSubmitState(navigator.onLine ? 'failed' : 'offline');
+    // A save that stopped for good already says why on the save line; submit then has nothing to add.
+    const saved = await flush();
+    if (saved !== 'saved')
+      return setSubmitState(saved === 'offline' ? 'offline' : saved === 'retrying' ? 'failed' : 'idle');
     const res = await submitAttempt(attempt.id);
     if (!res.ok) {
       if (res.failure === 'unauthenticated') return onSessionGone();
-      return setSubmitState(res.failure === 'offline' ? 'offline' : 'failed');
+      const state = stateAfter(res.failure);
+      return setSubmitState(state === 'offline' ? 'offline' : state === 'retrying' ? 'failed' : state);
     }
-    // Submitting ends the listen: the audio stops and the media keys are given back.
+    stopListening();
+    setResult(res.value);
+    setSubmitState('idle');
+    setAnnouncement(resultLine(res.value.score));
+    strip.current?.focus();
+  };
+  // An attempt that is closed (submitted or refused for good) ends the listen: the audio stops, reading time cannot start
+  // it, and the media keys are given back.
+  const stopListening = useCallback(() => {
     phaseRef.current = 'finished';
     window.clearTimeout(stallTimer.current);
     audioRef.current?.pause();
     holdMediaControls(false);
-    setResult(res.value);
-    setSubmitState('idle');
-    setAnnouncement(`${t.submitted} ${t.scoreOf(res.value.score ?? 0, item.questions.length)}`);
-    strip.current?.focus();
-  };
+  }, []);
+  useEffect(() => {
+    if (ended) stopListening();
+  }, [ended, stopListening]);
   const share = (value: number, of: number) => Math.min(1, Math.max(0, value / of));
 
   return (
@@ -243,14 +265,22 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
               <path d="M7 12.5l3.2 3.2L17 9" />
             </svg>
             <div>
-              <p className="status-text">
-                {t.submitted} {t.scoreOf(result.score ?? 0, item.questions.length)}
-              </p>
+              <p className="status-text">{resultLine(result.score)}</p>
               <p className="status-note">{t.reviewLater}</p>
             </div>
           </div>
         )}
-        {!submitted && phase === 'reading' && (
+        {ended && (
+          <div className="status-row">
+            <p className="status-text error" role="alert">
+              {ended === 'closed' ? t.saveClosed : t.saveRejected}
+            </p>
+            <button type="button" className="primary" onClick={onBack}>
+              {t.backToMaps}
+            </button>
+          </div>
+        )}
+        {!locked && phase === 'reading' && (
           <>
             <div className="status-row">
               <p className="status-text">{t.readingCountdown(secondsLeft)}</p>
@@ -263,7 +293,7 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
             </div>
           </>
         )}
-        {!submitted && phase === 'listening' && audioState === 'blocked' && (
+        {!locked && phase === 'listening' && audioState === 'blocked' && (
           <div className="status-row">
             <p className="status-text">{t.audioBlocked}</p>
             <button type="button" className="primary" onClick={play}>
@@ -271,7 +301,7 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
             </button>
           </div>
         )}
-        {!submitted && phase === 'listening' && audioState === 'failed' && (
+        {!locked && phase === 'listening' && audioState === 'failed' && (
           <div className="status-row">
             <p className="status-text error" role="alert">
               {furthest.current > 0 ? t.audioFailed : t.audioNotLoaded}
@@ -281,7 +311,7 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
             </button>
           </div>
         )}
-        {!submitted && phase === 'listening' && audioState !== 'blocked' && audioState !== 'failed' && (
+        {!locked && phase === 'listening' && audioState !== 'blocked' && audioState !== 'failed' && (
           <>
             <p className="status-text">
               {audioState === 'playing'
@@ -294,7 +324,7 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
             <p className="status-note">{t.firstListenRule}</p>
           </>
         )}
-        {!submitted && phase === 'finished' && (
+        {!locked && phase === 'finished' && (
           <div className="status-row done">
             <svg className="done-mark" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="11" />
@@ -312,7 +342,7 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
       </p>
 
       <div className="map-frame">
-        {!submitted && activeIndex >= 0 && (
+        {!locked && activeIndex >= 0 && (
           <p className="map-prompt" aria-hidden="true">
             {t.tapToAnswer(activeIndex + 1)}
           </p>
@@ -320,8 +350,8 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
         <ItemMap
           map={item.map}
           label={t.mapLabel}
-          picked={!submitted && activeQuestion ? answers[activeQuestion] : undefined}
-          onPick={submitted ? undefined : pickOnMap}
+          picked={!locked && activeQuestion ? answers[activeQuestion] : undefined}
+          onPick={locked ? undefined : pickOnMap}
         />
       </div>
 
@@ -330,7 +360,7 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
         <p>{t.questionsIntro}</p>
         <ol>
           {item.questions.map((q, index) => {
-            const active = !submitted && q.id === activeQuestion;
+            const active = !locked && q.id === activeQuestion;
             return (
               <li key={q.id} className={active ? 'active' : undefined}>
                 {/* Picks which question a tap on the map answers. */}
@@ -339,7 +369,7 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
                   className="question-number"
                   aria-pressed={active}
                   aria-label={t.answerOnMap(index + 1)}
-                  disabled={submitted}
+                  disabled={locked}
                   onClick={() => setActiveQuestion(q.id)}
                 >
                   {index + 1}
@@ -352,7 +382,7 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
                   aria-label={t.answerFor(index + 1)}
                   aria-describedby={`prompt-${q.id}`}
                   value={answers[q.id] ?? ''}
-                  disabled={submitted}
+                  disabled={locked}
                   onFocus={() => setActiveQuestion(q.id)}
                   onChange={(e) => setAnswer(q.id, e.target.value || null)}
                 >
@@ -367,7 +397,7 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
             );
           })}
         </ol>
-        {!submitted && (
+        {!locked && (
           <div className="submit-area">
             {/* Quiet while saving works (no announcement on every answer); a save that fails is announced. */}
             {saveState === 'saved' || saveState === 'saving' ? (
@@ -440,6 +470,7 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
   );
 }
 
+// Only while answers can still be saved; a save refused for good is shown in the status strip instead.
 function saveLine(t: Strings, state: SaveState) {
   if (state === 'saved') return t.saveSaved;
   if (state === 'saving') return t.saveSaving;

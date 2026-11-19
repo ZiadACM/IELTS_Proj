@@ -4,7 +4,7 @@
 
 **Blocked by:** 07 Browse and player shell
 
-**Status:** ready-for-human (built on `agent/answer-submit`; owner reviews; code-review and Impeccable critique/audit not yet run)
+**Status:** ready-for-human (built on `agent/answer-submit`; code-review and Impeccable critique/audit run 2026-11-19, fixes in; owner decisions open, see last comment)
 
 Spec: `../spec.md`
 
@@ -43,3 +43,42 @@ Built on `agent/answer-submit` (from `main` after PR #20).
   - screen reader behaviour of the number buttons and the list (only the accessible names were checked);
   - the Arabic strings need a fluent reader (CS 3.5);
   - CI (not pushed).
+
+### 2026-11-19, agent (code-review, Impeccable critique and audit, fixes)
+- **code-review** (standards + spec) found that failed saves were handled wrongly: a 400 was re-sent every 5 s forever; after a 409 or 404 the screen still said "we will try again"; a submit after a 409 said "Try again", which could never work.
+  - Fixed: `api.ts` maps any other 4xx to `rejected`. `saved-answers.ts` retries only when offline, on a 5xx or on a 429. When the attempt is closed (409, 404, 403) or the answers are refused (400), saving stops, the unsent copy is cleared from the device, answering and submit are locked, and the status strip names the problem and offers "Back to maps" (new strings `saveClosed` and `saveRejected`, English and Arabic). A submit refused because the attempt was already submitted says so.
+- Other code-review fixes:
+  - **CS 2.6:** sign-out clears unsent answers from the device (`forgetUnsavedAnswers`).
+  - **Server:** save and submit share `openAttemptWithContent` (404/409 checks in one place). `answerKeyOf` is renamed `itemContentOf` and returns 404 instead of crashing when the item row is missing.
+  - **Player:** the score line is built once.
+- **Impeccable critique** (dual-agent): 24/40.
+  - **Detector:** 0 findings.
+  - **Overlay:** blocked by the app's CSP (`script-src 'self'`). With the CSP bypassed it reported "No anti-patterns found".
+- **Impeccable audit:** 16/20.
+- **Impeccable fixes made:**
+  - After a refused save, the reading countdown and audio stop and the media keys are released (they kept running before).
+  - The failed-save line now uses the error colour; a CSS cascade had turned it grey.
+  - The active question row no longer uses saffron (saffron is for time only, as the surface brief says).
+  - The disabled number buttons after submit now read as printed numbers.
+- **Ran:**
+  - type check clean;
+  - lint 4 warnings (from before this change);
+  - build OK;
+  - `npm test` 128/128;
+  - `npx playwright test` against a local test instance: 37 passed, 2 skipped. This includes 3 new tests (save refused with 409, save refused with 400, submit after the attempt was already submitted), seen failing on the previous code (3 failed) and passing after the fix.
+  - Log: `docs/testing/evidence/answer-submit/2026-11-19/playwright-run-save-fix.txt`. Screenshots: `refused-*`; the other screenshots were re-taken.
+- **NOT VERIFIED:**
+  - sign-out clearing in a browser (no browser test signs out of an account);
+  - the new Arabic strings, which need a fluent reader (CS 3.5);
+  - a screen reader;
+  - a real phone;
+  - CI.
+- **Owner decisions open** (not changed):
+  1. Submit is allowed during reading time and the first listen, and stops the audio. The critique rates this P0: one stray tap scores the attempt.
+  2. "You got N of M right" is shown at submit, while spec story 31 puts the score in Review (ticket 09). The critique also notes the green tick next to a low score.
+  3. The ticket says client-sent scores are "ignored", but the server refuses them (400). Should the checkbox wording change?
+  4. Unsent answers on one device overwrite newer ones saved on another (story 28).
+- **Left as is:** `deadline: null` on guided attempts comes from ticket 07, not this diff. The contract says "exam only".
+- **Still open from critique:**
+  - Answers already given are not shown on the map; only the active question's letter is (suggested `/impeccable shape`).
+  - The submit area stacks three grey lines.

@@ -134,11 +134,26 @@ test('review shows the score, each letter against the correct one on the list an
   await expect(page.getByRole('img', { name: 'خريطة السؤال 3: الحرف الصحيح H، ولم تُجب.' })).toBeVisible();
   await expect(row(page, 3).locator('p.why-ar bdi')).toHaveText(['oh, sorry, I mean', 'G', 'H']);
 
+  // "Show in the transcript" takes the learner to the line where q3's answer is named (c14).
+  await row(page, 3).getByRole('button', { name: 'اعرضه في نص التسجيل' }).click();
+  const named = page.locator('.transcript li.named');
+  await expect(named).toBeFocused();
+  await expect(named).toHaveText(/^Q3/);
+  await expect(named).toBeInViewport();
+
   // Keyboard: the question rows are buttons in order; Enter opens one.
   await row(page, 1).locator('.review-row').focus();
   await page.keyboard.press('Enter');
   await expect(row(page, 1).locator('.review-row')).toHaveAttribute('aria-expanded', 'true');
   await expect(row(page, 1).locator('p.why-ar bdi')).toHaveText(['at the far end', 'D', 'A', 'C']);
+
+  // The review ends with one way on: back to the maps (the quiet back link is not repeated).
+  await expect(page.getByText('انتهت المراجعة. اختر خريطة أخرى لتواصل التدرّب.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'العودة إلى الخرائط' })).toHaveCount(1);
+  await page.screenshot({ path: `${EVIDENCE}review-end-${testInfo.project.name}.png`, fullPage: true });
+  await page.getByRole('button', { name: 'العودة إلى الخرائط' }).click();
+  await expect(page.getByRole('heading', { name: 'فئة الصعوبة 1' })).toBeVisible();
+  await expect(page.locator('.review-score')).toHaveCount(0);
 });
 
 test('a review that cannot load says why and loads on retry', async ({ page }, testInfo) => {

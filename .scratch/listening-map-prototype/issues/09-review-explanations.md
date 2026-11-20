@@ -96,3 +96,12 @@ Built on `agent/review-explanations`. It branches from `agent/answer-submit` at 
 - CI (not pushed).
 
 **Not in this ticket:** a way back to a past review after leaving the screen (the endpoint exists; no screen links to it yet). Suggest ticket 12 (resume and repeat) or 15 (progress) owns it.
+
+### 2026-11-20, owner decisions (agent built)
+- **Arabic toggle:** stays open across questions, as built (owner).
+- **Way back to a past review:** ticket 12 owns it; a line was added there (owner).
+- **Show in the transcript (built):** the open explanation has a button that scrolls to the line where that answer is named and moves focus there (reduced motion: no animation).
+- **End of review (built):** the review ends with "That is the whole review. Choose another map to keep practising." and one Back to maps button; the quiet back link is hidden while reviewing, so it is not repeated. Answer Replay (ticket 10) adds the next step later.
+- **e677cda:** it is an ancestor of this branch, so merging `agent/review-explanations` brings it in; no separate merge is needed.
+- **Ran:** `npm test` server 131/131, web 4/4; type check clean; lint 4 warnings from before; build OK; `npx playwright test` 46 passed, 2 skipped (`playwright-run-owner-decisions.txt`); review tests run 3 times in a row (all passed after a fix: the first test now waits for Browse after Back, so its pending maps request does not spill into the next test). New screenshots: `review-end-*.png`.
+- **NOT VERIFIED:** the two new Arabic strings ("اعرضه في نص التسجيل", "انتهت المراجعة. اختر خريطة أخرى لتواصل التدرّب."), plus everything listed above.

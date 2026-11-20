@@ -177,10 +177,12 @@ const en = {
   right: 'Right',
   wrong: 'Wrong',
   seeOnMap: 'See it on the map',
+  showInTranscript: 'Show in the transcript',
   readArabic: 'Read in Arabic',
   hideArabic: 'Hide the Arabic',
   transcriptTitle: 'Transcript',
   answerNamedHere: (n: number) => `Question ${n} answer named here`,
+  reviewEnd: 'That is the whole review. Choose another map to keep practising.',
   lang: 'en',
 };
 
@@ -351,10 +353,12 @@ const ar: typeof en = {
   right: 'صحيحة',
   wrong: 'خاطئة',
   seeOnMap: 'اعرضه على الخريطة',
+  showInTranscript: 'اعرضه في نص التسجيل',
   readArabic: 'اقرأ الشرح بالعربية',
   hideArabic: 'أخفِ الشرح العربي',
   transcriptTitle: 'نص التسجيل',
   answerNamedHere: (n: number) => `هنا ذُكرت إجابة السؤال ${n}`,
+  reviewEnd: 'انتهت المراجعة. اختر خريطة أخرى لتواصل التدرّب.',
   lang: 'ar',
 };
 

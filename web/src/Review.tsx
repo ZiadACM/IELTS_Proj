@@ -8,14 +8,15 @@ import { bidiRuns } from './bidi.ts';
 import { ItemMap } from './ItemMap.tsx';
 import type { Strings } from './strings.ts';
 
-type Props = { t: Strings; item: DeliveredItem; attemptId: string; onSessionGone: () => void };
+type Props = { t: Strings; item: DeliveredItem; attemptId: string; onBack: () => void; onSessionGone: () => void };
 
-export function Review({ t, item, attemptId, onSessionGone }: Props) {
+export function Review({ t, item, attemptId, onBack, onSessionGone }: Props) {
   const [review, setReview] = useState<ReviewData | 'loading' | 'offline' | 'failed'>('loading');
   const [selected, setSelected] = useState(0);
   const [arabicOpen, setArabicOpen] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const mapFrame = useRef<HTMLDivElement>(null);
+  const namedLine = useRef<HTMLLIElement>(null);
 
   const load = useCallback(async () => {
     setReview('loading');
@@ -103,9 +104,14 @@ export function Review({ t, item, attemptId, onSessionGone }: Props) {
                       {q.explanation.en}
                     </p>
                     {/* On a phone the map is out of view below the open row; desktop shows both side by side. */}
-                    <button type="button" className="see-on-map" onClick={() => showMap(mapFrame.current)}>
+                    <button type="button" className="see-on-map" onClick={() => bringIntoView(mapFrame.current)}>
                       {t.seeOnMap}
                     </button>
+                    {q.cueId && (
+                      <button type="button" onClick={() => bringIntoView(namedLine.current, true)}>
+                        {t.showInTranscript}
+                      </button>
+                    )}
                     <button type="button" aria-expanded={arabicOpen} onClick={() => setArabicOpen(!arabicOpen)}>
                       {arabicOpen ? t.hideArabic : t.readArabic}
                     </button>
@@ -138,7 +144,12 @@ export function Review({ t, item, attemptId, onSessionGone }: Props) {
             // The selected question's line; two questions named in one line each mark it when selected.
             const here = cue.id === question.cueId;
             return (
-              <li key={cue.id} className={here ? 'named' : undefined}>
+              <li
+                key={cue.id}
+                ref={here ? namedLine : undefined}
+                className={here ? 'named' : undefined}
+                tabIndex={here ? -1 : undefined}
+              >
                 {here && (
                   <span className="named-tag">
                     <span aria-hidden="true">Q{selected + 1}</span>
@@ -153,14 +164,23 @@ export function Review({ t, item, attemptId, onSessionGone }: Props) {
           })}
         </ol>
       </section>
+
+      <div className="review-end">
+        <p>{t.reviewEnd}</p>
+        <button type="button" className="primary" onClick={onBack}>
+          {t.backToMaps}
+        </button>
+      </div>
     </>
   );
 }
 
-// Scrolls the map into view, without animation for a learner who asked for reduced motion.
-function showMap(frame: HTMLElement | null) {
+// Scrolls a part of the review into view, without animation for a learner who asked for reduced motion. A transcript
+// line also takes focus, so keyboard and screen reader users land on it.
+function bringIntoView(target: HTMLElement | null, focus = false) {
   const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  frame?.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' });
+  if (focus) target?.focus({ preventScroll: true });
+  target?.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: focus ? 'center' : 'start' });
 }
 
 // "Right" or "Wrong" with a drawn mark, then the learner's letter and the correct one in words.

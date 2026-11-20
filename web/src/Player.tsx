@@ -261,7 +261,7 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
       <p className="unofficial">{t.unofficial}</p>
 
       {reviewing ? (
-        <Review t={t} item={item} attemptId={attempt.id} onSessionGone={onSessionGone} />
+        <Review t={t} item={item} attemptId={attempt.id} onBack={onBack} onSessionGone={onSessionGone} />
       ) : (
         <>
           <div className="status-strip" ref={strip} tabIndex={-1}>
@@ -437,9 +437,12 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
         </>
       )}
 
-      <button type="button" className="quiet back" onClick={onBack}>
-        {t.backToMaps}
-      </button>
+      {/* The review ends with its own Back to maps. */}
+      {!reviewing && (
+        <button type="button" className="quiet back" onClick={onBack}>
+          {t.backToMaps}
+        </button>
+      )}
 
       {/* No controls attribute: the first listen offers no pause or seek. Gone once submitted (the server closes it). */}
       {!submitted && (

@@ -1011,6 +1011,25 @@ button.review-row {
   border-radius: 4px;
 }
 
+/* Draws the eye to the named line after "Show in the transcript"; the highlight itself is the .named background. */
+.transcript li.named:focus-visible {
+  outline: 2px solid var(--night);
+  outline-offset: -2px;
+}
+
+.review-end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding-block: 0.5rem;
+}
+
+.player .review-end p {
+  margin: 0;
+  color: var(--ink);
+}
+
 /* Map marks: the correct letter framed solid with a tick; the learner's letter framed dashed with a tag. */
 .item-map .review-marks .correct-frame {
   fill: none;
@@ -1048,7 +1067,8 @@ button.review-row {
   font-weight: 700;
 }
 
-.player .back {
+.player .back,
+.review-end {
   grid-area: back;
   justify-self: start;
   margin: 1rem;
@@ -1098,7 +1118,8 @@ button.review-row {
     align-self: start;
   }
 
-  .player .back {
+  .player .back,
+  .review-end {
     margin-inline: 0;
   }
 

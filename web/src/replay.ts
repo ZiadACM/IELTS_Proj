@@ -7,12 +7,13 @@ import type { Point } from './api.ts';
 export type RouteEvent = {
   id: string;
   cueId: string;
-  kind: 'move' | 'turn' | 'landmark' | 'destination' | 'correction';
+  kind: 'move' | 'turn' | 'landmark' | 'distractor' | 'destination' | 'correction';
   at: Point;
   landmarkId?: string;
   startsLeg?: boolean;
   atSec?: number;
   wrongPath?: Point[];
+  note?: string; // a distractor's or correction's authored note: why it misleads, or what was corrected
 };
 export type Cue = { id: string; start: number; end: number };
 
@@ -22,6 +23,9 @@ export const SUMMARY_AFTER_SEC = 0.8; // all answers shown together this long af
 
 // The place lit on the map: a named room or symbol, or the answer place once it is reached. One at a time (D27).
 export type Lit = { landmarkId: string } | { answerAt: Point } | null;
+// A place named by mistake: a correction's wrong place (a point), or a distractor's landmark. Framed, never lit.
+export type Mistaken = { at: Point; landmarkId?: string };
+export type Note = { kind: 'distractor' | 'correction'; text: string };
 type WrongPath = { points: Point[]; at: number; backFrom: number; goneAt: number };
 type Leg = {
   start: Point;
@@ -29,7 +33,8 @@ type Leg = {
   walk: { to: Point; at: number }[];
   marks: { lit: Lit; at: number }[]; // from each time on, until the next
   wrong: WrongPath[];
-  mistaken: { place: Point; at: number }[]; // where each correction points by mistake: framed from its time on
+  mistaken: (Mistaken & { from: number })[]; // framed from its time on
+  notes: (Note & { from: number })[]; // shown while that moment is the latest step
 };
 export type ReplayPlan = {
   legs: Leg[];
@@ -44,7 +49,8 @@ export type ReplayView = {
   earlier: Point[][]; // the legs before it, whole (drawn faded); in the summary, every leg
   lit: Lit;
   wrong: { points: Point[]; dashed: boolean }[];
-  mistaken: Point[];
+  mistaken: Mistaken[];
+  note: Note | null;
   head: Point | null; // where the walker is: the line's end, or the tip of a wrong path while it is out
   summary: boolean; // the end: every answer framed and numbered together, nothing single lit
 };
@@ -97,16 +103,31 @@ export function replayPlan({ events, cues }: { events: RouteEvent[]; cues: Cue[]
     if (!legs.length || e.startsLeg) {
       const T = shownAt(e, cues);
       // a new leg starts unlit
-      legs.push({ start: e.at, startsAt: T, walk: [], marks: [{ lit: null, at: T }], wrong: [], mistaken: [] });
+      legs.push({
+        start: e.at,
+        startsAt: T,
+        walk: [],
+        marks: [{ lit: null, at: T }],
+        wrong: [],
+        mistaken: [],
+        notes: [],
+      });
       free = T;
       continue;
     }
     const leg = legs[legs.length - 1];
     const T = Math.max(shownAt(e, cues), free);
-    if (e.kind === 'correction') {
-      // The place named by mistake is framed, not lit; the wrong path runs on from where the line is.
+    if (e.kind === 'correction' || e.kind === 'distractor') {
+      // The place named by mistake is framed, not lit, and the line stays where it is (a distractor never changes the
+      // route); a correction's wrong path runs on from there and is pulled back.
       leg.marks.push({ lit: null, at: T });
-      leg.mistaken.push({ place: e.at, at: T });
+      leg.mistaken.push({
+        at: e.at,
+        ...(e.landmarkId && e.kind === 'distractor' ? { landmarkId: e.landmarkId } : {}),
+        from: T,
+      });
+      if (e.note) leg.notes.push({ kind: e.kind, text: e.note, from: T });
+      if (e.kind === 'distractor') continue;
       if (e.wrongPath?.length) {
         const from = leg.walk.at(-1)?.to ?? leg.start;
         const points = same(from, e.wrongPath[0]) ? e.wrongPath : [from, ...e.wrongPath];
@@ -124,7 +145,7 @@ export function replayPlan({ events, cues }: { events: RouteEvent[]; cues: Cue[]
   }
   const answersAt = legs.flatMap((l) => l.marks.filter((m) => m.lit && 'answerAt' in m.lit).map((m) => m.at));
   const summaryAt = answersAt.length ? ms(Math.max(...answersAt) + SUMMARY_AFTER_SEC) : null;
-  const moments = legs.flatMap((l) => [l.startsAt, ...l.walk.map((w) => w.at), ...l.mistaken.map((m) => m.at)]);
+  const moments = legs.flatMap((l) => [l.startsAt, ...l.walk.map((w) => w.at), ...l.mistaken.map((m) => m.from)]);
   if (summaryAt !== null) moments.push(summaryAt);
   const steps = [...new Set(moments)].sort((a, b) => a - b);
   return { legs, summaryAt, steps, questionStarts };
@@ -142,11 +163,17 @@ export function stepFrom(plan: ReplayPlan, t: number, dir: 1 | -1): number | nul
 // The transcript line being spoken at time t: the last one started (it stays marked through the pause after it).
 export const cueAt = (cues: Cue[], t: number) => last(cues, (c) => c.start <= t)?.id ?? null;
 
+function noteAt(leg: Leg, step: number | undefined): Note | null {
+  const n = leg.notes.find((x) => x.from === step);
+  return n ? { kind: n.kind, text: n.text } : null;
+}
+
 const lineAt = (l: Leg, t: number) => [l.start, ...l.walk.filter((w) => w.at <= t).map((w) => w.to)];
 
 export function replayAt(plan: ReplayPlan, t: number, reduced: boolean): ReplayView {
   const leg = lastIndex(plan.legs, (l) => l.startsAt <= t);
-  if (leg < 0) return { leg, line: [], earlier: [], lit: null, wrong: [], mistaken: [], head: null, summary: false };
+  if (leg < 0)
+    return { leg, line: [], earlier: [], lit: null, wrong: [], mistaken: [], note: null, head: null, summary: false };
   const summary = plan.summaryAt !== null && t >= plan.summaryAt;
   const current = plan.legs[leg];
   const line = summary ? [] : lineAt(current, t);
@@ -170,7 +197,11 @@ export function replayAt(plan: ReplayPlan, t: number, reduced: boolean): ReplayV
     earlier: (summary ? shown : shown.slice(0, -1)).map((l) => lineAt(l, Number.POSITIVE_INFINITY)),
     lit: summary ? null : (last(current.marks, (m) => m.at <= t)?.lit ?? null),
     wrong,
-    mistaken: shown.flatMap((l) => l.mistaken.filter((m) => m.at <= t).map((m) => m.place)),
+    mistaken: shown.flatMap((l) => l.mistaken.filter((m) => m.from <= t).map(({ from: _, ...m }) => m)),
+    note: noteAt(
+      current,
+      last(plan.steps, (s) => s <= t),
+    ),
     head,
     summary,
   };

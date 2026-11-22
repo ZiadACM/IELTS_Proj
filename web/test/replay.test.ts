@@ -59,7 +59,7 @@ test('correction (e19, 68.89 s): the wrong path appears whole, holds 0.8 s, pull
   assert.deepEqual(shown.wrong, [{ points: [P(290, 92), P(265, 92)], dashed: false }]); // from the corridor end to room G's door
   near(shown.head, P(265, 92));
   assert.equal(shown.lit, null); // the place named by mistake gets a frame, not the highlight
-  assert.deepEqual(shown.mistaken, [P(265, 92)]);
+  assert.deepEqual(shown.mistaken, [{ at: P(265, 92) }]);
   assert.deepEqual(at(69.68).wrong[0].points, [P(290, 92), P(265, 92)]); // still holding at 68.89 + 0.8
   // Halfway through the pull back (69.69 + 0.225 s) the sine easing is at one half: 12.5 of the 25 units are left.
   const half = at(69.915).wrong[0].points;
@@ -68,7 +68,7 @@ test('correction (e19, 68.89 s): the wrong path appears whole, holds 0.8 s, pull
   near(at(69.915).head, P(277.5, 92));
   const gone = at(70.14);
   assert.deepEqual(gone.wrong, []);
-  assert.deepEqual(gone.mistaken, [P(265, 92)]); // the mistaken place stays framed
+  assert.deepEqual(gone.mistaken, [{ at: P(265, 92) }]); // the mistaken place stays framed
   near(gone.head, P(290, 92));
 });
 
@@ -107,7 +107,7 @@ test('summary: 0.8 s after the last answer (76.08 s) all legs show whole and the
   assert.equal(v.earlier.length, 3);
   assert.deepEqual(v.earlier[0], leg1Whole);
   assert.deepEqual(v.earlier[2].at(-1), P(392, 92));
-  assert.deepEqual(v.mistaken, [P(265, 92)]); // the framed wrong place stays
+  assert.deepEqual(v.mistaken, [{ at: P(265, 92) }]); // the framed wrong place stays
   assert.deepEqual(v.wrong, []);
   assert.deepEqual(at(76.88, true).wrong, [{ points: [P(290, 92), P(265, 92)], dashed: true }]); // reduced: stays
 });
@@ -170,4 +170,36 @@ test('sweep every 10 ms of the recording: no point is on the line before an even
     for (const p of at(t).line) if (!said(p, t)) early.push(`${JSON.stringify(p)} at ${t}`);
   }
   assert.deepEqual(early, []);
+});
+
+test('a distractor frames the misleading place, puts the highlight out and does not move the line', () => {
+  const small = replayPlan({
+    cues: [{ id: 'c1', start: 0, end: 20 }],
+    events: [
+      { id: 'e1', cueId: 'c1', kind: 'move', at: P(0, 0), atSec: 1 },
+      { id: 'e2', cueId: 'c1', kind: 'landmark', landmarkId: 'office', at: P(0, 10), atSec: 2 },
+      { id: 'e3', cueId: 'c1', kind: 'distractor', landmarkId: 'cafe', at: P(50, 50), atSec: 3, note: 'Not the café.' },
+      { id: 'e4', cueId: 'c1', kind: 'move', at: P(10, 10), atSec: 4 },
+    ],
+  });
+  const v = replayAt(small, 3, false);
+  assert.deepEqual(v.line, [P(0, 0), P(0, 10)]);
+  assert.equal(v.lit, null);
+  assert.deepEqual(v.mistaken, [{ at: P(50, 50), landmarkId: 'cafe' }]);
+  assert.deepEqual(v.note, { kind: 'distractor', text: 'Not the café.' });
+  assert.deepEqual(replayAt(small, 4, false).line, [P(0, 0), P(0, 10), P(10, 10)]);
+  assert.equal(replayAt(small, 4, false).note, null); // the next step replaces it
+  assert.deepEqual(replayAt(small, 4, false).mistaken, [{ at: P(50, 50), landmarkId: 'cafe' }]); // the frame stays
+  assert.deepEqual(small.steps, [1, 2, 3, 4]);
+});
+
+test("the correction's note shows from its step until the next one (68.89 to 72.95 s)", () => {
+  const note = {
+    kind: 'correction',
+    text: 'She first suggests the door on her left (room G), then corrects herself to the right (the table tennis room, H).',
+  };
+  assert.equal(at(68.88).note, null);
+  assert.deepEqual(at(68.89).note, note);
+  assert.deepEqual(at(72.9).note, note);
+  assert.equal(at(72.95).note, null);
 });

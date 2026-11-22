@@ -30,3 +30,10 @@ Built on `agent/answer-replay`, branched from `agent/review-explanations` (ticke
 4. **Jump to a question:** seeks to the start of the cue that holds the leg's first event, and plays from there.
 5. **Test seam:** a pure module `web/src/replay.ts`. `replayPlan(item)` gives the legs as timed steps; `replayAt(plan, t, reducedMotion)` gives what is on screen at time t. Expected values are read by hand from `first-challenge-001` v2 (`atSec` plus the D27 constants), and the prototype's checks (`check-replay.mjs`) become cases.
 6. **XSS-03 and audio (owner, asked in the session):** XSS-03 accepted audio only from `examSingleUse` rows, so ADM-08 failed it. New matrix flag `servesAudio` on ATT-06, ATT-10 and ADM-08; XSS-03 accepts an audio reply only where it is set (nosniff still required everywhere). One-line change in the protected `tests/security/xss.test.mjs`, owner approved.
+7. **Shape brief (approved):** one map in review, with a player strip under it:
+   - the spoken sentence as a caption;
+   - the authored note of a trap or correction, labelled, while it is the latest step;
+   - Play/Pause, step back and forward, Q1 to Q3 jumps, 0.75x/1x;
+   - a display-only progress line.
+
+   The transcript marks the current line and does not auto-scroll. Before the first Play the map shows the selected question's marks; "Show marks" returns to them and rewinds. A `distractor` event gets the dashed "named by mistake" frame, puts the highlight out, and does not move the line. Staff preview: a "Preview, not saved" band, the learner's item screen (picks not saved), then the review with the correct letters only and the full Answer Replay.

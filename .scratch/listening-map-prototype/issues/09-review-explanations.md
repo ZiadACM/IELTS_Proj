@@ -4,7 +4,7 @@
 
 **Blocked by:** 08 Guided practice: answer and submit
 
-**Status:** ready-for-human (built on `agent/review-explanations`; code-review, Impeccable critique and audit run 2026-11-19, P1 fixes in; see last comment)
+**Status:** merged to `main` in PR #23 (2026-11-22). See the 2026-11-22 comment for the open checks
 
 Spec: `../spec.md`
 
@@ -105,3 +105,11 @@ Built on `agent/review-explanations`. It branches from `agent/answer-submit` at 
 - **e677cda:** it is an ancestor of this branch, so merging `agent/review-explanations` brings it in; no separate merge is needed.
 - **Ran:** `npm test` server 131/131, web 4/4; type check clean; lint 4 warnings from before; build OK; `npx playwright test` 46 passed, 2 skipped (`playwright-run-owner-decisions.txt`); review tests run 3 times in a row (all passed after a fix: the first test now waits for Browse after Back, so its pending maps request does not spill into the next test). New screenshots: `review-end-*.png`.
 - **NOT VERIFIED:** the two new Arabic strings ("اعرضه في نص التسجيل", "انتهت المراجعة. اختر خريطة أخرى لتواصل التدرّب."), plus everything listed above.
+
+### 2026-11-22, agent (open checks)
+- **Arabic strings:** checked by the owner (fluent reader), 2026-11-22.
+- **Under the real CSP:** the "overlay" was the Impeccable design overlay, a dev tool injected into the page. The CSP blocks it on purpose and should keep doing so; it already ran with the CSP bypassed (2026-11-19). What matters for learners is checked instead. A temporary browser test (not committed) ran the whole review flow against a local instance that sends the real header (`style-src 'self'`, no `unsafe-inline`) and recorded every `securitypolicyviolation` event and console report:
+  - phone Chromium and desktop Chromium: 0 violations;
+  - phone WebKit: 3 `style-src-attr` reports, one for each answer `<select>` on the player screen (ticket 08), none on the review screen. A bare page with the same header and one plain `<select>` and no app code gets the same report, so it comes from WebKit's own dropdown styling, not from our code. The selects still work (all WebKit tests pass). No change: loosening the CSP for this would be wrong.
+- NOT VERIFIED: the same on real iOS Safari (covered by the real-phone check).
+- Merged to `main` in PR #23 (c221c79).

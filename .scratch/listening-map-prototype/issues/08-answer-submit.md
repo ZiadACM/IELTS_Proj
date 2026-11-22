@@ -4,7 +4,7 @@
 
 **Blocked by:** 07 Browse and player shell
 
-**Status:** ready-for-human (built on `agent/answer-submit`; code-review and Impeccable critique/audit run 2026-11-19, fixes in; owner decisions answered 2026-11-19 and built, see last comment)
+**Status:** merged to `main` in PR #21 and PR #22 (2026-11-22). The one open box waits for ticket 13 (exam mode), see the 2026-11-22 comment
 
 Spec: `../spec.md`
 
@@ -101,3 +101,9 @@ Built on `agent/answer-submit` (from `main` after PR #20).
   - the new Arabic string, which needs a fluent reader;
   - the server tests, which did not change and were not re-run for this commit;
   - CI.
+
+### 2026-11-22, agent (after merge)
+- Merged to `main`: PR #21 (5696c24) and PR #22 (e677cda, owner decisions).
+- Arabic strings: checked by the owner (fluent reader), 2026-11-22.
+- The last box stays open: the cross-user and leakage suites run guided then exam, and the exam start answers 501 until ticket 13. Tick it when ticket 13 lets the exam half run.
+- NOT VERIFIED: CI on the merge commits (no GitHub access from this session).

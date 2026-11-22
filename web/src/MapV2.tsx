@@ -48,7 +48,7 @@ function AreaLabel({ text, r, unit }: { text: string; r: Rect; unit: number }) {
 }
 
 // The gap in a room's wall: `at` is the position along that side, default the middle.
-export function doorLine(r: Rect, door: NonNullable<MapArea['door']>, half: number) {
+function doorLine(r: Rect, door: NonNullable<MapArea['door']>, half: number) {
   if (door.side === 'n' || door.side === 's') {
     const x = door.at ?? r.x + r.w / 2;
     const y = door.side === 'n' ? r.y : r.y + r.h;

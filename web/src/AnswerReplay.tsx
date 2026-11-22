@@ -4,7 +4,7 @@
 // spoken as a caption (below the controls), with a trap's or correction's authored note under it, read out when paused; and a progress line you read, not drag.
 // The map drawing is the parent's: this strip reports the clock with onTime (null: back to the review marks).
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { type ReplayPlan, stepFrom } from './replay.ts';
+import { type Note, type ReplayPlan, stepFrom } from './replay.ts';
 import type { Strings } from './strings.ts';
 import { lineShare, minutesSeconds } from './time.ts';
 
@@ -20,7 +20,7 @@ type Props = {
   durationSec: number;
   time: number | null; // null before the first play and after Show marks
   caption: string | null;
-  note: { kind: 'distractor' | 'correction'; text: string } | null;
+  note: Note | null;
   onTime: (time: number | null) => void;
 };
 
@@ -37,12 +37,21 @@ export function AnswerReplay({ t, plan, audioUrl, durationSec, time, caption, no
   useEffect(() => {
     if (!playing) return;
     const tick = () => {
-      if (audio.current) onTime(audio.current.currentTime);
+      if (audio.current && !audio.current.paused) onTime(audio.current.currentTime);
       frame.current = requestAnimationFrame(tick);
     };
     frame.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame.current);
   }, [playing, onTime]);
+
+  // Back to the review marks (Show marks, or a question row picked in the review): the recording stops and rewinds,
+  // so the next Play starts from the beginning.
+  useEffect(() => {
+    const a = audio.current;
+    if (time !== null || !a || (a.paused && a.currentTime === 0)) return;
+    a.pause();
+    a.currentTime = 0;
+  }, [time]);
 
   const play = useCallback(async () => {
     const a = audio.current;
@@ -82,9 +91,6 @@ export function AnswerReplay({ t, plan, audioUrl, durationSec, time, caption, no
   };
 
   const showMarks = () => {
-    const a = audio.current;
-    a?.pause();
-    if (a) a.currentTime = 0;
     onTime(null);
     playButton.current?.focus(); // this button is about to go; focus must not fall to the page
   };

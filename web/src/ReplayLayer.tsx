@@ -7,13 +7,12 @@
 // lit frame marks the place); the summary goes `over` them.
 // `unit` is map units per screen pixel, so sizes given in px stay the same on every screen.
 import type { MapData, Point } from './api.ts';
-import { BOX_PX, LABEL_PX, rectOf, textPx } from './MapV2.tsx';
+import { BOX_PX, LABEL_PX, type Rect, rectOf, textPx } from './MapV2.tsx';
 import type { Lit, Mistaken, ReplayView } from './replay.ts';
 
 const V1_DISC_PX = 15; // a v1 letter's disc radius (ItemMap)
 const V1_SQUARE_PX = 8; // a v1 landmark's square
 
-type Box = { x: number; y: number; w: number; h: number };
 const points = (line: Point[]) => line.map((p) => `${p.x},${p.y}`).join(' ');
 
 // The letter at an answer place: the target nearest the authored point (a destination is within 20 units of it).
@@ -23,14 +22,14 @@ const nearestTarget = (map: MapData, at: Point) =>
   );
 
 // A box around a letter, one size for v1 discs and v2 boxes.
-function letterBox(map: MapData, at: Point, unit: number, pad: number): Box {
+function letterBox(map: MapData, at: Point, unit: number, pad: number): Rect {
   const half = (map.format === 2 ? BOX_PX / 2 : V1_DISC_PX) * unit + pad * unit;
   return { x: at.x - half, y: at.y - half, w: 2 * half, h: 2 * half };
 }
 
 // A landmark's place on the map: its room (v2, inset from the walls), its symbol with the label under it (v2), or the
 // small square and the space around it (v1). Null for an entrance: the leg's numbered ring already marks it.
-function landmarkBox(map: MapData, landmarkId: string, unit: number): Box | null {
+function landmarkBox(map: MapData, landmarkId: string, unit: number): Rect | null {
   const l = map.landmarks.find((x) => x.id === landmarkId);
   if (!l || l.entrance) return null;
   const area = l.area ? map.areas?.find((a) => a.id === l.area) : undefined;
@@ -45,7 +44,7 @@ function landmarkBox(map: MapData, landmarkId: string, unit: number): Box | null
   return { x: l.x - half, y: l.y - half, w: 2 * half, h: 2 * half };
 }
 
-function litBox(map: MapData, lit: Lit, unit: number): Box | null {
+function litBox(map: MapData, lit: Lit, unit: number): Rect | null {
   if (!lit) return null;
   if ('answerAt' in lit) return letterBox(map, nearestTarget(map, lit.answerAt), unit, 6);
   return landmarkBox(map, lit.landmarkId, unit);
@@ -53,7 +52,7 @@ function litBox(map: MapData, lit: Lit, unit: number): Box | null {
 
 // Where a dashed "named by mistake" frame goes: a distractor's landmark; for a correction, the letter in the room whose
 // door the wrong path ends at, else the nearest letter (the wrong place is a door or a corridor point, not a letter).
-function mistakenBox(map: MapData, m: Mistaken, unit: number): Box {
+function mistakenBox(map: MapData, m: Mistaken, unit: number): Rect {
   const place = m.landmarkId ? landmarkBox(map, m.landmarkId, unit) : null;
   if (place) return place;
   const room = map.areas?.find((a) => {
@@ -101,7 +100,7 @@ export function ReplayLayer({
   answers: string[]; // the correct letter of each question, in question order
   layer: 'under' | 'over';
 }) {
-  const box = (b: Box | null, className: string, key?: string | number) =>
+  const box = (b: Rect | null, className: string, key?: string | number) =>
     b && <rect key={key} className={className} x={b.x} y={b.y} width={b.w} height={b.h} rx={4 * unit} />;
   if (layer === 'over')
     return (

@@ -41,6 +41,7 @@ export type ReplayPlan = {
   summaryAt: number | null;
   steps: number[]; // every moment something new appears, in order: step back and forward land on these
   questionStarts: number[]; // per question, the start of the cue where its part of the walk begins
+  // (in route order, which is question order: the validator's question-order rule)
 };
 
 export type ReplayView = {

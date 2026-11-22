@@ -170,6 +170,20 @@ test('Answer Replay plays, steps point by point, lights the place named, jumps t
   );
 });
 
+test("picking a question row while the replay plays stops it, rewinds, and shows that question's marks", async ({
+  page,
+}) => {
+  await review(page);
+  await page.getByRole('button', { name: 'شغّل إعادة المسار' }).click();
+  await expect(page.getByRole('button', { name: 'إيقاف مؤقت' })).toBeVisible();
+  await page.locator('.review-row').nth(1).click();
+  await expect(page.locator('svg.item-map .review-marks')).toBeVisible();
+  await page.waitForTimeout(300); // a frame or two later the replay must not come back
+  await expect(page.locator('svg.item-map .replay-line')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'شغّل إعادة المسار' })).toBeVisible();
+  await expect.poll(() => clock(page)).toBe(0);
+});
+
 test('the correction: its wrong path and note appear at 68.89 s, the wrong place stays framed, and the summary frames every answer', async ({
   page,
 }) => {

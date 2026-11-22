@@ -67,8 +67,10 @@ export function AnswerReplay({ t, plan, audioUrl, durationSec, time, caption, no
         onTime(to);
         if (then === 'play') play();
       };
-      if (a.readyState >= HTMLMediaElement.HAVE_METADATA) go();
-      else a.addEventListener('loadedmetadata', go, { once: true });
+      if (a.readyState >= HTMLMediaElement.HAVE_METADATA) return go();
+      a.addEventListener('loadedmetadata', go, { once: true });
+      // Safari may not have fetched anything yet (iOS ignores preload); this tap starts it.
+      if (a.networkState !== HTMLMediaElement.NETWORK_LOADING) a.load();
     },
     [onTime, play],
   );

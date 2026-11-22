@@ -95,10 +95,10 @@ async function review(page: Page) {
 const clock = (page: Page) => page.locator('.replay-strip audio').evaluate((a: HTMLAudioElement) => a.currentTime);
 const next = (page: Page) => page.getByRole('button', { name: 'الخطوة التالية' });
 const back = (page: Page) => page.getByRole('button', { name: 'الخطوة السابقة' });
-async function stepTo(page: Page, sec: number) {
+async function stepTo(page: Page, sec: number, step = next(page)) {
   for (let i = 0; i < 40 && (await clock(page)) < sec - 0.05; i++) {
     const before = await clock(page);
-    await next(page).click();
+    await step.click();
     await expect.poll(() => clock(page)).toBeGreaterThan(before);
   }
   await expect.poll(() => clock(page)).toBeCloseTo(sec + 0.01, 1);
@@ -278,4 +278,20 @@ test('staff preview: a draft shown as learners see it (picks not saved), then th
 
   await page.getByRole('button', { name: 'العودة إلى العناصر' }).click();
   await expect(page.getByRole('heading', { name: 'عناصر المحتوى' })).toBeVisible();
+});
+
+test('in the English interface the strip reads left to right, its step icons are not mirrored, and the correction is labelled', async ({
+  page,
+}) => {
+  await review(page);
+  await page.getByRole('button', { name: 'English' }).click();
+  await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
+  const step = page.getByRole('button', { name: 'Next step' });
+  await stepTo(page, 68.89, step);
+  await expect(page.locator('.replay-note')).toContainText('Correction');
+  const mirrored = await step.locator('svg').evaluate((s) => getComputedStyle(s).transform);
+  expect(mirrored).toBe('none');
+  await page.locator('.replay-strip').screenshot({ path: `${EVIDENCE}strip-english-${test.info().project.name}.png` });
+  await page.getByRole('button', { name: 'Show the marks' }).click();
+  await expect(page.getByRole('button', { name: 'Play Answer Replay' })).toBeFocused();
 });

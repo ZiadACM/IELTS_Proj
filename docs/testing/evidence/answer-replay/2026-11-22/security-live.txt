@@ -1,0 +1,357 @@
+✔ LEAK-02: guided attempt, every deliveryPayload endpoint before submit carries no answer data (313.914708ms)
+✖ LEAK-03: exam attempt, no answer data or transcript before submit, including after answers are saved and after the deadline (85.960333ms)
+✖ LEAK-04: review endpoints before submit are refused in both modes and carry no canary (172.902833ms)
+✔ LEAK-05: page assets carry no canary and no source map is served (4.492333ms)
+ℹ scanned 2 asset(s) linked from /. A canary only appears in a bundle built with the content bank: for the real app, also run this after a build that includes seeded items (otherwise this part is NOT VERIFIED).
+✔ LEAK-06: attempt ids are random (>=122 bits) and guessed review URLs return 404 (186.189708ms)
+✖ LEAK-07: error responses (bad answer format, wrong mode, unknown question) carry no answer data (89.684667ms)
+✖ LEAK-08 (positive control): after submit, review carries the authored route and transcript (186.032291ms)
+✖ SESS-08: guest sessions are rate-limited per client, and idle guest data is deleted after 30 days (D11) (124.1945ms)
+✖ SESS-09: guest upgrade moves only the caller's own data and invalidates the old guest session (101.995375ms)
+✔ SESS-02: sign-in and password-reset requests answer the same for an existing and a non-existent email (177.078166ms)
+✔ SESS-04: after sign-out the old session cookie is refused (invalidated on the server) (94.322542ms)
+✔ SESS-05: a password-reset token works once; reusing it is refused (224.614292ms)
+✖ AUTHZ-06: every role x every endpoint matches its authorization-matrix cell (and the cell condition is enforced) (10178.017459ms)
+✔ matrix declares the six expected roles (guest added by owner decision D5) (0.485208ms)
+✔ every endpoint has a decision for every role, from the known vocabulary (0.100333ms)
+✔ endpoint ids and method+path pairs are unique (0.170833ms)
+✔ every endpoint cites at least one rule or threat (CS2.x, CS3.x, T1-T8) (0.06775ms)
+✔ CS2.1/T3: paths under /me or with {attemptId} are flagged ownerScoped (0.0655ms)
+✔ CS2.1/T3: owner-scoped endpoints are never "allow" for any role (server checks ownership) (0.067333ms)
+✔ CS2.1/T3: anonymous is denied all learner data (attempts, progress, settings, recommendations) (0.072292ms)
+✔ CS2.2/T1: learner-facing endpoints returning answer data require a submitted attempt (0.06175ms)
+✔ CS2.2/T1: delivery payloads are never also flagged as returning answer data (0.042833ms)
+✔ CS2.3/T4: exam-forbidden actions (replay, hint) are guided-only or denied, and vice versa (0.092541ms)
+✔ CS2.3/T3/T4: writes to an attempt are refused once it is submitted or past its deadline (0.312833ms)
+✔ T5: /admin endpoints are staff-only (anonymous, guest and learner denied) (0.055083ms)
+✔ CS3.1/T5: only the human content_reviewer role can publish (0.063083ms)
+✔ authorization-matrix.md matches the JSON exactly (0.620084ms)
+✔ coverage logic: path syntaxes normalise and unlisted endpoints are reported (synthetic) (0.069042ms)
+✔ every real endpoint in the application appears in the matrix (4.269583ms)
+✔ AUTHZ-03: another user's attempt ids are refused on every ownerScoped endpoint (learner, guest and mixed pairs) (618.575334ms)
+✔ AUTHZ-04: /me endpoints ignore a userId override in the query, a header or the body (269.097416ms)
+✖ AUTHZ-05: with no session every anonymous-denied endpoint returns 401 and no data (117.368292ms)
+✖ AUTHZ-07: extra fields on massAssignmentRisk endpoints are ignored or rejected; stored state unchanged (198.158792ms)
+✔ AUTHZ-08: progress and recommendations cannot be written by the client; the server computes the score (106.670708ms)
+✔ finds shorthand and route() registrations in Fastify style (1.108542ms)
+✔ fails closed: non-literal path (0.171583ms)
+✔ fails closed: template path with a variable (0.042791ms)
+✔ fails closed: route() without a literal url (0.038667ms)
+✔ fails closed: route() without a method (0.040042ms)
+✔ fails closed: register with a prefix (0.046708ms)
+✔ scans server/, skips tests and test-support, and the gate reports an unlisted route (1.685792ms)
+✔ returns nothing when there is no server/ directory (the gate then reports NOT VERIFIED) (0.177083ms)
+✖ EXAM-02: replay requested directly in an exam attempt is refused; support usage unchanged; no audio (209.646459ms)
+✖ EXAM-03: hint requested directly in an exam attempt is refused; no hint content returned (188.24925ms)
+✖ EXAM-04: exam audio is one forward-only stream per attempt (D9) (193.9185ms)
+✖ EXAM-05: late writes are refused (or marked late) and client time fields are ignored (88.27025ms)
+✖ EXAM-06: attempt mode is immutable and no guided attempt can be opened beside an open exam (D10) (88.891166ms)
+✖ EXAM-07: no parallel exam attempts; an exam after a seen item is flagged seenBefore and not counted (D10) (182.756417ms)
+✔ answer-key-leakage: passes against the SAFE fixture (nothing skipped) (427.449125ms)
+✔ answer-key-leakage: every test fails against the VULNERABLE fixture (422.841666ms)
+✔ exam-mode: passes against the SAFE fixture (nothing skipped) (580.167792ms)
+✔ exam-mode: every test fails against the VULNERABLE fixture (589.234208ms)
+✔ cross-user-access: passes against the SAFE fixture (nothing skipped) (612.96725ms)
+✔ cross-user-access: every test fails against the VULNERABLE fixture (613.517459ms)
+✔ authorization-enforcement: passes against the SAFE fixture (nothing skipped) (6335.640959ms)
+✔ authorization-enforcement: every test fails against the VULNERABLE fixture (6384.893042ms)
+✔ xss: passes against the SAFE fixture (nothing skipped) (302.306416ms)
+✔ xss: every test fails against the VULNERABLE fixture (305.155083ms)
+✔ auth: passes against the SAFE fixture (nothing skipped) (300.211375ms)
+✔ auth: every test fails against the VULNERABLE fixture (313.175583ms)
+✔ each vulnerability alone is caught by the test with the same case id, and every live test is covered (18250.737917ms)
+✔ XSS-01: markup in item text fields is rejected at import, or served back only as JSON data (198.772167ms)
+✔ XSS-02: learner text (item report) is stored as data and served back only as JSON (179.090833ms)
+✔ XSS-03: every API response is JSON (or audio) with nosniff; the page has a strict CSP (427.938041ms)
+ℹ tests 64
+ℹ suites 0
+ℹ pass 49
+ℹ fail 15
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 50729.201541
+
+✖ failing tests:
+
+test at tests/security/lib/live.mjs:27:3
+✖ LEAK-03: exam attempt, no answer data or transcript before submit, including after answers are saved and after the deadline (85.960333ms)
+  AssertionError [ERR_ASSERTION]: learner-a could not start a exam attempt on p1: 501 {"error":"not_implemented","ticket":"13-independent-check"}
+      at env.startAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/answer-key-leakage.test.mjs:31:15
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ LEAK-04: review endpoints before submit are refused in both modes and carry no canary (172.902833ms)
+  AssertionError [ERR_ASSERTION]: learner-exam could not start a exam attempt on p1: 501 {"error":"not_implemented","ticket":"13-independent-check"}
+      at env.startAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/answer-key-leakage.test.mjs:48:17
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ LEAK-07: error responses (bad answer format, wrong mode, unknown question) carry no answer data (89.684667ms)
+  AssertionError [ERR_ASSERTION]: learner-a could not start a exam attempt on p1: 501 {"error":"not_implemented","ticket":"13-independent-check"}
+      at env.startAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/answer-key-leakage.test.mjs:101:16
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ LEAK-08 (positive control): after submit, review carries the authored route and transcript (186.032291ms)
+  AssertionError [ERR_ASSERTION]: learner-exam could not start a exam attempt on p1: 501 {"error":"not_implemented","ticket":"13-independent-check"}
+      at env.startAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/answer-key-leakage.test.mjs:130:17
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ SESS-08: guest sessions are rate-limited per client, and idle guest data is deleted after 30 days (D11) (124.1945ms)
+  AssertionError [ERR_ASSERTION]: test-support POST /__test__/jobs/retention returned 501: {"error":"not_implemented","ticket":"17-data-rights-retention"}
+      at Object.supportOk (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:81:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/auth.test.mjs:29:3
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ SESS-09: guest upgrade moves only the caller's own data and invalidates the old guest session (101.995375ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   "upgraded account lost the guest's own attempt",
+  +   'guest-b lost its data or session (404)',
+  +   'old guest-a session still valid after upgrade (404)'
+  + ]
+  - []
+  
+      at file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/auth.test.mjs:61:10
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ "upgraded account lost the guest's own attempt", 'guest-b lost its data or session (404)', 'old guest-a session still valid after upgrade (404)' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ AUTHZ-06: every role x every endpoint matches its authorization-matrix cell (and the cell condition is enforced) (10178.017459ms)
+  AssertionError [ERR_ASSERTION]: guest-ATT-07 could not start a exam attempt on p3: 501 {"error":"not_implemented","ticket":"13-independent-check"}
+      at env.startAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async ownAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/authorization-enforcement.test.mjs:20:18)
+      at async ATT-07 (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/authorization-enforcement.test.mjs:64:107)
+      at async prepare (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/authorization-enforcement.test.mjs:77:13)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/authorization-enforcement.test.mjs:88:19
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ AUTHZ-05: with no session every anonymous-denied endpoint returns 401 and no data (117.368292ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   'ME-03 DELETE /me: expected 401, got 404',
+  +   'REP-01 POST /items/<id>/reports: expected 401, got 404',
+  +   'ATT-02 GET /me/attempts: expected 401, got 404',
+  +   'ATT-07 POST /attempts/<id>/replays: expected 401, got 404',
+  +   'ATT-08 POST /attempts/<id>/hints: expected 401, got 404',
+  +   'PROG-01 GET /me/progress: expected 401, got 404',
+  +   'PROG-02 GET /me/recommendations: expected 401, got 404',
+  +   'ADM-06 GET /admin/reports: expected 401, got 404'
+  + ]
+  - []
+  
+      at file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/cross-user-access.test.mjs:121:10
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'ME-03 DELETE /me: expected 401, got 404', 'REP-01 POST /items/<id>/reports: expected 401, got 404', 'ATT-02 GET /me/attempts: expected 401, got 404', 'ATT-07 POST /attempts/<id>/replays: expected 401, got 404', 'ATT-08 POST /attempts/<id>/hints: expected 401, got 404', 'PROG-01 GET /me/progress: expected 401, got 404', 'PROG-02 GET /me/recommendations: expected 401, got 404', 'ADM-06 GET /admin/reports: expected 401, got 404' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ AUTHZ-07: extra fields on massAssignmentRisk endpoints are ignored or rejected; stored state unchanged (198.158792ms)
+  AssertionError [ERR_ASSERTION]: test-support GET /__test__/users/<id> returned 501: {"error":"not_implemented","ticket":"17-data-rights-retention"}
+      at Object.supportOk (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:81:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async ME-02 (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/cross-user-access.test.mjs:133:22)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/cross-user-access.test.mjs:167:5
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ EXAM-02: replay requested directly in an exam attempt is refused; support usage unchanged; no audio (209.646459ms)
+  AssertionError [ERR_ASSERTION]: learner-a could not start a exam attempt on p1: 501 {"error":"not_implemented","ticket":"13-independent-check"}
+      at env.startAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async examForbiddenCase (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/exam-mode.test.mjs:27:17)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/exam-mode.test.mjs:40:20
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ EXAM-03: hint requested directly in an exam attempt is refused; no hint content returned (188.24925ms)
+  AssertionError [ERR_ASSERTION]: learner-a could not start a exam attempt on p1: 501 {"error":"not_implemented","ticket":"13-independent-check"}
+      at env.startAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async examForbiddenCase (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/exam-mode.test.mjs:27:17)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/exam-mode.test.mjs:44:20
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ EXAM-04: exam audio is one forward-only stream per attempt (D9) (193.9185ms)
+  AssertionError [ERR_ASSERTION]: learner-a could not start a exam attempt on p1: 501 {"error":"not_implemented","ticket":"13-independent-check"}
+      at env.startAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/exam-mode.test.mjs:59:17
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ EXAM-05: late writes are refused (or marked late) and client time fields are ignored (88.27025ms)
+  AssertionError [ERR_ASSERTION]: learner-a could not start a exam attempt on p1: 501 {"error":"not_implemented","ticket":"13-independent-check"}
+      at env.startAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/exam-mode.test.mjs:89:15
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ EXAM-06: attempt mode is immutable and no guided attempt can be opened beside an open exam (D10) (88.891166ms)
+  AssertionError [ERR_ASSERTION]: learner-a could not start a exam attempt on p1: 501 {"error":"not_implemented","ticket":"13-independent-check"}
+      at env.startAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/exam-mode.test.mjs:116:15
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ EXAM-07: no parallel exam attempts; an exam after a seen item is flagged seenBefore and not counted (D10) (182.756417ms)
+  AssertionError [ERR_ASSERTION]: learner-c could not start a exam attempt on p2: 501 {"error":"not_implemented","ticket":"13-independent-check"}
+      at env.startAttempt (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:163:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/exam-mode.test.mjs:142:17
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

@@ -25,7 +25,7 @@ type Area = {
 type MapPath = { id: string; kind: string; points: [number, number][]; width?: number; label?: string };
 type Entrance = Point & { id: string; kind: string; side?: string; youAreHere?: boolean };
 type MapSymbol = Point & { kind: string };
-type Content = {
+export type Content = {
   tier: number;
   purpose: string;
   focusSkill?: string;
@@ -100,8 +100,8 @@ function mapOf(m: Content['map']) {
   };
 }
 
-// What the player receives for a published item.
-function deliveryOf(itemId: string, c: Content) {
+// What the player receives for a published item; staff preview (ADM-04) shows the same, so it matches the learner view.
+export function deliveryOf(itemId: string, c: Content) {
   return {
     itemId,
     tier: c.tier,

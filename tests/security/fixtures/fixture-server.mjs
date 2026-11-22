@@ -420,6 +420,12 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
     json(res, 200, reviewView(o.a));
   });
 
+  route('GET', '/attempts/{attemptId}/review/audio', (req, res, body, url, p) => {
+    const o = ownAttempt(req, res, p.attemptId); if (!o) return;
+    if (o.a.status !== 'submitted') return err(res, 409, 'review opens after submission');
+    send(res, 200, audioBytes, 'audio/mpeg');
+  });
+
   // PROGRESS
   const progressOf = (u) => {
     if (vuln('AUTHZ-08') && progressOverrides.has(u.id)) return progressOverrides.get(u.id);
@@ -464,6 +470,11 @@ export function createFixtureServer({ vulnerable = [], supportToken = randomByte
     const rec = items.get(p.itemId); if (!rec) return err(res, 404, 'not found');
     if (vuln('XSS-01')) return send(res, 200, `<html><body>${rec.item.transcript.cues.map((x) => `<p>${x.text}</p>`).join('')}${rec.item.questions.map((q) => `<p>${q.prompt}</p>`).join('')}</body></html>`, 'text/html; charset=utf-8');
     json(res, 200, { itemId: rec.id, status: rec.status, item: rec.item });
+  });
+  route('GET', '/admin/items/{itemId}/audio', (req, res, body, url, p) => {
+    const c = requireRole(req, res, AUTHOR_REVIEWER); if (!c) return;
+    if (!items.get(p.itemId)) return err(res, 404, 'not found');
+    send(res, 200, audioBytes, 'audio/mpeg');
   });
   route('POST', '/admin/items/{itemId}/publish', (req, res, body, url, p) => {
     const c = requireRole(req, res, vuln('AUTHZ-06') ? AUTHOR_REVIEWER : ['content_reviewer']); if (!c) return;

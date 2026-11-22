@@ -83,7 +83,7 @@ liveTest('XSS-03: every API response is JSON (or audio) with nosniff; the page h
     for (const [who, a] of [['anonymous', env.anonymous()], ['learner', learner], ['author', author]]) {
       const r = await a.req('GET', fillPath(e.path, { attemptId: att.id, itemId: env.items.p1, userId: learner.userId }));
       const type = r.headers.get('content-type') ?? '';
-      if (r.bytes.length && !isJson(r) && !(has(e, 'examSingleUse') && /^audio\//.test(type))) problems.push(`${e.id} as ${who}: content-type ${type || '(none)'}`);
+      if (r.bytes.length && !isJson(r) && !(has(e, 'servesAudio') && /^audio\//.test(type))) problems.push(`${e.id} as ${who}: content-type ${type || '(none)'}`);
       if (!nosniff(r)) problems.push(`${e.id} as ${who} (${r.status}): no nosniff`);
     }
   }

@@ -113,7 +113,7 @@ liveTest('AUTHZ-05: with no session every anonymous-denied endpoint returns 401 
   const anon = env.anonymous();
   const problems = [];
   for (const e of anonDenied) {
-    const attemptId = e.id === 'ATT-09' ? victim.submitted : victim.open;
+    const attemptId = ['ATT-09', 'ATT-10'].includes(e.id) ? victim.submitted : victim.open;
     const r = await anon.req(e.method, fillPath(e.path, { attemptId, itemId: env.items.p1, userId: victim.actor.userId }), { body: ownerBody(env, e) });
     if (r.status !== 401) problems.push(`${e.id} ${r.method} ${r.path}: expected 401, got ${r.status}`);
     if (env.canaryRe.test(r.text) || leaksVictim(r, victim) || r.text.includes(attemptId)) problems.push(`${e.id}: data in the body`);

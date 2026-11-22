@@ -424,7 +424,8 @@
       "resource": "attempt",
       "flags": [
         "ownerScoped",
-        "examSingleUse"
+        "examSingleUse",
+        "servesAudio"
       ],
       "refs": [
         "T4",
@@ -501,6 +502,29 @@
         "T3",
         "CS2.1",
         "CS2.2"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "own-submitted",
+        "learner": "own-submitted",
+        "content_author": "own-submitted",
+        "content_reviewer": "own-submitted",
+        "admin": "deny"
+      }
+    },
+    {
+      "id": "ATT-10",
+      "method": "GET",
+      "path": "/attempts/{attemptId}/review/audio",
+      "purpose": "Stream the item audio for Answer Replay in review (owner decision 2026-11-22, ticket 10)",
+      "resource": "attempt",
+      "flags": [
+        "ownerScoped",
+        "servesAudio"
+      ],
+      "refs": [
+        "T3",
+        "CS2.1"
       ],
       "access": {
         "anonymous": "deny",
@@ -660,6 +684,28 @@
         "T5",
         "CS2.5",
         "CS2.6"
+      ],
+      "access": {
+        "anonymous": "deny",
+        "guest": "deny",
+        "learner": "deny",
+        "content_author": "allow",
+        "content_reviewer": "allow",
+        "admin": "deny"
+      }
+    },
+    {
+      "id": "ADM-08",
+      "method": "GET",
+      "path": "/admin/items/{itemId}/audio",
+      "purpose": "Stream an item's audio, draft or published, for staff preview (owner decision 2026-11-22, ticket 10)",
+      "resource": "item",
+      "flags": [
+        "staffOnly",
+        "servesAudio"
+      ],
+      "refs": [
+        "T5"
       ],
       "access": {
         "anonymous": "deny",

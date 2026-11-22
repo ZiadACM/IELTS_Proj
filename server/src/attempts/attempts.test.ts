@@ -378,3 +378,40 @@ describe('ATT-09 GET /attempts/{attemptId}/review', () => {
       assert.equal((await review(app, cookie, bad)).statusCode, 404, bad);
   });
 });
+
+// Ticket 10: the recording for Answer Replay in review (ATT-10, owner decision 2026-11-22): the owner's submitted
+// attempt only, like ATT-09; ATT-06 stays closed after submit.
+const reviewAudio = (app: App, cookie: string | undefined, id: string, headers?: Record<string, string>) =>
+  call(app, 'GET', `/attempts/${id}/review/audio`, { cookie, headers });
+
+describe('ATT-10 GET /attempts/{attemptId}/review/audio', () => {
+  test('after submit the owner gets the item audio, whole or by byte range', async () => {
+    const { app, cookie, id } = await openAttempt('guest');
+    await submit(app, cookie, id);
+    const whole = await reviewAudio(app, cookie, id);
+    assert.equal(whole.statusCode, 200, whole.body);
+    assert.equal(whole.headers['content-type'], 'audio/mpeg');
+    assert.equal(whole.headers['cache-control'], 'private, no-cache');
+    assert.deepEqual(whole.rawPayload, FIXTURE_AUDIO_BYTES);
+    const part = await reviewAudio(app, cookie, id, { range: 'bytes=0-99' });
+    assert.equal(part.statusCode, 206);
+    assert.deepEqual(part.rawPayload, FIXTURE_AUDIO_BYTES.subarray(0, 100));
+    assert.equal((await call(app, 'GET', `/attempts/${id}/audio`, { cookie })).statusCode, 409); // ATT-06 unchanged
+  });
+
+  test('before submit it is refused (409)', async () => {
+    const { app, cookie, id } = await openAttempt();
+    const res = await reviewAudio(app, cookie, id);
+    assert.equal(res.statusCode, 409, res.body);
+    assert.deepEqual(res.json(), { error: 'attempt_open' });
+  });
+
+  test('anonymous 401; another learner 404; an admin is denied; an unknown id 404', async () => {
+    const { app, cookie, id } = await openAttempt();
+    await submit(app, cookie, id);
+    assert.equal((await reviewAudio(app, undefined, id)).statusCode, 401);
+    assert.equal((await reviewAudio(app, await signedIn(app, apps.db, 'learner'), id)).statusCode, 404);
+    assert.equal((await reviewAudio(app, await signedIn(app, apps.db, 'admin'), id)).statusCode, 403);
+    assert.equal((await reviewAudio(app, cookie, '7b0c1a52-8f2e-4c4b-9d35-2f8a7c1e0b11')).statusCode, 404);
+  });
+});

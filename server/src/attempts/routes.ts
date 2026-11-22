@@ -1,6 +1,6 @@
-// Attempts (spec: Attempts, Audio delivery, Review; matrix ATT-01, ATT-03 to ATT-06, ATT-09). Ticket 07 starts guided
-// practice and serves its audio; ticket 08 saves answers and submits, scored here; ticket 09 serves the review. Replays and hints are ticket 11, the independent
-// check (mode `exam`) 13.
+// Attempts (spec: Attempts, Audio delivery, Review; matrix ATT-01, ATT-03 to ATT-06, ATT-09, ATT-10). Ticket 07 starts
+// guided practice and serves its audio; ticket 08 saves answers and submits, scored here; ticket 09 serves the review;
+// ticket 10 the review's audio for Answer Replay. Replays and hints are ticket 11, the independent check (mode `exam`) 13.
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { Pool } from 'pg';
 import { type Auth, callerId, requireSession } from '../access/auth.ts';
@@ -44,7 +44,8 @@ const attemptOf = (r: Row) => ({
 
 // The parts of an item's content that check and score answers (its questions with their answer letters, and its map
 // letters), and what review shows besides (prompts, explanations, the authored route and the transcript).
-type ItemContent = {
+export type ItemContent = {
+  audio: { file: string };
   questions: {
     id: string;
     prompt: string;
@@ -59,7 +60,7 @@ type ItemContent = {
 
 // The item content behind an attempt. Read by id, not through the published-only lookup: the attempt was started on a
 // published item and is scored against the same content. Null if the item row is gone.
-async function itemContentOf(db: Pool, itemId: string) {
+export async function itemContentOf(db: Pool, itemId: string) {
   const { rows } = await db.query<{ content: ItemContent }>('select content from items where id = $1', [itemId]);
   return rows[0]?.content ?? null;
 }
@@ -244,6 +245,22 @@ export async function attemptRoutes(
         route: content.events,
         transcript: content.transcript,
       };
+    },
+  );
+
+  // ATT-10: the recording behind Answer Replay, for the caller's own submitted attempt only, in any mode (like ATT-09).
+  // ATT-06 stays closed after submit, so the exam's single listen is not reopened through it.
+  fastify.get<{ Params: { attemptId: string } }>(
+    '/attempts/:attemptId/review/audio',
+    { preValidation: attemptUser },
+    async (request, reply) => {
+      const attempt = await ownAttempt(request);
+      if (!attempt) return reply.code(404).send({ error: 'not_found' });
+      if (attempt.status !== 'submitted') return reply.code(409).send({ error: 'attempt_open' });
+      const content = await itemContentOf(db, attempt.itemId);
+      if (!content) return reply.code(404).send({ error: 'not_found' });
+      reply.header('cache-control', 'private, no-cache');
+      return reply.sendFile(content.audio.file, contentDir, { cacheControl: false });
     },
   );
 

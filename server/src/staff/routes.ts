@@ -1,11 +1,23 @@
-// Staff item routes (spec: Staff; matrix ADM-01, ADM-02, ADM-05). ADM-04 (preview, ticket 10) and ADM-06 (reports,
-// ticket 14) are not built yet. There is no item editor and no roles endpoint (owner decision D19).
+// Staff item routes (spec: Staff; matrix ADM-01, ADM-02, ADM-04, ADM-05, ADM-08). ADM-06 (reports, ticket 14) is not
+// built yet. There is no item editor and no roles endpoint (owner decision D19).
 import type { FastifyInstance } from 'fastify';
 import type { Pool } from 'pg';
 import { type Auth, callerId } from '../access/auth.ts';
+import type { ItemContent } from '../attempts/routes.ts';
+import { type Content, deliveryOf } from '../catalogue/routes.ts';
 import type { Clock } from '../clock.ts';
 import { importItem, listItems, publishItem } from './items.ts';
 import { requireStaffRole } from './roles.ts';
+
+// Any item, draft or published: staff check drafts before they publish them.
+async function itemRow(db: Pool, itemId: string) {
+  if (!UUID.test(itemId)) return null;
+  const { rows } = await db.query<{ status: 'draft' | 'published'; content: Omit<Content, 'questions'> & ItemContent }>(
+    'select status, content from items where id = $1',
+    [itemId],
+  );
+  return rows[0] ?? null;
+}
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -59,6 +71,45 @@ export async function staffRoutes(
       if (result.kind === 'already_published') return reply.code(409).send({ error: 'item_published' });
       if (result.kind === 'invalid') return reply.code(400).send({ error: 'item_invalid', problems: result.problems });
       return { itemId, status: 'published' };
+    },
+  );
+
+  // ADM-04: the item exactly as a learner receives it, plus what review shows (answers, explanations, the authored
+  // route and the transcript) for Answer Replay. Staff only (D6 holds for learners).
+  fastify.get<{ Params: { itemId: string } }>(
+    '/admin/items/:itemId/preview',
+    { preValidation: contentStaffOnly },
+    async (request, reply) => {
+      const row = await itemRow(db, request.params.itemId);
+      if (!row) return reply.code(404).send({ error: 'not_found' });
+      const c = row.content;
+      reply.header('cache-control', 'private, no-store');
+      return {
+        status: row.status,
+        item: deliveryOf(request.params.itemId, c),
+        questions: c.questions.map((q) => ({
+          id: q.id,
+          cueId: c.events.find((e) => e.id === q.eventId)?.cueId ?? null,
+          prompt: q.prompt,
+          correctAnswer: q.answerLabel,
+          explanation: { en: q.explanation.en, ar: q.explanation.ar },
+        })),
+        route: c.events,
+        transcript: c.transcript,
+      };
+    },
+  );
+
+  // ADM-08: the item's audio for preview, draft or published, with byte ranges.
+  fastify.get<{ Params: { itemId: string } }>(
+    '/admin/items/:itemId/audio',
+    { preValidation: contentStaffOnly },
+    async (request, reply) => {
+      const row = await itemRow(db, request.params.itemId);
+      if (!row) return reply.code(404).send({ error: 'not_found' });
+      reply.header('cache-control', 'private, no-cache');
+      // A missing file falls through to the app's 404; @fastify/send refuses paths outside contentDir.
+      return reply.sendFile(row.content.audio.file, contentDir, { cacheControl: false });
     },
   );
 }

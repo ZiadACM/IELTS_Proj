@@ -34,7 +34,7 @@ async function prepare(env, e, role, actor, allowed) {
   const q = env.questionIds[0];
   const needsAttempt = e.path.includes('{attemptId}');
   // admin may start attempts (ATT-01 allow) but not read them (D7); anonymous uses a learner's attempt
-  const attemptId = needsAttempt ? await ownAttempt('p1', 'guided', e.id === 'ATT-09') : undefined;
+  const attemptId = needsAttempt ? await ownAttempt('p1', 'guided', ['ATT-09', 'ATT-10'].includes(e.id)) : undefined;
   const recipes = {
     // Without a session an account needs a fresh invite code and the 18+ confirmation (ticket 05); a guest upgrades.
     'AUTH-01': async () => {
@@ -64,12 +64,14 @@ async function prepare(env, e, role, actor, allowed) {
     'ATT-07': async () => ({ params: { attemptId }, body: {}, negative: allowed && { params: { attemptId: await ownAttempt('p3', 'exam') }, body: {}, expect: [403, 409] } }),
     'ATT-08': async () => ({ params: { attemptId }, body: { questionId: q }, negative: allowed && { params: { attemptId: await ownAttempt('p3', 'exam') }, body: { questionId: q }, expect: [403, 409] } }),
     'ATT-09': async () => ({ params: { attemptId }, negative: allowed && { params: { attemptId: await ownAttempt('p3', 'exam') }, expect: [403, 404, 409] } }),
+    'ATT-10': async () => ({ params: { attemptId }, negative: allowed && { params: { attemptId: await ownAttempt('p2', 'guided') }, expect: [403, 404, 409] } }),
     'PROG-01': () => ({}), 'PROG-02': () => ({}),
     'ADM-01': () => ({}),
     'ADM-02': () => ({ body: { item: buildItem(env.runId, { suffix: `-imp${env.uniq('i')}`, status: 'draft' }) } }),
     'ADM-04': () => ({ params: { itemId: env.items.p1 } }),
     'ADM-05': async () => ({ params: { itemId: await env.seedDraft() }, body: {} }),
     'ADM-06': () => ({}),
+    'ADM-08': () => ({ params: { itemId: env.items.p1 } }),
   };
   assert.ok(recipes[e.id], `no request recipe for ${e.id} in authorization-enforcement.test.mjs; add one (fail closed)`);
   const r = await recipes[e.id]();

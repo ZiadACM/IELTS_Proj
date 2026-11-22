@@ -52,10 +52,11 @@ Status: **Proposed**. **No API exists yet.** The endpoints below are a logical, 
 | ATT-03 | GET | `/attempts/{attemptId}` | `deny` | `own` | `own` | `own` | `own` | `deny` | ownerScoped, deliveryPayload | T1, T3, CS2.1, CS2.2 |
 | ATT-04 | PUT | `/attempts/{attemptId}/answers` | `deny` | `own-open` | `own-open` | `own-open` | `own-open` | `deny` | ownerScoped, massAssignmentRisk | T3, T4, CS2.1, CS2.3 |
 | ATT-05 | POST | `/attempts/{attemptId}/submit` | `deny` | `own-open` | `own-open` | `own-open` | `own-open` | `deny` | ownerScoped, massAssignmentRisk | T3, T4, CS2.1, CS2.3 |
-| ATT-06 | GET | `/attempts/{attemptId}/audio` | `deny` | `own-open` | `own-open` | `own-open` | `own-open` | `deny` | ownerScoped, examSingleUse | T4, CS2.1, CS2.3 |
+| ATT-06 | GET | `/attempts/{attemptId}/audio` | `deny` | `own-open` | `own-open` | `own-open` | `own-open` | `deny` | ownerScoped, examSingleUse, servesAudio | T4, CS2.1, CS2.3 |
 | ATT-07 | POST | `/attempts/{attemptId}/replays` | `deny` | `own-open-guided` | `own-open-guided` | `own-open-guided` | `own-open-guided` | `deny` | ownerScoped, examForbidden | T4, CS2.3 |
 | ATT-08 | POST | `/attempts/{attemptId}/hints` | `deny` | `own-open-guided` | `own-open-guided` | `own-open-guided` | `own-open-guided` | `deny` | ownerScoped, examForbidden | T4, CS2.3 |
 | ATT-09 | GET | `/attempts/{attemptId}/review` | `deny` | `own-submitted` | `own-submitted` | `own-submitted` | `own-submitted` | `deny` | ownerScoped, returnsAnswerData | T1, T3, CS2.1, CS2.2 |
+| ATT-10 | GET | `/attempts/{attemptId}/review/audio` | `deny` | `own-submitted` | `own-submitted` | `own-submitted` | `own-submitted` | `deny` | ownerScoped, servesAudio | T3, CS2.1 |
 | PROG-01 | GET | `/me/progress` | `deny` | `own` | `own` | `own` | `own` | `own` | ownerScoped | T3, CS2.1 |
 | PROG-02 | GET | `/me/recommendations` | `deny` | `own` | `own` | `own` | `own` | `own` | ownerScoped | T3, CS2.1 |
 | ADM-01 | GET | `/admin/items` | `deny` | `deny` | `deny` | `allow` | `allow` | `deny` | staffOnly | T5 |
@@ -63,8 +64,9 @@ Status: **Proposed**. **No API exists yet.** The endpoints below are a logical, 
 | ADM-04 | GET | `/admin/items/{itemId}/preview` | `deny` | `deny` | `deny` | `allow` | `allow` | `deny` | staffOnly, returnsAnswerData | T1, T5 |
 | ADM-05 | POST | `/admin/items/{itemId}/publish` | `deny` | `deny` | `deny` | `deny` | `allow` | `deny` | staffOnly, publishAction | T5, CS3.1 |
 | ADM-06 | GET | `/admin/reports` | `deny` | `deny` | `deny` | `allow` | `allow` | `deny` | staffOnly, rendersUserText | T5, CS2.5, CS2.6 |
+| ADM-08 | GET | `/admin/items/{itemId}/audio` | `deny` | `deny` | `deny` | `allow` | `allow` | `deny` | staffOnly, servesAudio | T5 |
 
-Flags drive the invariants and, later, the stack-specific tests: `ownerScoped` (cross-user tests), `deliveryPayload` (answer-key leakage scan), `returnsAnswerData`, `examForbidden` / `examSingleUse` (exam-mode tests), `acceptsUserText` / `rendersUserText` (XSS tests), `massAssignmentRisk` (extra-field tests), `enumerationSensitive` / `rateLimited` (auth tests), `staffOnly`, `publishAction`.
+Flags drive the invariants and, later, the stack-specific tests: `ownerScoped` (cross-user tests), `deliveryPayload` (answer-key leakage scan), `returnsAnswerData`, `examForbidden` / `examSingleUse` (exam-mode tests), `acceptsUserText` / `rendersUserText` (XSS tests), `massAssignmentRisk` (extra-field tests), `enumerationSensitive` / `rateLimited` (auth tests), `staffOnly`, `publishAction`, `servesAudio` (the only rows that may answer with audio instead of JSON; XSS-03).
 
 ## Invariants the test enforces
 

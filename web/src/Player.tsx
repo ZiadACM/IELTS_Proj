@@ -3,19 +3,22 @@
 // uninterrupted first listen is an interaction rule in the client (spec: Audio delivery). Ticket 08 adds answering
 // (a tap on the map or a letter from the list, spec stories 17 to 19), saving as the learner goes, and submit. Ticket
 // 09 opens the review in place after submit.
-import { type CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AnswerSheet, ItemStub } from './AnswerSheet.tsx';
 import {
   type Attempt,
   attemptAudioUrl,
   type DeliveredItem,
   getItem,
+  getReview,
+  reviewAudioUrl,
   startGuidedPractice,
   submitAttempt,
 } from './api.ts';
-import { ItemMap } from './ItemMap.tsx';
-import { Review } from './Review.tsx';
+import { Review, type ReviewSource } from './Review.tsx';
 import { type SaveState, stateAfter, useSavedAnswers } from './saved-answers.ts';
 import type { Strings } from './strings.ts';
+import { lineShare, minutesSeconds } from './time.ts';
 
 type Loaded = { item: DeliveredItem; attempt: Attempt };
 type Phase = 'reading' | 'listening' | 'finished';
@@ -30,14 +33,6 @@ const MEDIA_ACTIONS: MediaSessionAction[] = [
   'previoustrack',
   'nexttrack',
 ];
-
-// React sets this through the CSSOM, which the page's CSP allows (it forbids inline style attributes in markup).
-const lineShare = (share: number) => ({ '--share': share }) as CSSProperties;
-
-const minutesSeconds = (seconds: number) => {
-  const s = Math.max(0, Math.floor(seconds));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-};
 
 // Hardware keys and lock-screen controls must not pause or seek the first listen either.
 function holdMediaControls(hold: boolean) {
@@ -96,6 +91,10 @@ export function Player({ itemId, ...screen }: ScreenProps & { itemId: string }) 
 }
 
 function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: ScreenProps & Loaded) {
+  const reviewSource = useMemo<ReviewSource>(
+    () => ({ load: () => getReview(attempt.id), audioUrl: reviewAudioUrl(attempt.id) }),
+    [attempt.id],
+  );
   const [phase, setPhase] = useState<Phase>('reading');
   const [secondsLeft, setSecondsLeft] = useState(item.readingTimeSec);
   const [audioState, setAudioState] = useState<AudioState>('waiting-to-start');
@@ -111,7 +110,6 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
   strings.current = t;
 
   const { answers, saveState, setAnswer, flush } = useSavedAnswers(attempt.id, attempt.answers, onSessionGone);
-  const [activeQuestion, setActiveQuestion] = useState(item.questions[0]?.id);
   const [submitState, setSubmitState] = useState<'idle' | 'submitting' | 'offline' | 'failed' | 'closed' | 'rejected'>(
     'idle',
   );
@@ -193,16 +191,6 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
         : null;
   const locked = submitted || ended !== null;
   const unanswered = item.questions.filter((q) => !answers[q.id]).length;
-  const activeIndex = item.questions.findIndex((q) => q.id === activeQuestion);
-
-  // A letter picked on the map answers the active question, then moves on to the next question without an answer.
-  const pickOnMap = (letter: string) => {
-    if (locked || !activeQuestion) return;
-    setAnswer(activeQuestion, letter);
-    const after = [...item.questions.slice(activeIndex + 1), ...item.questions.slice(0, activeIndex)];
-    const next = after.find((q) => !answers[q.id]);
-    if (next) setActiveQuestion(next.id);
-  };
 
   const submit = async () => {
     setSubmitState('submitting');
@@ -238,30 +226,10 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
 
   return (
     <article className="player">
-      <header className="stub">
-        <h1>{mapNumber ? t.mapName(item.tier, mapNumber) : t.guidedPractice}</h1>
-        <dl className="stub-facts">
-          <div>
-            <dt>{t.itemTier}</dt>
-            <dd>{item.tier}</dd>
-          </div>
-          <div>
-            <dt>{t.itemQuestions}</dt>
-            <dd>{item.questions.length}</dd>
-          </div>
-          <div>
-            <dt className="visually-hidden">{t.guidedPractice}</dt>
-            <dd className="stub-mode">
-              {item.focusSkill ? `${t.skillChallenge}: ${t.microSkills[item.focusSkill]}` : t.guidedPractice}
-            </dd>
-          </div>
-        </dl>
-      </header>
-      <div className="perforation" aria-hidden="true" />
-      <p className="unofficial">{t.unofficial}</p>
+      <ItemStub t={t} item={item} mapNumber={mapNumber} />
 
       {reviewing ? (
-        <Review t={t} item={item} attemptId={attempt.id} onBack={onBack} onSessionGone={onSessionGone} />
+        <Review t={t} item={item} source={reviewSource} onBack={onBack} onSessionGone={onSessionGone} />
       ) : (
         <>
           <div className="status-strip" ref={strip} tabIndex={-1}>
@@ -350,62 +318,7 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
             {announcement}
           </p>
 
-          <div className="map-frame">
-            {!locked && activeIndex >= 0 && (
-              <p className="map-prompt" aria-hidden="true">
-                {t.tapToAnswer(activeIndex + 1)}
-              </p>
-            )}
-            <ItemMap
-              map={item.map}
-              label={t.mapLabel}
-              picked={!locked && activeQuestion ? answers[activeQuestion] : undefined}
-              onPick={locked ? undefined : pickOnMap}
-            />
-          </div>
-
-          <section className="questions" aria-labelledby="questions-title">
-            <h2 id="questions-title">{t.itemQuestions}</h2>
-            <p>{t.questionsIntro}</p>
-            <ol>
-              {item.questions.map((q, index) => {
-                const active = !locked && q.id === activeQuestion;
-                return (
-                  <li key={q.id} className={active ? 'active' : undefined}>
-                    {/* Picks which question a tap on the map answers. */}
-                    <button
-                      type="button"
-                      className="question-number"
-                      aria-pressed={active}
-                      aria-label={t.answerOnMap(index + 1)}
-                      disabled={locked}
-                      onClick={() => setActiveQuestion(q.id)}
-                    >
-                      {index + 1}
-                    </button>
-                    <span className="question-prompt" dir="ltr" lang="en" id={`prompt-${q.id}`}>
-                      {q.prompt}
-                    </span>
-                    <select
-                      className="answer-choice"
-                      aria-label={t.answerFor(index + 1)}
-                      aria-describedby={`prompt-${q.id}`}
-                      value={answers[q.id] ?? ''}
-                      disabled={locked}
-                      onFocus={() => setActiveQuestion(q.id)}
-                      onChange={(e) => setAnswer(q.id, e.target.value || null)}
-                    >
-                      <option value="">{t.noAnswer}</option>
-                      {item.map.targets.map((target) => (
-                        <option key={target.label} value={target.label}>
-                          {target.label}
-                        </option>
-                      ))}
-                    </select>
-                  </li>
-                );
-              })}
-            </ol>
+          <AnswerSheet t={t} item={item} answers={answers} setAnswer={setAnswer} locked={locked}>
             {!locked && (
               <div className="submit-area">
                 {/* Quiet while saving works (no announcement on every answer); a save that fails is announced. */}
@@ -433,7 +346,7 @@ function PlayerScreen({ t, mapNumber, onBack, onSessionGone, item, attempt }: Sc
                 )}
               </div>
             )}
-          </section>
+          </AnswerSheet>
         </>
       )}
 

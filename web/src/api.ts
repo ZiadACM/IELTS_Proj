@@ -1,5 +1,6 @@
 // The only place the web app talks to the API. Every call is same-origin and sends the session cookie.
 
+import type { RouteEvent } from './replay.ts';
 export const TARGET_BANDS = ['5.5', '6.0', '6.5', '7.0+'] as const;
 export type TargetBand = (typeof TARGET_BANDS)[number];
 export type InterfaceLanguage = 'ar' | 'en';
@@ -197,8 +198,22 @@ export type Review = {
   mode: 'guided' | 'exam';
   score: number;
   questions: ReviewQuestion[];
-  route: unknown[]; // Answer Replay, ticket 10
+  route: RouteEvent[]; // the authored route, for Answer Replay (ticket 10)
   transcript: { cues: TranscriptCue[] };
 };
 export const getReview = (attemptId: string) =>
   call<Review>('GET', `/attempts/${encodeURIComponent(attemptId)}/review`);
+// Ticket 10: the recording behind Answer Replay, for the learner's own submitted attempt (ATT-10).
+export const reviewAudioUrl = (attemptId: string) => `/attempts/${encodeURIComponent(attemptId)}/review/audio`;
+
+// Ticket 10: staff preview (ADM-04): the item as a learner receives it, plus what review shows. Staff only.
+export type StaffPreview = {
+  status: ItemStatus;
+  item: DeliveredItem;
+  questions: Omit<ReviewQuestion, 'yourAnswer' | 'correct'>[];
+  route: RouteEvent[];
+  transcript: { cues: TranscriptCue[] };
+};
+export const getStaffPreview = (itemId: string) =>
+  call<StaffPreview>('GET', `/admin/items/${encodeURIComponent(itemId)}/preview`);
+export const staffAudioUrl = (itemId: string) => `/admin/items/${encodeURIComponent(itemId)}/audio`;

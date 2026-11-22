@@ -1,4 +1,4 @@
-// Staff item list, import and publish (ticket 06; spec: Staff). Plain screen: its design review and browser checks are
+// Staff item list, import, preview (ticket 10) and publish (ticket 06; spec: Staff). Plain screen: its design review and browser checks are
 // deferred to ticket 07 (owner decision). Item ids, purposes and content-checker messages are English and stay
 // left-to-right inside the Arabic frame.
 import { type ChangeEvent, useCallback, useEffect, useId, useState } from 'react';
@@ -25,10 +25,12 @@ function failureText(t: Strings, failure: Failure) {
 export function StaffItems({
   t,
   onBack,
+  onPreview,
   onSessionGone,
 }: {
   t: Strings;
   onBack: () => void;
+  onPreview: (item: { itemId: string; contentId: string }) => void;
   onSessionGone: () => void;
 }) {
   const [items, setItems] = useState<StaffItem[] | null>(null);
@@ -153,6 +155,13 @@ export function StaffItems({
               <span className={`item-status ${item.status}`}>
                 {item.status === 'published' ? t.statusPublished : t.statusDraft}
               </span>
+              <button
+                type="button"
+                onClick={() => onPreview({ itemId: item.itemId, contentId: item.contentId })}
+                aria-label={t.previewOf(item.contentId)}
+              >
+                {t.preview}
+              </button>
               {canPublish && item.status === 'draft' && (
                 <button type="button" onClick={() => onPublish(item.itemId)} disabled={busy !== null}>
                   {busy === item.itemId ? t.publishing : t.publish}

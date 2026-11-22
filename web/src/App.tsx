@@ -14,6 +14,7 @@ import {
 import { Browse, type ChosenItem } from './Browse.tsx';
 import { Player } from './Player.tsx';
 import { StaffItems } from './Staff.tsx';
+import { StaffPreview } from './StaffPreview.tsx';
 import { STRINGS, type Strings } from './strings.ts';
 
 type Screen =
@@ -28,6 +29,7 @@ type Screen =
   | 'home'
   | 'settings'
   | 'staff'
+  | 'staff-preview'
   | 'browse'
   | 'player';
 type SessionKind = 'guest' | 'account';
@@ -86,9 +88,10 @@ export function App() {
   // Whether the server lets this account see the staff list. Only decides whether Home offers it.
   const [isStaff, setIsStaff] = useState(false);
   const [chosenItem, setChosenItem] = useState<ChosenItem | null>(null);
+  const [previewItem, setPreviewItem] = useState<{ itemId: string; contentId: string } | null>(null);
   const language = settings.interfaceLanguage;
   const t = STRINGS[language];
-  const signedIn = ['target-band', 'home', 'settings', 'staff', 'browse', 'player'].includes(screen);
+  const signedIn = ['target-band', 'home', 'settings', 'staff', 'staff-preview', 'browse', 'player'].includes(screen);
 
   const startedSession = (kind: SessionKind) => {
     setSessionEnded(null);
@@ -263,7 +266,20 @@ export function App() {
             onSessionGone={sessionGone}
           />
         )}
-        {screen === 'staff' && <StaffItems t={t} onBack={() => setScreen('home')} onSessionGone={sessionGone} />}
+        {screen === 'staff' && (
+          <StaffItems
+            t={t}
+            onBack={() => setScreen('home')}
+            onPreview={(item) => {
+              setPreviewItem(item);
+              setScreen('staff-preview');
+            }}
+            onSessionGone={sessionGone}
+          />
+        )}
+        {screen === 'staff-preview' && previewItem && (
+          <StaffPreview t={t} {...previewItem} onBack={() => setScreen('staff')} onSessionGone={sessionGone} />
+        )}
         {screen === 'settings' && (
           <SettingsScreen
             t={t}

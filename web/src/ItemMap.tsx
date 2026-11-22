@@ -2,9 +2,11 @@
 // v1: landmarks as small labelled squares, lettered places as large discs (size carries the hierarchy, not
 // colour). Map content is English and stays left-to-right inside the Arabic frame. Text is sized in screen pixels, so
 // labels stay readable on a 360 px phone without pinch-zoom.
-import { type MouseEvent, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { type MouseEvent, type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { MapData } from './api.ts';
 import { MapV2 } from './MapV2.tsx';
+import { ReplayLayer } from './ReplayLayer.tsx';
+import type { ReplayView } from './replay.ts';
 
 const LABEL_PX = 12;
 const LETTER_PX = 15;
@@ -216,6 +218,9 @@ function Marks({ map, unit, marks }: { map: MapData; unit: number; marks: Review
   );
 }
 
+// Answer Replay at one moment (ticket 10): shown instead of the review marks once the replay has started.
+export type ReplayOnMap = { view: ReplayView; answers: string[] };
+
 // `picked` is the letter shown as chosen. With `onPick`, a tap or click near a letter picks it. Tapping is for
 // pointers only: the question list's letter choice is the keyboard and screen reader path (spec: Accessibility).
 export function ItemMap({
@@ -224,12 +229,14 @@ export function ItemMap({
   picked,
   onPick,
   marks,
+  replay,
 }: {
   map: MapData;
   label: string;
   picked?: string;
   onPick?: (letter: string) => void;
   marks?: ReviewMarks;
+  replay?: ReplayOnMap;
 }) {
   const ref = useRef<SVGSVGElement>(null);
   const [width, setWidth] = useState(0);
@@ -281,19 +288,47 @@ export function ItemMap({
         onClick={onPick && pick}
       >
         {v2 ? (
-          <MapV2 map={map} unit={unit} picked={picked} />
+          <MapV2
+            map={map}
+            unit={unit}
+            picked={picked}
+            under={replay && <ReplayLayer layer="under" map={map} unit={unit} {...replay} />}
+          />
         ) : (
-          <V1Map map={map} unit={unit} labels={labels} picked={picked} />
+          <V1Map
+            map={map}
+            unit={unit}
+            labels={labels}
+            picked={picked}
+            under={replay && <ReplayLayer layer="under" map={map} unit={unit} {...replay} />}
+          />
         )}
-        {marks && <Marks map={map} unit={unit} marks={marks} />}
+        {replay ? (
+          <ReplayLayer layer="over" map={map} unit={unit} {...replay} />
+        ) : (
+          marks && <Marks map={map} unit={unit} marks={marks} />
+        )}
       </svg>
     </>
   );
 }
 
-function V1Map({ map, unit, labels, picked }: { map: MapData; unit: number; labels: Placed[]; picked?: string }) {
+function V1Map({
+  map,
+  unit,
+  labels,
+  picked,
+  under,
+}: {
+  map: MapData;
+  unit: number;
+  labels: Placed[];
+  picked?: string;
+  under?: ReactNode;
+}) {
   return (
     <>
+      {under}
       {map.landmarks.map((l) => (
         <rect
           key={l.id}

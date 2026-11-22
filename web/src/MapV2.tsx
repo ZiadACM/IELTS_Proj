@@ -4,20 +4,21 @@
 // and answer letters as square boxes. Kinds the prototype did not draw (water, roads, polygons, other symbols) are
 // skipped, never fatal: no item uses them yet and their look is not decided.
 // `unit` is map units per screen pixel, so sizes given in px stay the same on every screen.
+import type { ReactNode } from 'react';
 import type { MapArea, MapData } from './api.ts';
 
-const LABEL_PX = 11; // D22: labels at 11 px inside their rooms
+export const LABEL_PX = 11; // D22: labels at 11 px inside their rooms
 const PATH_LABEL_PX = 10;
-const BOX_PX = 26; // answer letter box side
+export const BOX_PX = 26; // answer letter box side
 const LETTER_PX = 15;
 const LABEL_FONT = (px: number) => `${px}px system-ui, "Segoe UI", sans-serif`; // matches .map-v2 text
 
-type Rect = { x: number; y: number; w: number; h: number };
-const rectOf = (a: MapArea): Rect | null =>
+export type Rect = { x: number; y: number; w: number; h: number };
+export const rectOf = (a: MapArea): Rect | null =>
   a.rect ? { x: a.rect[0], y: a.rect[1], w: a.rect[2], h: a.rect[3] } : null;
 
 let measureContext: CanvasRenderingContext2D | null | undefined;
-function textPx(text: string, px: number) {
+export function textPx(text: string, px: number) {
   measureContext ??= document.createElement('canvas').getContext('2d');
   if (!measureContext) return text.length * 0.56 * px;
   measureContext.font = LABEL_FONT(px);
@@ -47,7 +48,7 @@ function AreaLabel({ text, r, unit }: { text: string; r: Rect; unit: number }) {
 }
 
 // The gap in a room's wall: `at` is the position along that side, default the middle.
-function doorLine(r: Rect, door: NonNullable<MapArea['door']>, half: number) {
+export function doorLine(r: Rect, door: NonNullable<MapArea['door']>, half: number) {
   if (door.side === 'n' || door.side === 's') {
     const x = door.at ?? r.x + r.w / 2;
     const y = door.side === 'n' ? r.y : r.y + r.h;
@@ -58,7 +59,18 @@ function doorLine(r: Rect, door: NonNullable<MapArea['door']>, half: number) {
   return { x1: x, y1: y - half, x2: x, y2: y + half };
 }
 
-export function MapV2({ map, unit, picked }: { map: MapData; unit: number; picked?: string }) {
+// `under` is drawn above the plan and below the letters (Answer Replay's route), so it never hides a letter.
+export function MapV2({
+  map,
+  unit,
+  picked,
+  under,
+}: {
+  map: MapData;
+  unit: number;
+  picked?: string;
+  under?: ReactNode;
+}) {
   const areas = map.areas ?? [];
   const byId = new Map(areas.map((a) => [a.id, a]));
   const ofKind = (kind: string) =>
@@ -180,6 +192,7 @@ export function MapV2({ map, unit, picked }: { map: MapData; unit: number; picke
         </g>
       )}
 
+      {under}
       {map.targets.map((t) => (
         <g key={t.label} className={t.label === picked ? 'letter-box picked' : 'letter-box'}>
           <rect

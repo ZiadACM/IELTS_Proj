@@ -1,30 +1,51 @@
 // Review after submit (ticket 09; spec stories 31, 32, 40, 41; D6). Shown in place of the player's status strip, map and
 // question list: the score, each question with the learner's letter and the correct one (in words and marks, not colour
 // alone), the selected question marked on the map, its English explanation with an Arabic version on request, and the
-// transcript with the line where that answer is named. Answer Replay is ticket 10.
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { type DeliveredItem, getReview, type Review as ReviewData } from './api.ts';
+// transcript with the line where that answer is named. Ticket 10 adds Answer Replay under the map (approved shape
+// brief): once it has started the map shows the replay instead of the marks, and the transcript marks the line being
+// spoken. Staff preview (ADM-04) shows the same screen with the correct letters only.
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AnswerReplay } from './AnswerReplay.tsx';
+import type { DeliveredItem, Result, Review as ReviewData } from './api.ts';
 import { bidiRuns } from './bidi.ts';
 import { ItemMap } from './ItemMap.tsx';
+import { cueAt, replayAt, replayPlan } from './replay.ts';
 import type { Strings } from './strings.ts';
 
-type Props = { t: Strings; item: DeliveredItem; attemptId: string; onBack: () => void; onSessionGone: () => void };
+// Where the review comes from: the learner's own submitted attempt, or a staff preview (no learner answers).
+export type ReviewSource = { load: () => Promise<Result<ReviewData>>; audioUrl: string; preview?: boolean };
+type Props = { t: Strings; item: DeliveredItem; source: ReviewSource; onBack?: () => void; onSessionGone: () => void };
 
-export function Review({ t, item, attemptId, onBack, onSessionGone }: Props) {
+function useReducedMotion() {
+  const query = '(prefers-reduced-motion: reduce)';
+  const [reduced, setReduced] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const list = window.matchMedia(query);
+    const change = () => setReduced(list.matches);
+    list.addEventListener('change', change);
+    return () => list.removeEventListener('change', change);
+  }, []);
+  return reduced;
+}
+
+export function Review({ t, item, source, onBack, onSessionGone }: Props) {
   const [review, setReview] = useState<ReviewData | 'loading' | 'offline' | 'failed'>('loading');
   const [selected, setSelected] = useState(0);
   const [arabicOpen, setArabicOpen] = useState(false);
+  const [replayTime, setReplayTime] = useState<number | null>(null);
+  const reduced = useReducedMotion();
   const heading = useRef<HTMLHeadingElement>(null);
   const mapFrame = useRef<HTMLDivElement>(null);
   const namedLine = useRef<HTMLLIElement>(null);
+  const { load: fetchReview, preview = false } = source;
 
   const load = useCallback(async () => {
     setReview('loading');
-    const res = await getReview(attemptId);
+    const res = await fetchReview();
     if (res.ok) return setReview(res.value);
     if (res.failure === 'unauthenticated') return onSessionGone();
     setReview(res.failure === 'offline' ? 'offline' : 'failed');
-  }, [attemptId, onSessionGone]);
+  }, [fetchReview, onSessionGone]);
 
   useEffect(() => {
     load();
@@ -36,7 +57,12 @@ export function Review({ t, item, attemptId, onBack, onSessionGone }: Props) {
     if (ready) heading.current?.focus();
   }, [ready]);
 
-  if (!ready)
+  const plan = useMemo(
+    () => (ready ? replayPlan({ events: review.route, cues: review.transcript.cues }) : null),
+    [ready, review],
+  );
+
+  if (!ready || !plan)
     return (
       <div className="status-strip review-head">
         {review === 'loading' ? (
@@ -57,6 +83,17 @@ export function Review({ t, item, attemptId, onBack, onSessionGone }: Props) {
     );
 
   const question = review.questions[selected];
+  const cues = review.transcript.cues;
+  const view = replayTime === null ? null : replayAt(plan, replayTime, reduced);
+  const spokenId = replayTime === null ? null : cueAt(cues, replayTime);
+  const answers = review.questions.map((q) => q.correctAnswer);
+  const mapLabel = view
+    ? view.summary
+      ? t.replayMapSummary
+      : t.replayMapLabel(Math.max(1, view.leg + 1))
+    : preview
+      ? t.previewMapLabel(selected + 1, question.correctAnswer)
+      : t.reviewMapLabel(selected + 1, question.yourAnswer, question.correctAnswer);
 
   return (
     <>
@@ -64,14 +101,25 @@ export function Review({ t, item, attemptId, onBack, onSessionGone }: Props) {
         <h2 ref={heading} tabIndex={-1}>
           {t.reviewTitle}
         </h2>
-        <p className="review-score">{t.reviewScore(review.score, review.questions.length)}</p>
+        {!preview && <p className="review-score">{t.reviewScore(review.score, review.questions.length)}</p>}
       </div>
 
-      <div className="map-frame" ref={mapFrame}>
+      <div className={reduced ? 'map-frame reduced' : 'map-frame'} ref={mapFrame}>
         <ItemMap
           map={item.map}
-          label={t.reviewMapLabel(selected + 1, question.yourAnswer, question.correctAnswer)}
+          label={mapLabel}
           marks={{ yours: question.yourAnswer, correct: question.correctAnswer, yoursTag: t.yours }}
+          replay={view ? { view, answers } : undefined}
+        />
+        <AnswerReplay
+          t={t}
+          plan={plan}
+          audioUrl={source.audioUrl}
+          durationSec={item.audio.durationSec}
+          time={replayTime}
+          caption={cues.find((c) => c.id === spokenId)?.text ?? null}
+          note={view?.note ?? null}
+          onTime={setReplayTime}
         />
       </div>
 
@@ -88,14 +136,26 @@ export function Review({ t, item, attemptId, onBack, onSessionGone }: Props) {
                   className="review-row"
                   aria-expanded={open}
                   aria-controls={open ? `why-${q.id}` : undefined}
-                  onClick={() => setSelected(index)}
+                  onClick={() => {
+                    setSelected(index);
+                    // The row's marks are what the learner asked for: the map leaves the replay for them.
+                    if (replayTime !== null) setReplayTime(null);
+                  }}
                 >
                   <span className="question-number">{index + 1}</span>
                   <span className="review-row-body">
                     <span className="question-prompt" dir="ltr" lang="en">
                       {q.prompt}
                     </span>
-                    <Verdict t={t} q={q} />
+                    {preview ? (
+                      <span className="verdict">
+                        <span>
+                          {t.correctLetter}: <bdi className="letter">{q.correctAnswer}</bdi>
+                        </span>
+                      </span>
+                    ) : (
+                      <Verdict t={t} q={q} />
+                    )}
                   </span>
                 </button>
                 {open && (
@@ -140,15 +200,19 @@ export function Review({ t, item, attemptId, onBack, onSessionGone }: Props) {
       <section className="transcript" aria-labelledby="transcript-title">
         <h2 id="transcript-title">{t.transcriptTitle}</h2>
         <ol dir="ltr" lang="en">
-          {review.transcript.cues.map((cue) => {
+          {cues.map((cue) => {
             // The selected question's line; two questions named in one line each mark it when selected.
             const here = cue.id === question.cueId;
+            // While Answer Replay runs, the line being spoken is marked too; the list does not scroll to it, so the
+            // map stays in view on a phone (approved shape brief).
+            const spoken = cue.id === spokenId;
             return (
               <li
                 key={cue.id}
                 ref={here ? namedLine : undefined}
-                className={here ? 'named' : undefined}
+                className={[here && 'named', spoken && 'spoken'].filter(Boolean).join(' ') || undefined}
                 tabIndex={here ? -1 : undefined}
+                aria-current={spoken || undefined}
               >
                 {here && (
                   <span className="named-tag">
@@ -165,12 +229,14 @@ export function Review({ t, item, attemptId, onBack, onSessionGone }: Props) {
         </ol>
       </section>
 
-      <div className="review-end">
-        <p>{t.reviewEnd}</p>
-        <button type="button" className="primary" onClick={onBack}>
-          {t.backToMaps}
-        </button>
-      </div>
+      {onBack && (
+        <div className="review-end">
+          <p>{t.reviewEnd}</p>
+          <button type="button" className="primary" onClick={onBack}>
+            {t.backToMaps}
+          </button>
+        </div>
+      )}
     </>
   );
 }

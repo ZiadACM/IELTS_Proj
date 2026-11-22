@@ -12,6 +12,7 @@ Spec: `../spec.md`
 - [ ] Interruption recorded on the attempt
 - [ ] Redo flagged seenBefore and shown in history
 - [ ] Browse marks seen items
+- [ ] A seen map in Browse links to its last review (`GET /attempts/{id}/review` exists since ticket 09; owner, 2026-11-20)
 
 ## Comments
 

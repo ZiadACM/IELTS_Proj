@@ -1,0 +1,64 @@
+✔ AUTHZ-03: another user's attempt ids are refused on every ownerScoped endpoint (learner, guest and mixed pairs) (610.090875ms)
+✔ AUTHZ-04: /me endpoints ignore a userId override in the query, a header or the body (287.509666ms)
+✖ AUTHZ-05: with no session every anonymous-denied endpoint returns 401 and no data (118.753542ms)
+✖ AUTHZ-07: extra fields on massAssignmentRisk endpoints are ignored or rejected; stored state unchanged (195.8275ms)
+✔ AUTHZ-08: progress and recommendations cannot be written by the client; the server computes the score (105.297583ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 3
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1348.509209
+
+✖ failing tests:
+
+test at tests/security/lib/live.mjs:27:3
+✖ AUTHZ-05: with no session every anonymous-denied endpoint returns 401 and no data (118.753542ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   'ME-03 DELETE /me: expected 401, got 404',
+  +   'REP-01 POST /items/<id>/reports: expected 401, got 404',
+  +   'ATT-02 GET /me/attempts: expected 401, got 404',
+  +   'ATT-07 POST /attempts/<id>/replays: expected 401, got 404',
+  +   'ATT-08 POST /attempts/<id>/hints: expected 401, got 404',
+  +   'PROG-01 GET /me/progress: expected 401, got 404',
+  +   'PROG-02 GET /me/recommendations: expected 401, got 404',
+  +   'ADM-04 GET /admin/items/<id>/preview: expected 401, got 404',
+  +   'ADM-06 GET /admin/reports: expected 401, got 404'
+  + ]
+  - []
+  
+      at file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/cross-user-access.test.mjs:121:10
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'ME-03 DELETE /me: expected 401, got 404', 'REP-01 POST /items/<id>/reports: expected 401, got 404', 'ATT-02 GET /me/attempts: expected 401, got 404', 'ATT-07 POST /attempts/<id>/replays: expected 401, got 404', 'ATT-08 POST /attempts/<id>/hints: expected 401, got 404', 'PROG-01 GET /me/progress: expected 401, got 404', 'PROG-02 GET /me/recommendations: expected 401, got 404', 'ADM-04 GET /admin/items/<id>/preview: expected 401, got 404', 'ADM-06 GET /admin/reports: expected 401, got 404' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/security/lib/live.mjs:27:3
+✖ AUTHZ-07: extra fields on massAssignmentRisk endpoints are ignored or rejected; stored state unchanged (195.8275ms)
+  AssertionError [ERR_ASSERTION]: test-support GET /__test__/users/gBc2ONUCNDUsfTdtgiDq86LRqj9tvZVu returned 501: {"error":"not_implemented","ticket":"17-data-rights-retention"}
+      at Object.supportOk (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:81:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async ME-02 (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/cross-user-access.test.mjs:133:22)
+      at async file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/cross-user-access.test.mjs:167:5
+      at async TestContext.<anonymous> (file:///Users/ziyad/Desktop/IELTS_Proj/tests/security/lib/live.mjs:35:5)
+      at async Test.run (node:internal/test_runner/test:1313:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:897:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

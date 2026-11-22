@@ -1,6 +1,7 @@
 // Answer Replay drawn on the map (ticket 10; D23, D25, D27), as in the owner-approved prototype (map-format-v2,
 // variant D). It draws one moment, `view`, computed by replay.ts from the authored route: earlier legs faded, the
-// current leg's line with a numbered start ring, the place just named lit, places named by mistake in a dashed frame,
+// current leg's line with a numbered start ring (only the current one: legs that share an entrance would overprint
+// their numbers; the summary numbers the answers instead), the place just named lit, places named by mistake in a dashed frame,
 // a correction's wrong path, the walker, and at the end every answer framed and numbered together. The route goes
 // `under` the letters, with the walker, so no letter is ever hidden (on arrival the letter covers the walker and the
 // lit frame marks the place); the summary goes `over` them.
@@ -137,7 +138,6 @@ export function ReplayLayer({
         // biome-ignore lint/suspicious/noArrayIndexKey: legs are a fixed sequence
         <g key={i} className={view.summary ? 'replay-leg summary' : 'replay-leg earlier'}>
           <polyline className="replay-line" points={points(line)} />
-          <StartRing at={line[0]} n={i + 1} unit={unit} />
         </g>
       ))}
       {view.mistaken.map((m, i) => (

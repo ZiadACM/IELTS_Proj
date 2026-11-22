@@ -1,7 +1,7 @@
 // Answer Replay's player strip (ticket 10, approved shape brief): it sits under the review map and owns the recording.
 // Play and pause; step back and forward, which move to the moment the previous or next point appears and pause there;
 // a jump to each question's part, which starts at the sentence that opens it and plays; 0.75x or 1x; the sentence being
-// spoken as a caption, with a trap's or correction's authored note under it; and a progress line you read, not drag.
+// spoken as a caption (below the controls), with a trap's or correction's authored note under it, read out when paused; and a progress line you read, not drag.
 // The map drawing is the parent's: this strip reports the clock with onTime (null: back to the review marks).
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type ReplayPlan, stepFrom } from './replay.ts';
@@ -26,6 +26,7 @@ type Props = {
 
 export function AnswerReplay({ t, plan, audioUrl, durationSec, time, caption, note, onTime }: Props) {
   const audio = useRef<HTMLAudioElement>(null);
+  const playButton = useRef<HTMLButtonElement>(null);
   const frame = useRef(0);
   const [playing, setPlaying] = useState(false);
   const [status, setStatus] = useState<Status>('ready');
@@ -85,6 +86,7 @@ export function AnswerReplay({ t, plan, audioUrl, durationSec, time, caption, no
     a?.pause();
     if (a) a.currentTime = 0;
     onTime(null);
+    playButton.current?.focus(); // this button is about to go; focus must not fall to the page
   };
 
   const retry = () => {
@@ -100,22 +102,6 @@ export function AnswerReplay({ t, plan, audioUrl, durationSec, time, caption, no
     <div className="replay-strip">
       <h3 className="replay-title">{t.replayTitle}</h3>
       {!started && <p className="status-note">{t.replayIntro}</p>}
-      {started && (
-        <div className="replay-caption">
-          <p className="replay-sentence" dir="ltr" lang="en">
-            {caption ?? ' '}
-          </p>
-          {note && (
-            <p className="replay-note">
-              <span className="replay-note-kind">{note.kind === 'correction' ? t.replayCorrection : t.replayTrap}</span>{' '}
-              <span dir="ltr" lang="en">
-                {note.text}
-              </span>
-            </p>
-          )}
-        </div>
-      )}
-
       {(status === 'failed' || status === 'offline') && (
         <div className="status-row">
           <p className="status-text error" role="alert">
@@ -138,6 +124,7 @@ export function AnswerReplay({ t, plan, audioUrl, durationSec, time, caption, no
 
       <div className="replay-controls">
         <button
+          ref={playButton}
           type="button"
           className="primary icon-button"
           onClick={playing ? () => audio.current?.pause() : play}
@@ -203,6 +190,38 @@ export function AnswerReplay({ t, plan, audioUrl, durationSec, time, caption, no
           ))}
         </fieldset>
       </div>
+
+      {/* The caption comes after the controls, so its changing height never moves a button under the thumb. */}
+      {started && (
+        <div className="replay-caption">
+          <p className="replay-sentence" dir="ltr" lang="en">
+            {caption ?? ' '}
+          </p>
+          {note && (
+            <p className="replay-note">
+              <span className="replay-note-kind">{note.kind === 'correction' ? t.replayCorrection : t.replayTrap}</span>{' '}
+              <span dir="ltr" lang="en">
+                {note.text}
+              </span>
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Read out only while paused (after a step or a pause), never every frame over the recording. */}
+      <p className="visually-hidden" aria-live="polite">
+        {started && !playing && caption ? (
+          <>
+            <span lang="en">{caption}</span>
+            {note && (
+              <>
+                {' '}
+                {note.kind === 'correction' ? t.replayCorrection : t.replayTrap}: <span lang="en">{note.text}</span>
+              </>
+            )}
+          </>
+        ) : null}
+      </p>
 
       {/* Our own controls above are the keyboard and screen reader path; the transcript is the text alternative. */}
       {/* biome-ignore lint/a11y/useMediaCaption: the transcript below is the recording's text, shown in review */}

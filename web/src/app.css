@@ -1194,7 +1194,7 @@ button.icon-button {
 /* The transcript line being spoken during the replay: a light saffron wash, the tag stays on the named line. */
 .transcript li.spoken {
   max-inline-size: none;
-  background: rgb(232 163 61 / 0.16);
+  background: color-mix(in srgb, var(--saffron) 16%, transparent);
 }
 
 /* Map drawing, as in the owner-approved prototype (variant D). */
@@ -1231,7 +1231,7 @@ button.icon-button {
 }
 
 .item-map .replay-lit {
-  fill: rgb(232 163 61 / 0.22);
+  fill: color-mix(in srgb, var(--saffron) 22%, transparent);
   stroke: var(--saffron);
 }
 
@@ -1264,7 +1264,7 @@ button.icon-button {
 }
 
 .item-map .replay-summary-badge + .replay-number {
-  fill: #ffffff;
+  fill: var(--map-paper);
 }
 
 /* The end: the answer frames come in one after another, once. */

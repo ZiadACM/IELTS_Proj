@@ -130,6 +130,8 @@ test('Answer Replay plays, steps point by point, lights the place named, jumps t
   await expect.poll(() => clock(page)).toBeCloseTo(20.43, 1); // e2 "turn right" at the noticeboard
   await expect(page.locator('.replay-lit')).toHaveCount(1);
   await expect(page.locator('.replay-sentence')).toHaveText(/turn right\.$/);
+  // Paused after a step, the sentence is read out once (a polite live region), not every frame.
+  await expect(page.locator('[aria-live="polite"]').filter({ hasText: 'turn right.' })).toHaveCount(1);
   await expect(page.locator('.transcript li[aria-current="true"]')).toHaveText(/^First, the Quiet Lounge/);
   // Stepping pauses: the clock stays put.
   await page.waitForTimeout(400);
@@ -159,6 +161,7 @@ test('Answer Replay plays, steps point by point, lights the place named, jumps t
   // Pause, then Show the marks: back to the review marks at the start.
   await page.getByRole('button', { name: 'إيقاف مؤقت' }).click();
   await page.getByRole('button', { name: 'اعرض العلامات' }).click();
+  await expect(page.getByRole('button', { name: 'شغّل إعادة المسار' })).toBeFocused(); // not dropped to the page
   await expect(page.locator('svg.item-map .review-marks')).toBeVisible();
   await expect(page.locator('svg.item-map .replay-line')).toHaveCount(0);
   await expect.poll(() => clock(page)).toBe(0);
@@ -184,6 +187,7 @@ test('the correction: its wrong path and note appear at 68.89 s, the wrong place
   await expect(page.locator('.replay-note')).toHaveCount(0);
   await stepTo(page, 76.88); // 0.8 s after the last answer
   await expect(page.locator('.replay-summary')).toHaveCount(3);
+  await expect(page.locator('.replay-start')).toHaveCount(0); // legs share the entrance: no overprinted numbers
   await expect(page.locator('.replay-lit')).toHaveCount(0);
   await expect(next(page)).toBeDisabled();
   await page.waitForTimeout(800);

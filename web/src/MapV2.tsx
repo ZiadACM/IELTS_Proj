@@ -59,7 +59,7 @@ export function doorLine(r: Rect, door: NonNullable<MapArea['door']>, half: numb
   return { x1: x, y1: y - half, x2: x, y2: y + half };
 }
 
-// `under` is drawn above the plan and below the letters (Answer Replay's route), so it never hides a letter.
+// `under` is drawn above the walls and below the names and letters (Answer Replay's route), so it never hides either.
 export function MapV2({
   map,
   unit,
@@ -113,6 +113,8 @@ export function MapV2({
         </g>
       ))}
 
+      {/* Above the walls and doors, below every name and letter, so the route never hides one. */}
+      {under}
       {(map.paths ?? []).map((p) => {
         if (!p.label || p.points.length < 2) return null;
         const [[x1, y1], [x2, y2]] = p.points;
@@ -192,7 +194,6 @@ export function MapV2({
         </g>
       )}
 
-      {under}
       {map.targets.map((t) => (
         <g key={t.label} className={t.label === picked ? 'letter-box picked' : 'letter-box'}>
           <rect

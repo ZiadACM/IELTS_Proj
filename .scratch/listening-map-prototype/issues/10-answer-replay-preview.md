@@ -19,3 +19,13 @@ Spec: `../spec.md`
 
 ### 2026-11-19, owner (via agent, map-v2-app split)
 Decision: this ticket is amended to D27 instead of building a second replay (`.scratch/map-v2-app/issues/02-answer-replay-d27.md` is folded in here). Build 08, 09 and 10 in order with v2 maps in mind. D27 changed how the line is drawn and lit; it did not remove the controls listed above (play, pause, step, jump to question, speed), so they stay unless the owner says otherwise. Behaviour reference: prototype variant D and its checks (`check-replay.mjs` on `agent/map-format-v2-prototype`).
+
+### 2026-11-22, owner decisions (asked in the session)
+Built on `agent/answer-replay`, branched from `agent/review-explanations` (ticket 09, not merged to `main` yet).
+1. **Audio for review and preview:** two new rows in the authorization matrix. ATT-06 stays as it is.
+   - `ATT-10 GET /attempts/{attemptId}/review/audio`: the caller's own submitted attempt only, any mode (like ATT-09); admin denied.
+   - `ADM-08 GET /admin/items/{itemId}/audio`: content staff only (`content_author`, `content_reviewer`), drafts included.
+2. **Protected files:** the owner allows add-only edits under `tests/security/**` for these two rows: a recipe for each in `authorization-enforcement.test.mjs` and `cross-user-access.test.mjs`, and the two routes in `fixtures/fixture-server.mjs`. No existing check is loosened.
+3. **Step back / forward:** moves the audio to the moment the previous or next point appears (its `atSec`) and pauses there. A correction counts as one step.
+4. **Jump to a question:** seeks to the start of the cue that holds the leg's first event, and plays from there.
+5. **Test seam:** a pure module `web/src/replay.ts`. `replayPlan(item)` gives the legs as timed steps; `replayAt(plan, t, reducedMotion)` gives what is on screen at time t. Expected values are read by hand from `first-challenge-001` v2 (`atSec` plus the D27 constants), and the prototype's checks (`check-replay.mjs`) become cases.
